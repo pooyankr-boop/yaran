@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>مهدکودک و پیش‌دبستانی مجازی یاران</title>
+<link rel="stylesheet" href="css/main.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+  if (window["pdfjsLib"]) {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+  }
+</script>
+</head>
+<body>
+
+  <!-- 1) اینترو -->
+  <section id="screen-intro" class="screen active">
+    <video id="intro-video" src="assets/video/intro1.mp4" autoplay muted loop playsinline></video>
+    <div class="intro-overlay">
+      <h1>به مهدکودک و پیش‌دبستانی مجازی یاران خوش آمدید</h1>
+      <button class="btn btn-glow" id="btn-enter">ورود به یاران 🧸</button>
+    </div>
+  </section>
+
+  <!-- 2) نقشه پلان: انتخاب در ورودی بر اساس نقش -->
+  <section id="screen-plan" class="screen">
+    <div class="scene">
+      <img class="scene-bg" id="plan-img" src="assets/images/plan/hero.webp" alt="نقشه پلان مهدکودک یاران" />
+      <div class="scene-caption">از کدام در وارد می‌شوید؟</div>
+      <div class="top-bar">
+        <button class="pill-btn" id="plan-back-intro">↩ بازگشت</button>
+        <div class="theme-toggle" id="theme-toggle-plan">
+          <button class="theme-btn" data-theme="day" title="روز">☀️</button>
+          <button class="theme-btn" data-theme="night" title="شب">🌙</button>
+          <button class="theme-btn" data-theme="festival" title="جشن">🎉</button>
+        </div>
+      </div>
+      <div id="door-hotspots"></div>
+    </div>
+  </section>
+
+  <!-- 3) لابی -->
+  <section id="screen-lobby" class="screen">
+    <div class="scene">
+      <img class="scene-bg kenburns" src="assets/images/lobby/hero.webp" alt="لابی مهدکودک یاران" />
+      <div class="scene-caption">به لابی یاران خوش آمدید</div>
+      <div class="top-bar">
+        <button class="pill-btn" id="lobby-back-plan">↩ بازگشت به نقشه</button>
+        <div class="top-bar-left">
+          <button class="pill-btn" id="lobby-search">🔍 جستجو</button>
+          <button class="pill-btn" id="lobby-panel">👤 پنل کاربری</button>
+          <div class="theme-toggle" id="theme-toggle-lobby">
+            <button class="theme-btn" data-theme="day" title="روز">☀️</button>
+            <button class="theme-btn" data-theme="night" title="شب">🌙</button>
+            <button class="theme-btn" data-theme="festival" title="جشن">🎉</button>
+          </div>
+        </div>
+      </div>
+      <div class="lobby-bottom">
+        <button class="btn btn-glow" id="btn-goto-map">گشت‌وگذار در اتاق‌ها 🚪</button>
+        <button class="btn" id="btn-goto-games">بازی‌های بیشتر 🎮</button>
+      </div>
+      <!-- نکته روز فرزندپروری — سمت راست -->
+      <div class="lobby-tip-box" id="lobby-tip-box">
+        <div class="tip-header">
+          <span class="tip-icon">💡</span>
+          <span class="tip-title">نکته روز فرزندپروری</span>
+          <div class="tip-datetime" id="tip-datetime"></div>
+        </div>
+        <div class="tip-body" id="tip-body"></div>
+        <div class="tip-nav">
+          <button class="pill-btn tip-prev" id="tip-prev">◀</button>
+          <span class="tip-counter" id="tip-counter"></span>
+          <button class="pill-btn tip-next" id="tip-next">▶</button>
+          <button class="pill-btn tip-share" id="tip-share">📤</button>
+        </div>
+      </div>
+      <!-- اسلایدشو محتوا — سمت چپ -->
+      <div class="lobby-slideshow-box" id="lobby-slideshow-box">
+        <div class="slideshow-header">
+          <span class="slideshow-title">📸 از محتواهای یاران</span>
+          <div class="slideshow-nav">
+            <button class="pill-btn" id="slide-prev">◀</button>
+            <button class="pill-btn" id="slide-next">▶</button>
+            <button class="pill-btn" id="slide-share">📤</button>
+          </div>
+        </div>
+        <div class="slideshow-body" id="slideshow-body"></div>
+        <div class="slideshow-caption" id="slideshow-caption"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4) نقشه اتاق‌ها -->
+  <section id="screen-map" class="screen">
+    <div class="map-header">
+      <button class="pill-btn" id="map-back-lobby" style="margin-bottom:1rem;">↩ بازگشت به لابی</button>
+      <div class="theme-toggle" id="theme-toggle-map">
+        <button class="theme-btn" data-theme="day" title="روز">☀️</button>
+        <button class="theme-btn" data-theme="night" title="شب">🌙</button>
+        <button class="theme-btn" data-theme="festival" title="جشن">🎉</button>
+      </div>
+      <h2>اتاق‌های یاران</h2>
+      <p>یک اتاق را برای ورود به تور مجازی انتخاب کنید</p>
+    </div>
+    <div class="room-grid" id="room-grid"></div>
+  </section>
+
+  <!-- 5) نمای اتاق (تور مجازی) -->
+  <section id="screen-room" class="screen">
+    <div class="scene">
+      <img class="scene-bg layer-a kenburns" id="room-bg-a" src="" alt="" />
+      <img class="scene-bg layer-b kenburns" id="room-bg-b" src="" alt="" />
+      <div class="scene-caption" id="room-caption"></div>
+      <div class="top-bar">
+        <button class="pill-btn" id="room-back-lobby">🏠 لابی</button>
+        <button class="pill-btn" id="room-back-map">↩ همهی اتاقها</button>
+      </div>
+      <div class="top-bar-left">
+        <button class="pill-btn" id="room-weather" title="آب و هوا">☁️ هوا</button>
+        <div class="theme-toggle" id="theme-toggle">
+          <button class="theme-btn active" data-theme="day" title="حالت روز">☀️</button>
+          <button class="theme-btn" data-theme="night" title="حالت شب">🌙</button>
+          <button class="theme-btn" data-theme="festival" title="حالت جشن">🎉</button>
+        </div>
+      </div>
+      <div id="hero-nav-zones"></div>
+      <div id="room-hotspots"></div>
+      <div class="view-nav" id="view-nav"></div>
+    </div>
+  </section>
+
+  <!-- 6) محتوای اتاق (۳ بخش) -->
+  <section id="screen-content" class="screen">
+    <div class="content-header">
+      <button class="pill-btn" id="content-back-room">↩ بازگشت به تور</button>
+      <h2 id="content-title"></h2>
+    </div>
+    <div class="content-zones" id="content-zones"></div>
+  </section>
+
+  <!-- 7) پنل کاربری -->
+  <section id="screen-panel" class="screen">
+    <div class="panel-container">
+      <div class="panel-header">
+        <button class="pill-btn" id="panel-back">↩ بازگشت</button>
+        <h2>پنل کاربری</h2>
+        <div id="auth-status"></div>
+      </div>
+      <div class="panel-tabs" id="panel-tabs">
+        <button class="tab-btn active" data-tab="dashboard">داشبورد</button>
+        <button class="tab-btn" data-tab="tasks">کارهای روزانه</button>
+        <button class="tab-btn" data-tab="messages">پیام‌ها</button>
+        <button class="tab-btn" data-tab="reports">گزارش‌ها</button>
+      </div>
+      <div class="panel-body" id="panel-body"></div>
+    </div>
+  </section>
+
+  <!-- 8) بایگانی -->
+  <section id="screen-archive" class="screen">
+    <div class="archive-container">
+      <div class="archive-header">
+        <button class="pill-btn" id="archive-back">↩ بازگشت</button>
+        <h2>🗄️ بایگانی</h2>
+        <div class="archive-search">
+          <input type="text" id="archive-search-input" placeholder="جستجو در بایگانی..." />
+          <div class="archive-filters" id="archive-filters"></div>
+        </div>
+      </div>
+      <div class="archive-results" id="archive-results"></div>
+    </div>
+  </section>
+
+  <!-- 9) جستجوی عمومی -->
+  <section id="screen-search" class="screen">
+    <div class="search-container">
+      <div class="search-header">
+        <button class="pill-btn" id="search-back">↩ بازگشت</button>
+        <h2>🔍 جستجو</h2>
+        <input type="text" id="search-input" placeholder="جستجو در تمام محتواها..." />
+      </div>
+      <div class="search-results" id="search-results"></div>
+    </div>
+  </section>
+
+  <!-- 10) مدال رسانه -->
+  <div id="media-modal" class="modal-overlay hidden">
+    <div class="modal-content">
+      <button class="modal-close" id="media-close">✕</button>
+      <div class="modal-header" id="media-header"></div>
+      <div class="modal-body" id="media-body"></div>
+      <div class="modal-actions" id="media-actions"></div>
+    </div>
+  </div>
+
+  <!-- 11) بازی تعاملی -->
+  <div id="game-modal" class="modal-overlay hidden">
+    <div class="modal-content modal-game">
+      <button class="modal-close" id="game-close">✕</button>
+      <div class="modal-header" id="game-header"></div>
+      <div class="modal-body" id="game-body"></div>
+    </div>
+  </div>
+
+  <!-- Explorer Panel (right-side foldable) -->
+  <button id="explorer-toggle" title="کاوشگر محتوا">📂</button>
+  <div id="explorer-panel">
+    <div class="explorer-header">
+      <span>📂 کاوشگر محتوای آموزشی</span>
+      <button id="explorer-close">✕</button>
+    </div>
+    <div class="explorer-search">
+      <input type="text" id="explorer-search-input" placeholder="جستجوی کاربرگ..." />
+    </div>
+    <div class="explorer-filters" id="explorer-filters"></div>
+    <div class="explorer-body" id="explorer-body"></div>
+  </div>
+
+  <!-- 12) مدال ورود / ثبت‌نام (فاز ۳ — متصل به API واقعی) -->
+  <div id="auth-modal" class="modal-overlay hidden">
+    <div class="modal-content" style="max-width:420px;">
+      <button class="modal-close" id="auth-close">✕</button>
+      <div class="modal-header" id="auth-header">ورود به حساب کاربری</div>
+      <div class="modal-body" id="auth-body"></div>
+    </div>
+  </div>
+
+<script src="js/api.js"></script>
+<script src="js/rooms.js"></script>
+<script src="js/archive-somayehrouhi.js"></script>
+<script src="js/tour.js"></script>
+<script src="js/media.js"></script>
+<script src="js/explorer.js"></script>
+<script src="js/lobby.js"></script>
+<script src="js/games.js"></script>
+<script src="js/games2.js"></script>
+<script src="js/tags.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
