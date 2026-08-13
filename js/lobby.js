@@ -28,12 +28,20 @@ var tipTimer = null;
 
 function getIranDateTime() {
   var now = new Date();
-  var iranOffset = 3.5 * 60;
+  // Convert to Iran timezone (UTC+3:30)
   var utc = now.getTime() + now.getTimezoneOffset() * 60000;
-  var iran = new Date(utc + iranOffset * 60000);
-  var days = ['یکشنبه','دوشنبه','سه‌شنبه','چهارشنبه','پنجشنبه','جمعه','شنبه'];
-  var months = ['ژانویه','فوریه','مارس','آوریل','مه','ژوئن','ژوئیه','اوت','سپتامبر','اکتبر','نوامبر','دسامبر'];
-  return days[iran.getDay()] + ' ' + iran.getDate() + ' ' + months[iran.getMonth()] + ' — ' + String(iran.getHours()).padStart(2,'0') + ':' + String(iran.getMinutes()).padStart(2,'0');
+  var iranTime = new Date(utc + 3.5 * 3600000);
+  // Use Intl.DateTimeFormat for Persian calendar
+  var formatter = new Intl.DateTimeFormat('fa-IR-u-ca-persian', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  });
+  return formatter.format(iranTime);
 }
 
 function renderTip() {

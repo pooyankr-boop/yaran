@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>مهدکودک و پیش‌دبستانی مجازی یاران</title>
+<title>مهدکودک و پیشدبستانی مجازی یاران</title>
 <link rel="stylesheet" href="css/main.css" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>
@@ -18,7 +18,7 @@
   <section id="screen-intro" class="screen active">
     <video id="intro-video" src="assets/video/intro1.mp4" autoplay muted loop playsinline></video>
     <div class="intro-overlay">
-      <h1>به مهدکودک و پیش‌دبستانی مجازی یاران خوش آمدید</h1>
+      <h1>به مهدکودک و پیشدبستانی مجازی یاران خوش آمدید</h1>
       <button class="btn btn-glow" id="btn-enter">ورود به یاران 🧸</button>
     </div>
   </section>
@@ -27,7 +27,7 @@
   <section id="screen-plan" class="screen">
     <div class="scene">
       <img class="scene-bg" id="plan-img" src="assets/images/plan/hero.webp" alt="نقشه پلان مهدکودک یاران" />
-      <div class="scene-caption">از کدام در وارد می‌شوید؟</div>
+      <div class="scene-caption">از کدام در وارد میشوید؟</div>
       <div class="top-bar">
         <button class="pill-btn" id="plan-back-intro">↩ بازگشت</button>
         <div class="theme-toggle" id="theme-toggle-plan">
@@ -57,10 +57,6 @@
           </div>
         </div>
       </div>
-      <div class="lobby-bottom">
-        <button class="btn btn-glow" id="btn-goto-map">گشت‌وگذار در اتاق‌ها 🚪</button>
-        <button class="btn" id="btn-goto-games">بازی‌های بیشتر 🎮</button>
-      </div>
       <!-- نکته روز فرزندپروری — سمت راست -->
       <div class="lobby-tip-box" id="lobby-tip-box">
         <div class="tip-header">
@@ -89,19 +85,27 @@
         <div class="slideshow-body" id="slideshow-body"></div>
         <div class="slideshow-caption" id="slideshow-caption"></div>
       </div>
+      <div class="lobby-bottom">
+        <button class="btn btn-glow" id="btn-goto-map">گشت‌وگذار در اتاق‌ها 🚪</button>
+        <button class="btn" id="btn-goto-games">بازی‌های بیشتر 🎮</button>
+      </div>
     </div>
   </section>
 
-  <!-- 4) نقشه اتاق‌ها -->
+  <!-- 4) نقشه اتاقها -->
   <section id="screen-map" class="screen">
     <div class="map-header">
-      <button class="pill-btn" id="map-back-lobby" style="margin-bottom:1rem;">↩ بازگشت به لابی</button>
-      <div class="theme-toggle" id="theme-toggle-map">
-        <button class="theme-btn" data-theme="day" title="روز">☀️</button>
-        <button class="theme-btn" data-theme="night" title="شب">🌙</button>
-        <button class="theme-btn" data-theme="festival" title="جشن">🎉</button>
+      <div class="top-bar">
+        <button class="pill-btn" id="map-back-lobby">↩ بازگشت به لابی</button>
+        <div class="top-bar-right">
+          <div class="theme-toggle" id="theme-toggle-map">
+            <button class="theme-btn" data-theme="day" title="روز">☀️</button>
+            <button class="theme-btn" data-theme="night" title="شب">🌙</button>
+            <button class="theme-btn" data-theme="festival" title="جشن">🎉</button>
+          </div>
+        </div>
       </div>
-      <h2>اتاق‌های یاران</h2>
+      <h2>اتاقهای یاران</h2>
       <p>یک اتاق را برای ورود به تور مجازی انتخاب کنید</p>
     </div>
     <div class="room-grid" id="room-grid"></div>
@@ -115,14 +119,12 @@
       <div class="scene-caption" id="room-caption"></div>
       <div class="top-bar">
         <button class="pill-btn" id="room-back-lobby">🏠 لابی</button>
-        <button class="pill-btn" id="room-back-map">↩ همهی اتاقها</button>
-      </div>
-      <div class="top-bar-left">
-        <button class="pill-btn" id="room-weather" title="آب و هوا">☁️ هوا</button>
-        <div class="theme-toggle" id="theme-toggle">
-          <button class="theme-btn active" data-theme="day" title="حالت روز">☀️</button>
-          <button class="theme-btn" data-theme="night" title="حالت شب">🌙</button>
-          <button class="theme-btn" data-theme="festival" title="حالت جشن">🎉</button>
+        <button class="pill-btn" id="room-back-map">↩ همه‌ی اتاق‌ها</button>
+        <div class="top-bar-left"><div class="theme-toggle" id="theme-toggle">
+            <button class="theme-btn active" data-theme="day" title="حالت روز">☀️</button>
+            <button class="theme-btn" data-theme="night" title="حالت شب">🌙</button>
+            <button class="theme-btn" data-theme="festival" title="حالت جشن">🎉</button>
+          </div>
         </div>
       </div>
       <div id="hero-nav-zones"></div>
@@ -151,8 +153,8 @@
       <div class="panel-tabs" id="panel-tabs">
         <button class="tab-btn active" data-tab="dashboard">داشبورد</button>
         <button class="tab-btn" data-tab="tasks">کارهای روزانه</button>
-        <button class="tab-btn" data-tab="messages">پیام‌ها</button>
-        <button class="tab-btn" data-tab="reports">گزارش‌ها</button>
+        <button class="tab-btn" data-tab="messages">پیامها</button>
+        <button class="tab-btn" data-tab="reports">گزارشها</button>
       </div>
       <div class="panel-body" id="panel-body"></div>
     </div>
@@ -218,7 +220,7 @@
     <div class="explorer-body" id="explorer-body"></div>
   </div>
 
-  <!-- 12) مدال ورود / ثبت‌نام (فاز ۳ — متصل به API واقعی) -->
+  <!-- 12) مدال ورود / ثبتنام -->
   <div id="auth-modal" class="modal-overlay hidden">
     <div class="modal-content" style="max-width:420px;">
       <button class="modal-close" id="auth-close">✕</button>

@@ -1012,9 +1012,9 @@ body.theme-festival .explorer-filters .filter-chip.active { background: #ff3366;
 .vn-center:hover { background: rgba(255, 184, 77, 0.3); border-color: #ffb84d; }
 .vn-center.active { background: #ffb84d; color: #333; border-color: #ffb84d; }
 
-/* Plan zoom out to show door names — دقیق با JS محاسبه می‌شود (positionPlanLayout در tour.js) */
-#screen-plan .scene { background: #eaf3e0; }
 #plan-img, #door-hotspots { transition: left .3s ease, top .3s ease, width .3s ease, height .3s ease; }
+
+/* Plan image: removed CSS scale override — JS positionPlanLayout handles sizing */
 
 /* Glass menu: RTL + hover-only improvements */
 .glass-menu .close-menu { position: absolute; top: .4rem; right: .5rem; left: auto; }
@@ -1028,7 +1028,7 @@ body.theme-festival .explorer-filters .filter-chip.active { background: #ff3366;
 
 /* ===== Lobby Tip-of-Day Box (right side) ===== */
 .lobby-tip-box {
-  position: absolute; bottom: 80px; left: 15px;
+  position: absolute; top: 72px; left: 15px;
   width: 320px; max-height: 260px;
   background: rgba(255,255,255,.85);
   backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
@@ -1053,7 +1053,7 @@ body.theme-festival .explorer-filters .filter-chip.active { background: #ff3366;
 
 /* ===== Lobby Content Slideshow (left side) ===== */
 .lobby-slideshow-box {
-  position: absolute; bottom: 80px; right: 15px;
+  position: absolute; top: 72px; right: 15px;
   width: 340px; max-height: 260px;
   background: rgba(255,255,255,.85);
   backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
@@ -1086,8 +1086,8 @@ body.theme-night .slideshow-caption { color: #b8a8d0 !important; }
 
 /* Mobile */
 @media (max-width: 768px) {
-  .lobby-tip-box { width: calc(100% - 30px); left: 15px; bottom: 280px; max-height: 180px; }
-  .lobby-slideshow-box { width: calc(100% - 30px); right: 15px; bottom: 460px; max-height: 160px; }
+  .lobby-tip-box { width: calc(100% - 30px); left: 15px; top: 72px; max-height: 180px; }
+  .lobby-slideshow-box { width: calc(100% - 30px); right: 15px; top: 260px; max-height: 160px; }
   .slideshow-body { height: 100px; }
 }
 

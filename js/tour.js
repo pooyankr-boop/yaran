@@ -22,7 +22,7 @@ function showScreen(id) {
    داخل صفحه جا میگیرد. چون CSS بهتنهایی نمیتواند این باکس دقیق را به لایهی هاتسپاتها
    بدهد، عکس و لایهی درها هر دو با جاوااسکریپت دقیقاًٌ هماندازه محاسبه میشوند تا درصد
    x/y هر در همیشه درست روی خود عکس بنشیند، نه کل صفحه. */
-const PLAN_ZOOM_OUT = 0.8;
+const PLAN_ZOOM_OUT = 1.2; // 20% larger than normal size
 function positionPlanLayout() {
   const scene = document.querySelector("#screen-plan .scene");
   const img = document.getElementById("plan-img");
