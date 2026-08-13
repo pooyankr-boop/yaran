@@ -87,10 +87,57 @@ function renderRoomGrid() {
     const card = document.createElement("div");
     card.className = "room-card";
     card.innerHTML = '<img src="assets/images/' + room.folder + '/hero.webp" alt="' + room.name + '" loading="lazy" onerror="this.style.display=\'none\'"><div class="room-card-info"><span class="room-card-icon">' + room.icon + '</span><span class="room-card-name">' + room.name + '</span></div>';
-    card.addEventListener("click", () => openRoom(room.id));
+    card.addEventListener("mouseenter", () => {
+      const circle = document.getElementById("map-preview-" + room.id);
+      if (circle) { circle.classList.add("visible", "pulsing"); }
+    });
+    card.addEventListener("mouseleave", () => {
+      const circle = document.getElementById("map-preview-" + room.id);
+      if (circle) { circle.classList.remove("visible", "pulsing"); }
+    });
+    card.addEventListener("click", () => openRoomWithTransition(room.id));
     grid.appendChild(card);
+    // Add preview circle overlay
+    const previewCircle = document.createElement("div");
+    previewCircle.id = "map-preview-" + room.id;
+    previewCircle.className = "room-preview-circle";
+    previewCircle.innerHTML = '<img src="assets/images/' + room.folder + '/herog.webp" alt="preview" onerror="this.src=\'assets/images/plan/hero.webp\'">';
+    previewCircle.style.position = "absolute";
+    previewCircle.style.top = "-180px";
+    previewCircle.style.left = "50%";
+    previewCircle.style.transform = "translateX(-50%)";
+    card.style.position = "relative";
+    card.appendChild(previewCircle);
   });
 }
+
+/* ---------- Zoom + fade transition into room ---------- */
+function openRoomWithTransition(id) {
+  const grid = document.getElementById("room-grid");
+  if (!grid || transitioning) return;
+  
+  const room = ROOMS.find(r => r.id === id);
+  if (!room) return;
+  
+  currentRoom = room;
+  currentView = "hero";
+  transitioning = true;
+  
+  // Animate: zoom out effect
+  grid.style.transition = "transform 0.5s ease-in, opacity 0.5s ease-in";
+  grid.style.transform = "scale(0.8)";
+  grid.style.opacity = "0";
+  
+  setTimeout(() => {
+    showScreen("screen-room");
+    openRoom(id);
+    grid.style.transition = "";
+    grid.style.transform = "";
+    grid.style.opacity = "";
+    transitioning = false;
+  }, 450);
+}
+
 document.getElementById("map-back-lobby").addEventListener("click", () => showScreen("screen-lobby"));
 
 /* ---------- اتاق ---------- */
@@ -425,12 +472,6 @@ function closeGlassMenu() {
 }
 
 
-function closeGlassMenu() {
-  clearTimeout(menuHideTimer);
-  const existing = document.getElementById("active-glass-menu");
-  if (existing) existing.remove();
-  openHotspotEl = null;
-}
 
 // Backdrop close — click anywhere on screen-room outside menu/hotspot/zone
 const screenRoomEl = document.getElementById("screen-room");

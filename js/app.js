@@ -273,6 +273,150 @@ async function loadRoomsFromApi() {
   renderRoomGrid();
   initArchive();
 })();
+
+/* ---------- 按鈕進入 INTRO ---------- */
+(function() {
+  var _btnEnter = document.getElementById("btn-enter");
+  console.log('DEBUG: btn-enter found:', !!_btnEnter);
+  if (_btnEnter) {
+    _btnEnter.addEventListener("click", function(e) {
+      console.log('DEBUG: btn-enter clicked!');
+      showScreen("screen-plan");
+    });
+  } else {
+    console.error('DEBUG: btn-enter NOT found in DOM');
+  }
+})();
+
 document.getElementById("btn-goto-games").addEventListener("click", () => {
   if (typeof openGamePicker === "function") openGamePicker();
 });
+
+
+/* ---------- Mini Player for Castbox audio episodes ---------- */
+var _miniPlayerState = { queue: [], currentIndex: -1, open: false };
+
+function openMiniPlayer(item) {
+  if (!item || item.type !== 'audio') return;
+  var player = document.getElementById('mini-player');
+  if (!player) return;
+  
+  // Add to queue if not already playing
+  if (_miniPlayerState.currentIndex < 0 || 
+      _miniPlayerState.queue[_miniPlayerState.currentIndex]?.id !== item.id) {
+    _miniPlayerState.queue.push(item);
+    _miniPlayerState.currentIndex = _miniPlayerState.queue.length - 1;
+  }
+  
+  _updateMiniPlayerUI();
+  player.classList.remove('hidden');
+}
+
+function closeMiniPlayer() {
+  var player = document.getElementById('mini-player');
+  if (player) { 
+    player.classList.add('hidden'); 
+    _miniPlayerState.open = false;
+  }
+}
+
+function _updateMiniPlayerUI() {
+  var item = _miniPlayerState.queue[_miniPlayerState.currentIndex];
+  if (!item) return;
+  
+  var titleEl = document.getElementById('mini-title');
+  var channelEl = document.getElementById('mini-channel');
+  var playlistEl = document.getElementById('mini-playlist');
+  
+  if (titleEl) titleEl.textContent = item.title || '';
+  if (channelEl) channelEl.textContent = item.channel || item.source || '';
+  
+  if (playlistEl && _miniPlayerState.queue.length > 0) {
+    playlistEl.innerHTML = _miniPlayerState.queue.map(function(ep, i) {
+      return '<div class="mini-playlist-item' + (i === _miniPlayerState.currentIndex ? ' active' : '') + '">' + 
+        (i + 1) + '. ' + ep.title + '</div>';
+    }).join('');
+    
+    playlistEl.querySelectorAll('.mini-playlist-item').forEach(function(el, idx) {
+      el.onclick = function() {
+        _miniPlayerState.currentIndex = idx;
+        _updateMiniPlayerUI();
+        _playEpisode(_miniPlayerState.queue[idx]);
+      };
+    });
+  }
+}
+
+function _playEpisode(item) {
+  if (!item || !item.url) return;
+  window.open(item.url, '_blank');
+  var btn = document.getElementById('mini-play-pause');
+  if (btn) btn.textContent = '⏸';
+  _miniPlayerState.open = true;
+}
+
+function _prevEpisode() {
+  if (_miniPlayerState.queue.length === 0) return;
+  _miniPlayerState.currentIndex = (_miniPlayerState.currentIndex - 1 + _miniPlayerState.queue.length) % _miniPlayerState.queue.length;
+  _updateMiniPlayerUI();
+  _playEpisode(_miniPlayerState.queue[_miniPlayerState.currentIndex]);
+}
+
+function _nextEpisode() {
+  if (_miniPlayerState.queue.length === 0) return;
+  _miniPlayerState.currentIndex = (_miniPlayerState.currentIndex + 1) % _miniPlayerState.queue.length;
+  _updateMiniPlayerUI();
+  _playEpisode(_miniPlayerState.queue[_miniPlayerState.currentIndex]);
+}
+
+function toggleMiniPlayer() {
+  var player = document.getElementById('mini-player');
+  if (player) {
+    player.classList.toggle('hidden');
+    _miniPlayerState.open = !_miniPlayerState.open;
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  var prevBtn = document.getElementById('mini-prev');
+  var nextBtn = document.getElementById('mini-next');
+  var playPauseBtn = document.getElementById('mini-play-pause');
+  var closeBtn = document.getElementById('mini-close');
+  var toggleBtn = document.getElementById('mini-player-toggle');
+  
+  if (prevBtn) prevBtn.onclick = _prevEpisode;
+  if (nextBtn) nextBtn.onclick = _nextEpisode;
+  if (playPauseBtn) playPauseBtn.onclick = function() {
+    var item = _miniPlayerState.queue[_miniPlayerState.currentIndex];
+    if (item) _playEpisode(item);
+  };
+  if (closeBtn) closeBtn.onclick = closeMiniPlayer;
+  if (toggleBtn) toggleBtn.onclick = toggleMiniPlayer;
+  
+  // Close on outside click
+  document.addEventListener('click', function(e) {
+    var player = document.getElementById('mini-player');
+    if (player && !player.classList.contains('hidden') && 
+        !player.contains(e.target) && 
+        !toggleBtn.contains(e.target)) {
+      closeMiniPlayer();
+    }
+  });
+
+  // Outside-click-close handlers
+  document.addEventListener('click', function(e) {
+    ['auth-modal', 'media-modal', 'game-modal'].forEach(function(modalId) {
+      var modal = document.getElementById(modalId);
+      if (modal && !modal.classList.contains('hidden') && e.target === modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('active');
+      }
+    });
+    var explorerPanel = document.getElementById('explorer-panel');
+    var explorerToggle = document.getElementById('explorer-toggle');
+    if (explorerPanel && explorerToggle && explorerPanel.classList.contains('open') && 
+        !explorerPanel.contains(e.target) && !explorerToggle.contains(e.target)) {
+      explorerPanel.classList.remove('open');
+      explorerToggle.classList.remove('shifted');
+    }
+  });});
