@@ -83,15 +83,75 @@ document.getElementById("lobby-search").addEventListener("click", () => { showSc
 // عکس پایه هر دایره = نمای کلی اتاق (hero.webp)؛ اسلایدشو هاور فقط گوشه‌های راست/چپ
 const MAP_BASE = { key: "hero", label: "نمای کلی" };
 const MAP_CORNERS = [
-  { key: "herog_right", label: "گوشه راست" },
-  { key: "herog_left",  label: "گوشه چپ" }
+  { key: "herog",       label: "گوشه وسط" },
+  { key: "herog_left",  label: "گوشه چپ" },
+  { key: "herog_right", label: "گوشه راست" }
 ];
 
 function renderMapCircles() {
   const wrap = document.getElementById("map-circles");
-  const markers = document.getElementById("map-room-markers");
   if (wrap) wrap.innerHTML = "";
-  if (markers) markers.innerHTML = "";
+
+  // مکان دایره روی عکس plan2 (درصد از گوشه چپ‌بالا، از روی خودِ نقشه)
+  const PLAN_CENTER = {
+    amoozesh: { x: 33, y: 43 },
+    bazi: { x: 28, y: 65 },
+    honar: { x: 10, y: 76 },
+    motaleh: { x: 10, y: 43 },
+    salamat: { x: 58, y: 64 },
+    khab: { x: 87, y: 61 },
+    moraabi: { x: 45, y: 40 },
+    "esterahat-moraabian": { x: 38, y: 80 },
+    "jalase-owlia": { x: 53, y: 40 },
+    bayegani: { x: 87, y: 42 },
+    teria: { x: 58, y: 56 },
+    hayat: { x: 52, y: 34 },
+    maddakari: { x: 55, y: 58 },
+  };
+  // تبدیل مکان نقشه (نسبت به تصویر کوچک) به مکان روی کل صفحه — نقشه در مرکز است
+  const PLAN_SCALE = 1.2; // پخش دایره‌ها روی کل صفحه نسبت به مرکز
+  const toScreen = (p) => ({ x: 50 + (p.x - 50) * PLAN_SCALE, y: 50 + (p.y - 50) * PLAN_SCALE });
+  // مکان اولیه از روی عکس نقشه
+  const posOf = {};
+  ROOMS.forEach(r => {
+    const base = PLAN_CENTER[r.id] || (r.heroPos && r.heroPos.center ? r.heroPos.center : { x: 50, y: 50 });
+    posOf[r.id] = toScreen(Object.assign({}, base));
+  });
+  // جابجایی برای جلوگیری از همپوشانی (فاصله حداقل = قطر دایره)
+  const MIN_GAP = 18; // درصد فاصله مرکز تا مرکز روی کل صفحه
+  for (let iter = 0; iter < 80; iter++) {
+    let moved = false;
+    const ids = Object.keys(posOf);
+    for (let a = 0; a < ids.length; a++) {
+      for (let b = a + 1; b < ids.length; b++) {
+        const A = posOf[ids[a]], B = posOf[ids[b]];
+        let dx = B.x - A.x, dy = B.y - A.y;
+        let dist = Math.hypot(dx, dy) || 0.01;
+        if (dist < MIN_GAP) {
+          // مربی و جلسه اولیا قفل‌اند (مماس می‌مانند) — فقط همسایه را دور می‌کنیم
+          if (ids[a] === "moraabi" && ids[b] === "jalase-owlia") continue;
+          const push = (MIN_GAP - dist) / 2;
+          const ux = dx / dist, uy = dy / dist;
+          if (ids[a] === "moraabi" || ids[a] === "jalase-owlia") { B.x += ux * 2 * push; B.y += uy * 2 * push; }
+          else if (ids[b] === "moraabi" || ids[b] === "jalase-owlia") { A.x -= ux * 2 * push; A.y -= uy * 2 * push; }
+          else { A.x -= ux * push; A.y -= uy * push; B.x += ux * push; B.y += uy * push; }
+          moved = true;
+        }
+      }
+    }
+    ids.forEach(id => {
+      posOf[id].x = Math.max(8, Math.min(92, posOf[id].x));
+      posOf[id].y = Math.max(10, Math.min(90, posOf[id].y));
+    });
+    if (!moved) break;
+  }
+  // مربی و جلسه اولیا مماس (مربی چپ، جلسه راست، هم‌ردیف)
+  {
+    const mr = posOf["moraabi"], jl = posOf["jalase-owlia"];
+    const tx = (mr.x + jl.x) / 2, ty = (mr.y + jl.y) / 2;
+    mr.x = tx - 4.17; mr.y = ty; jl.x = tx + 4.17; jl.y = ty;
+  }
+
   ROOMS.forEach(room => {
     const c = document.createElement("div");
     c.className = "map-circle";
@@ -133,16 +193,13 @@ function renderMapCircles() {
     }
     c.addEventListener("mouseenter", () => { if (baseImg) baseImg.style.opacity = "0"; reset(); step(); timer = setInterval(step, 2000); });
     c.addEventListener("mouseleave", () => { if (timer) clearInterval(timer); timer = null; reset(); if (baseImg) baseImg.style.opacity = "1"; });
-    if (wrap) wrap.appendChild(c);
-
-    // آیکون انتخاب اتاق — نوار پایین (بدون همپوشانی)
-    if (markers) {
-      const m = document.createElement("button");
-      m.className = "map-room-marker";
-      m.title = room.name;
-      m.innerHTML = '<span class="map-marker-icon">' + room.icon + '</span><span class="map-marker-label">' + room.name + '</span>';
-      m.addEventListener("click", () => openRoomWithTransition(room.id));
-      markers.appendChild(m);
+    if (wrap) {
+      // قرارگیری روی نقشه در محل اتاق (با فاصله اگر هم‌مکان باشند)
+      const pos = posOf[room.id] || (room.heroPos && room.heroPos.center ? room.heroPos.center : { x: 50, y: 50 });
+      c.style.left = pos.x + "%";
+      c.style.top  = pos.y + "%";
+      c.style.transform = "translate(-50%, -50%)";
+      wrap.appendChild(c);
     }
   });
 }

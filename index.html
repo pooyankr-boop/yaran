@@ -240,23 +240,27 @@
 
   <!-- 4) نقشه اتاقها -->
   <section id="screen-map" class="screen">
-    <div class="map-bg" id="map-bg"></div>
-    <div class="map-header">
-      <div class="top-bar">
-        <button class="pill-btn" id="map-back-lobby">↩ بازگشت به لابی</button>
-        <div class="top-bar-left">
-          <div class="theme-toggle" id="theme-toggle-map">
-            <button class="theme-btn" data-theme="day" title="روز">☀️</button>
-            <button class="theme-btn" data-theme="night" title="شب">🌙</button>
-            <button class="theme-btn" data-theme="festival" title="جشن">🎉</button>
+    <div class="scene">
+      <img class="scene-bg" id="map-bg" src="assets/images/plan/plan2.webp" alt="نقشه اتاق‌های یاران" />
+      <div class="map-header">
+        <div class="top-bar">
+          <button class="pill-btn" id="map-back-lobby">↩ بازگشت به لابی</button>
+          <div class="top-bar-left">
+            <div class="theme-toggle" id="theme-toggle-map">
+              <button class="theme-btn" data-theme="day" title="روز">☀️</button>
+              <button class="theme-btn" data-theme="night" title="شب">🌙</button>
+              <button class="theme-btn" data-theme="festival" title="جشن">🎉</button>
+            </div>
           </div>
         </div>
+        <h2 class="map-title-center">اتاق‌های یاران</h2>
+        <p class="map-subtitle-center">یک اتاق را برای ورود به تور مجازی انتخاب کنید</p>
       </div>
-      <h2 class="map-title-center">اتاق‌های یاران</h2>
-      <p class="map-subtitle-center">یک اتاق را برای ورود به تور مجازی انتخاب کنید</p>
+      <div class="map-plan">
+        <img class="map-bg" src="assets/images/plan/plan2.webp" alt="نقشه اتاق‌های یاران" />
+      </div>
+      <div class="map-circles" id="map-circles"></div>
     </div>
-    <div class="map-circles" id="map-circles"></div>
-    <div class="map-room-markers" id="map-room-markers"></div>
   </section>
 
   <!-- 5) نمای اتاق (تور مجازی) -->
