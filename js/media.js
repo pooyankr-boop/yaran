@@ -24,19 +24,28 @@ function openMediaModal(item) {
   header.innerHTML = '<span>' + getTypeIcon(item.type) + '</span> — ' + item.title;
 
   if (item.type === "pdf") {
-    // فاز ۳: نمایش زنده‌ی PDF با PDF.js از طریق پراکسی سرور (به‌جای iframe که با CORS/X-Frame-Options منابع بیرونی مشکل دارد)
+    const canProxy = APP_API_ONLINE; // فقط وقتی سرور بالاست پراکسی تلاش کن
     body.innerHTML =
-      '<div class="pdfjs-wrap"><div id="pdfjs-status">در حال بارگذاری PDF...</div><canvas id="pdfjs-canvas"></canvas></div>';
-    actions.innerHTML =
-      '<div class="pdfjs-nav"><button class="pill-btn" id="pdf-prev">◀</button><span id="pdf-page-indicator"></span><button class="pill-btn" id="pdf-next">▶</button></div>' +
-      '<a href="' + item.url + '" target="_blank" class="pill-btn" download>📥 دانلود</a>';
-    loadPdfIntoCanvas(item.url);
+      '<div class="pdfjs-wrap">' +
+      (canProxy
+        ? '<div id="pdfjs-status">در حال بارگذاری PDF...</div><canvas id="pdfjs-canvas"></canvas>'
+        : '<div class="pdf-iframe-wrap"><iframe src="' + item.url + '#toolbar=1&view=FitH" class="media-iframe" title="' + item.title + '"></iframe></div>') +
+      '</div>';
+    actions.innerHTML = '<a href="' + item.url + '" target="_blank" class="pill-btn" download>📥 دانلود</a>';
+    if (canProxy) loadPdfIntoCanvas(item.url);
   } else if (item.type === "video") {
     body.innerHTML = '<div class="media-iframe-wrap"><iframe src="' + item.url + '" class="media-iframe" allowfullscreen title="' + item.title + '"></iframe></div>';
     actions.innerHTML = '<a href="' + item.url + '" target="_blank" class="pill-btn" download>📥 دانلود</a>';
   } else if (item.type === "audio") {
-    body.innerHTML = '<div style="padding:2rem;text-align:center"><audio controls autoplay style="width:100%;max-width:400px"><source src="' + item.url + '" />مرورگر شما صدا را پشتیبانی نمی‌کند.</audio></div>';
-    actions.innerHTML = '<a href="' + item.url + '" target="_blank" class="pill-btn" download>📥 دانلود</a>';
+    // Route audio items to the real in-page mini player so the file actually plays.
+    if (typeof openMiniPlayer === "function") {
+      openMiniPlayer(item);
+      modal.classList.add("hidden");
+      modal.classList.remove("active");
+    } else {
+      body.innerHTML = '<div style="padding:2rem;text-align:center"><a href="' + item.url + '" target="_blank" class="pill-btn">▶ پخش در کستباکس</a></div>';
+    }
+    return;
   }
 
   modal.classList.remove("hidden");

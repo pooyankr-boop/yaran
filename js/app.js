@@ -20,14 +20,18 @@ function initPanel() {
 function renderPanelTab(tab) {
   const body = document.getElementById("panel-body");
   if (tab === "dashboard") {
+    const roomCount = (typeof ROOMS !== "undefined") ? ROOMS.length : 0;
+    const gameCount = (typeof GAMES !== "undefined") ? Object.keys(GAMES).length : 0;
+    const archiveCount = (typeof ARCHIVE_DATA !== "undefined") ? ARCHIVE_DATA.length : 0;
+    const videoCount = (typeof ARCHIVE_DATA !== "undefined") ? ARCHIVE_DATA.filter(a => a.type === "video").length : 0;
     body.innerHTML = `
       <div class="panel-stat-grid">
-        <div class="panel-stat"><div class="stat-num">۱۳</div><div class="stat-label">اتاق</div></div>
-        <div class="panel-stat"><div class="stat-num">۱۴</div><div class="stat-label">بازی</div></div>
-        <div class="panel-stat"><div class="stat-num">۲۸</div><div class="stat-label">کاربرگ</div></div>
-        <div class="panel-stat"><div class="stat-num">۱۲</div><div class="stat-label">ویدیو</div></div>
+        <div class="panel-stat"><div class="stat-num">${roomCount}</div><div class="stat-label">اتاق</div></div>
+        <div class="panel-stat"><div class="stat-num">${gameCount}</div><div class="stat-label">بازی</div></div>
+        <div class="panel-stat"><div class="stat-num">${archiveCount}</div><div class="stat-label">کاربرگ</div></div>
+        <div class="panel-stat"><div class="stat-num">${videoCount}</div><div class="stat-label">ویدیو</div></div>
       </div>
-      <h3 style="margin-top:1.5rem;margin-bottom:.8rem;">اتاق‌های پربازدید</h3>
+      <h3 style="margin-top:1.5rem;margin-bottom:.8rem;">اتاقهای پربازدید</h3>
       <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
         ${ROOMS.slice(0,5).map(r => `<span class="pill-btn" style="cursor:pointer;" onclick="openRoom('${r.id}')">${r.icon} ${r.name}</span>`).join("")}
       </div>
@@ -163,7 +167,8 @@ async function submitReport(childId) {
   }
 }
 
-document.getElementById("panel-back").addEventListener("click", () => showScreen("screen-lobby"));
+var _panelBack = document.getElementById("panel-back");
+if (_panelBack) _panelBack.addEventListener("click", () => showScreen("screen-lobby"));
 
 /* ---------- بایگانی (فاز ۳: جستجوی زنده از API، با سقوط به داده‌ی استاتیک اگر سرور در دسترس نبود) ---------- */
 async function initArchive() {
@@ -193,12 +198,19 @@ async function initArchive() {
 function renderArchiveResults(elId, results) {
   const el = document.getElementById(elId);
   el.innerHTML = results.map(item => {
-    const typeIcon = { pdf: "📄", video: "🎬", audio: "🔊", game: "🎮" }[item.type] || "📄";
+    const typeIcon = { pdf: "📄", video: "🎬", audio: "🔊", game: "🎮", activity: "🎯" }[item.type] || "📄";
+    // منبع کوتاه (فقط نام، بدون URL طولانی)
+    const srcName = (item.source || "").replace(/^https?:\/\//, "").split("/")[0] || "";
+    const srcTag = srcName ? '<span class="ai-tag ai-source">' + srcName + '</span>' : '';
+    const typeTag = '<span class="ai-tag ai-type">' + (item.type || 'سایر') + '</span>';
+    // فقط دسته و سن — بدون رشته‌های طولانی
+    const meta = [item.category, item.age].filter(Boolean).join(" • ");
     return `
       <div class="archive-item" onclick="openMediaModal(${JSON.stringify(item).replace(/"/g, '&quot;')})">
-        <div class="ai-icon">${typeIcon} ${item.url ? '🔗' : ''}</div>
+        <div class="ai-icon">${typeIcon}</div>
         <div class="ai-title">${item.title}</div>
-        <div class="ai-meta">${item.category || ''} • ${item.audience || ''} • ${item.age || ''} ${item.source ? '<span style="background:#ffb84d;padding:.1rem .4rem;border-radius:6px;font-size:.75rem;">'+item.source+'</span>' : ''}</div>
+        <div class="ai-meta">${meta}</div>
+        <div class="ai-tags">${typeTag}${srcTag}</div>
       </div>
     `;
   }).join("") || '<div style="text-align:center;color:#7a6b55;padding:2rem;">نتیجه‌ای یافت نشد</div>';
@@ -232,28 +244,96 @@ function debounce(fn, ms) {
   return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
 }
 
-document.getElementById("archive-back").addEventListener("click", () => showScreen("screen-lobby"));
+var _archiveBack = document.getElementById("archive-back");
+if (_archiveBack) _archiveBack.addEventListener("click", () => showScreen("screen-lobby"));
 
-/* ---------- جستجوی عمومی (فاز ۳: زنده از API) ---------- */
-document.getElementById("search-input").addEventListener("input", debounce(async (e) => {
-  const q = e.target.value;
+/* ---------- جستجوی عمومی (فاز ۳: فیلتر + تگ + سورت) ---------- */
+function applySearchFilters(results, q) {
+  const type = document.getElementById("search-type")?.value || "";
+  const cat = document.getElementById("search-category")?.value || "";
+  const age = document.getElementById("search-age")?.value || "";
+  const sort = document.getElementById("search-sort")?.value || "relevance";
+
+  let r = results.slice();
+  if (type) r = r.filter(a => (a.type || "") === type);
+  if (cat) r = r.filter(a => (a.category || "") === cat);
+  if (age) r = r.filter(a => (a.age || "").includes(age.replace(/ سال/g, "")));
+
+  if (sort === "title") {
+    r.sort((a, b) => (a.title || "").localeCompare((b.title || ""), "fa"));
+  } else if (sort === "newest" || sort === "oldest") {
+    r.sort((a, b) => {
+      const da = new Date(a.date || 0).getTime();
+      const db = new Date(b.date || 0).getTime();
+      return sort === "newest" ? db - da : da - db;
+    });
+  } else if (q) {
+    r.sort((a, b) => (b.title || "").includes(q) - (a.title || "").includes(q));
+  }
+  return r;
+}
+
+function renderSearchTags() {
+  const el = document.getElementById("search-tags");
+  if (!el) return;
+  const type = document.getElementById("search-type")?.value || "";
+  const cat = document.getElementById("search-category")?.value || "";
+  const age = document.getElementById("search-age")?.value || "";
+  const labels = [];
+  if (type) labels.push({ k: "type", t: ({pdf:"کاربرگ",video:"ویدیو",audio:"صوت",game:"بازی",activity:"فعالیت"})[type] || type });
+  if (cat) labels.push({ k: "category", t: cat });
+  if (age) labels.push({ k: "age", t: age });
+  el.innerHTML = labels.map(l =>
+    '<span class="search-tag" data-k="' + l.k + '">' + l.t + ' <button class="search-tag-x" onclick="clearSearchFilter(\'' + l.k + '\')">✕</button></span>'
+  ).join("");
+}
+
+function clearSearchFilter(key) {
+  if (key === "type") document.getElementById("search-type").value = "";
+  if (key === "category") document.getElementById("search-category").value = "";
+  if (key === "age") document.getElementById("search-age").value = "";
+  document.getElementById("search-input").dispatchEvent(new Event("input"));
+}
+
+function doSearch(q) {
   const el = document.getElementById("search-results");
   if (!q) { el.innerHTML = ""; return; }
-
-  if (APP_API_ONLINE) {
-    try {
-      const res = await Api.archive({ q, pageSize: "40" });
-      renderArchiveResults("search-results", res.items);
-      return;
-    } catch (err) {
-      console.warn("Search API failed, falling back to static data:", err);
-    }
-  }
-  const results = ARCHIVE_DATA.filter(a => a.title.includes(q) || (a.category||"").includes(q) || (a.audience||"").includes(q));
+  let results = ARCHIVE_DATA.filter(a =>
+    (a.title || "").includes(q) ||
+    (a.category || "").includes(q) ||
+    (a.audience || "").includes(q) ||
+    (a.desc || "").includes(q)
+  );
+  results = applySearchFilters(results, q);
+  renderSearchTags();
   renderArchiveResults("search-results", results);
-}, 250));
+}
 
-document.getElementById("search-back").addEventListener("click", () => showScreen("screen-lobby"));
+document.getElementById("search-input").addEventListener("input", debounce(async (e) => {
+  doSearch(e.target.value.trim());
+}, 250));
+["search-type", "search-category", "search-age", "search-sort"].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener("change", () => {
+    const q = (document.getElementById("search-input")?.value || "").trim();
+    if (q) doSearch(q);
+  });
+});
+
+// پر کردن دسته‌ها در فیلتر جستجو از داده واقعی
+(function fillSearchCategories() {
+  const sel = document.getElementById("search-category");
+  if (!sel) return;
+  const cats = [...new Set(ARCHIVE_DATA.map(a => a.category).filter(Boolean))].sort();
+  cats.forEach(c => {
+    const o = document.createElement("option");
+    o.value = c; o.textContent = c;
+    sel.appendChild(o);
+  });
+})();
+
+var _searchBack = document.getElementById("search-back");
+if (_searchBack) _searchBack.addEventListener("click", () => showScreen("screen-lobby"));
 
 /* ---------- اتاق‌ها از API (فاز ۴) ----------
    نکته‌ی مهم (بعد از بازطراحی هایلایت‌ها): بک‌اند هنوز ساختار قدیمی «zones» (چپ/وسط/راست
@@ -270,7 +350,7 @@ async function loadRoomsFromApi() {
 (async function initApp() {
   await loadRoomsFromApi();
   renderDoors();
-  renderRoomGrid();
+  renderMapCircles();
   initArchive();
 })();
 
@@ -288,55 +368,94 @@ async function loadRoomsFromApi() {
   }
 })();
 
-document.getElementById("btn-goto-games").addEventListener("click", () => {
+var _btnGotoGames = document.getElementById("btn-goto-games");
+if (_btnGotoGames) _btnGotoGames.addEventListener("click", () => {
   if (typeof openGamePicker === "function") openGamePicker();
 });
 
 
-/* ---------- Mini Player for Castbox audio episodes ---------- */
+/* ---------- Mini Player: real <audio> playback ---------- */
 var _miniPlayerState = { queue: [], currentIndex: -1, open: false };
+var _miniAudio = null;
+
+function _getAudio() {
+  if (!_miniAudio) _miniAudio = document.getElementById('mini-audio');
+  return _miniAudio;
+}
+
+// source url priority: explicit audio file (audioUrl) > nothing playable here
+function _resolveAudioSrc(item) {
+  return item && (item.audioUrl || item.audio_url || item.mediaUrl || null);
+}
 
 function openMiniPlayer(item) {
   if (!item || item.type !== 'audio') return;
   var player = document.getElementById('mini-player');
   if (!player) return;
-  
-  // Add to queue if not already playing
-  if (_miniPlayerState.currentIndex < 0 || 
-      _miniPlayerState.queue[_miniPlayerState.currentIndex]?.id !== item.id) {
+
+  var src = _resolveAudioSrc(item);
+  if (!src) {
+    // No local audio file (castbox blocks direct mp3). Open the page in a new tab
+    // and still show the player panel with a direct link so playback is reachable.
+    if (item.url) window.open(item.url, '_blank');
+    _miniPlayerState.queue.push(item);
+    _miniPlayerState.currentIndex = _miniPlayerState.queue.length - 1;
+    _updateMiniPlayerUI();
+    var player = document.getElementById('mini-player');
+    if (player) { player.classList.remove('hidden'); player.classList.add('open'); }
+    _miniPlayerState.open = true;
+    var pl = document.getElementById('mini-playlist');
+    if (pl) pl.innerHTML = '<div class="mini-playlist-fallback">فایل صوتی مستقیم در دسترس نیست. <a href="' + (item.url || '#') + '" target="_blank" style="color:#ff8c00">▶ پخش در کستباکس</a></div>';
+    return;
+  }
+
+  var existing = _miniPlayerState.queue.findIndex(function(e) { return e.id === item.id; });
+  if (existing >= 0) {
+    _miniPlayerState.currentIndex = existing;
+  } else {
     _miniPlayerState.queue.push(item);
     _miniPlayerState.currentIndex = _miniPlayerState.queue.length - 1;
   }
-  
+
   _updateMiniPlayerUI();
   player.classList.remove('hidden');
+  player.classList.add('open');
+  _miniPlayerState.open = true;
+  _playEpisode(_miniPlayerState.queue[_miniPlayerState.currentIndex]);
 }
 
 function closeMiniPlayer() {
   var player = document.getElementById('mini-player');
-  if (player) { 
-    player.classList.add('hidden'); 
+  var a = _getAudio();
+  if (a) a.pause();
+  if (player) {
+    player.classList.add('hidden');
+    player.classList.remove('open');
     _miniPlayerState.open = false;
   }
+}
+
+function _fmtTime(sec) {
+  if (!isFinite(sec) || sec < 0) sec = 0;
+  var m = Math.floor(sec / 60);
+  var s = Math.floor(sec % 60);
+  return m + ':' + (s < 10 ? '0' : '') + s;
 }
 
 function _updateMiniPlayerUI() {
   var item = _miniPlayerState.queue[_miniPlayerState.currentIndex];
   if (!item) return;
-  
   var titleEl = document.getElementById('mini-title');
   var channelEl = document.getElementById('mini-channel');
   var playlistEl = document.getElementById('mini-playlist');
-  
   if (titleEl) titleEl.textContent = item.title || '';
   if (channelEl) channelEl.textContent = item.channel || item.source || '';
-  
+
   if (playlistEl && _miniPlayerState.queue.length > 0) {
     playlistEl.innerHTML = _miniPlayerState.queue.map(function(ep, i) {
-      return '<div class="mini-playlist-item' + (i === _miniPlayerState.currentIndex ? ' active' : '') + '">' + 
+      return '<div class="mini-playlist-item' + (i === _miniPlayerState.currentIndex ? ' active' : '') + '">' +
         (i + 1) + '. ' + ep.title + '</div>';
     }).join('');
-    
     playlistEl.querySelectorAll('.mini-playlist-item').forEach(function(el, idx) {
       el.onclick = function() {
         _miniPlayerState.currentIndex = idx;
@@ -347,12 +466,24 @@ function _updateMiniPlayerUI() {
   }
 }
 
-function _playEpisode(item) {
-  if (!item || !item.url) return;
-  window.open(item.url, '_blank');
+function _syncPlayButton() {
+  var a = _getAudio();
   var btn = document.getElementById('mini-play-pause');
-  if (btn) btn.textContent = '⏸';
-  _miniPlayerState.open = true;
+  var tgl = document.getElementById('mini-toggle-icon');
+  var playing = a && !a.paused && !a.ended;
+  if (btn) btn.textContent = playing ? '⏸' : '▶';
+  if (tgl) tgl.textContent = playing ? '⏸' : '▶';
+}
+
+function _playEpisode(item) {
+  if (!item) return;
+  var src = _resolveAudioSrc(item);
+  if (!src) return;
+  var a = _getAudio();
+  if (!a) return;
+  if (a.src !== src) a.src = src;
+  a.play().catch(function(err) { console.warn('Audio playback failed:', err); });
+  _syncPlayButton();
 }
 
 function _prevEpisode() {
@@ -371,37 +502,66 @@ function _nextEpisode() {
 
 function toggleMiniPlayer() {
   var player = document.getElementById('mini-player');
-  if (player) {
-    player.classList.toggle('hidden');
-    _miniPlayerState.open = !_miniPlayerState.open;
+  var a = _getAudio();
+  if (!player) return;
+  if (player.classList.contains('hidden')) {
+    player.classList.remove('hidden');
+    _miniPlayerState.open = true;
+  } else {
+    if (a && !a.paused) { a.pause(); _syncPlayButton(); }
+    else { player.classList.add('hidden'); _miniPlayerState.open = false; }
   }
 }
 
-document.addEventListener('DOMContentLoaded', function() {
-  var prevBtn = document.getElementById('mini-prev');
-  var nextBtn = document.getElementById('mini-next');
-  var playPauseBtn = document.getElementById('mini-play-pause');
-  var closeBtn = document.getElementById('mini-close');
-  var toggleBtn = document.getElementById('mini-player-toggle');
-  
-  if (prevBtn) prevBtn.onclick = _prevEpisode;
-  if (nextBtn) nextBtn.onclick = _nextEpisode;
-  if (playPauseBtn) playPauseBtn.onclick = function() {
-    var item = _miniPlayerState.queue[_miniPlayerState.currentIndex];
-    if (item) _playEpisode(item);
-  };
-  if (closeBtn) closeBtn.onclick = closeMiniPlayer;
-  if (toggleBtn) toggleBtn.onclick = toggleMiniPlayer;
-  
-  // Close on outside click
-  document.addEventListener('click', function(e) {
-    var player = document.getElementById('mini-player');
-    if (player && !player.classList.contains('hidden') && 
-        !player.contains(e.target) && 
-        !toggleBtn.contains(e.target)) {
-      closeMiniPlayer();
+  /* ---------- Mini Player: wiring controls ---------- */
+  function _bindMiniControls() {
+    var toggleBtn = document.getElementById('mini-player-toggle');
+    var playPause = document.getElementById('mini-play-pause');
+    var prevBtn = document.getElementById('mini-prev');
+    var nextBtn = document.getElementById('mini-next');
+    var seek = document.getElementById('mini-seek');
+    var closeBtn = document.getElementById('mini-close');
+    var audio = _getAudio();
+
+    if (toggleBtn) toggleBtn.addEventListener('click', toggleMiniPlayer);
+    if (playPause) playPause.addEventListener('click', function () {
+      var a = _getAudio();
+      if (!a || !a.src) return;
+      if (a.paused) { a.play().catch(function (err) { console.warn('play failed', err); }); }
+      else { a.pause(); }
+      _syncPlayButton();
+    });
+    if (prevBtn) prevBtn.addEventListener('click', _prevEpisode);
+    if (nextBtn) nextBtn.addEventListener('click', _nextEpisode);
+    if (closeBtn) closeBtn.addEventListener('click', closeMiniPlayer);
+
+    if (audio) {
+      audio.addEventListener('timeupdate', function () {
+        if (!isFinite(audio.duration) || audio.duration <= 0) return;
+        var pct = (audio.currentTime / audio.duration) * 100;
+        if (seek) seek.value = pct;
+        var cur = document.getElementById('mini-cur');
+        var dur = document.getElementById('mini-dur');
+        if (cur) cur.textContent = _fmtTime(audio.currentTime);
+        if (dur) dur.textContent = _fmtTime(audio.duration);
+      });
+      audio.addEventListener('ended', function () { _nextEpisode(); });
+      audio.addEventListener('play', _syncPlayButton);
+      audio.addEventListener('pause', _syncPlayButton);
+      audio.addEventListener('loadedmetadata', function () {
+        var dur = document.getElementById('mini-dur');
+        if (dur && isFinite(audio.duration)) dur.textContent = _fmtTime(audio.duration);
+      });
     }
-  });
+    if (seek) {
+      seek.addEventListener('input', function () {
+        var a = _getAudio();
+        if (!a || !isFinite(a.duration) || a.duration <= 0) return;
+        a.currentTime = (seek.value / 100) * a.duration;
+      });
+    }
+  }
+  _bindMiniControls();
 
   // Outside-click-close handlers
   document.addEventListener('click', function(e) {
@@ -419,4 +579,4 @@ document.addEventListener('DOMContentLoaded', function() {
       explorerPanel.classList.remove('open');
       explorerToggle.classList.remove('shifted');
     }
-  });});
+  });

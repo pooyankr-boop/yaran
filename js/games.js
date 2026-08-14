@@ -335,26 +335,13 @@ const GAMES = {
   "sound-guess": gameSoundGuess,
 };
 
-// ادغام ۱۵ بازی اضافه از games2.js (در صورت لود شدن) در همون رجیستری مشترک GAMES
+// لیبل بازیهای اصلی (بازیهای games2 بعد از لود شدنِ games2.js اضافه میشوند)
 const GAME_LABELS = {
-  "color-hunt": "🎨 رنگ‌یابی", "shape-sorter": "🔷 دسته‌بندی اشکال", "puzzle": "🧩 پازل کشویی",
+  "color-hunt": "🎨 رنگیابی", "shape-sorter": "🔷 دستهبندی اشکال", "puzzle": "🧩 پازل کشویی",
   "pattern": "🔴 الگویابی", "memory-match": "🧠 حافظه", "sound-guess": "🐶 حدس صدا",
 };
-if (typeof Games2 !== "undefined") {
-  Games2.list().forEach(id => {
-    GAMES[id] = (body) => Games2.start(id, body);
-  });
-  const G2_LABELS = {
-    "balloon-pop": "🎈 ترکاندن بادکنک", "drawing": "🖍️ نقاشی", "catch-fish": "🐟 گرفتن ماهی",
-    "maze": "🌀 هزارتو", "quiz": "❓ مسابقه‌ی دانستنی", "sorting": "🔴 دسته‌بندی رنگ",
-    "memory2": "🃏 حافظه‌ی بزرگ", "dot-connect": "🔢 نقطه به نقطه", "bingo": "🎱 بینگو",
-    "rhythm": "🎵 ریتم و رنگ", "word-search": "🔤 کلمات مخفی", "pattern-match": "🍎 الگوی میوه",
-    "story-builder": "📖 چیدن داستان", "magnet-fish": "🧲 ماهی‌گیری", "domino": "🁣 دومینو",
-  };
-  Object.assign(GAME_LABELS, G2_LABELS);
-}
 
-/* پیکر «بازی‌های بیشتر»: انتخابگر تمام بازی‌های موجود (اصلی + games2) */
+/* پیکر «بازیهای بیشتر»: انتخابگر تمام بازیهای موجود (اصلی + games2) */
 function openGamePicker() {
   const modal = document.getElementById("game-modal");
   const header = document.getElementById("game-header");

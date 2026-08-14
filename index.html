@@ -13,7 +13,7 @@
 </script>
 
 <style>
-/* ===== Mini Player (Castbox Audio) ===== */
+/* ===== Mini Player (real audio) ===== */
 .mini-player {
   position: fixed;
   bottom: 20px;
@@ -49,12 +49,15 @@
   border-radius: 16px;
   box-shadow: 0 8px 32px rgba(0,0,0,0.2);
   padding: 16px;
-  display: none;
-  animation: miniPanelSlideIn 0.3s ease;
+  opacity: 0;
+  transform: translateY(14px) scale(0.96);
+  transform-origin: bottom left;
+  pointer-events: none;
+  transition: opacity .32s cubic-bezier(.22,1,.36,1), transform .32s cubic-bezier(.22,1,.36,1);
   max-height: 60vh;
   overflow-y: auto;
 }
-.mini-player.open .mini-player-panel { display: block; }
+.mini-player.open .mini-player-panel { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
 @keyframes miniPanelSlideIn {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
@@ -83,6 +86,7 @@
   padding: 4px;
   margin-left: 8px;
 }
+.mini-player.hidden { display: none; }
 .mini-player-channel {
   font-size: 12px;
   color: #666;
@@ -211,7 +215,7 @@
           <button class="pill-btn tip-next" id="tip-next">▶</button>
           <span class="tip-counter" id="tip-counter"></span>
           <button class="pill-btn tip-prev" id="tip-prev">◀</button>
-          <button class="pill-btn tip-share" id="tip-share">اشتراک‌گذاری/button>
+          <button class="pill-btn tip-share" id="tip-share">📤 اشتراک‌گذاری</button>
         </div>
       </div>
       <!-- اسلایدشو محتوا — سمت چپ -->
@@ -236,10 +240,11 @@
 
   <!-- 4) نقشه اتاقها -->
   <section id="screen-map" class="screen">
+    <div class="map-bg" id="map-bg"></div>
     <div class="map-header">
       <div class="top-bar">
         <button class="pill-btn" id="map-back-lobby">↩ بازگشت به لابی</button>
-        <div class="top-bar-right">
+        <div class="top-bar-left">
           <div class="theme-toggle" id="theme-toggle-map">
             <button class="theme-btn" data-theme="day" title="روز">☀️</button>
             <button class="theme-btn" data-theme="night" title="شب">🌙</button>
@@ -247,10 +252,11 @@
           </div>
         </div>
       </div>
-      <h2>اتاقهای یاران</h2>
-      <p>یک اتاق را برای ورود به تور مجازی انتخاب کنید</p>
+      <h2 class="map-title-center">اتاق‌های یاران</h2>
+      <p class="map-subtitle-center">یک اتاق را برای ورود به تور مجازی انتخاب کنید</p>
     </div>
-    <div class="room-grid" id="room-grid"></div>
+    <div class="map-circles" id="map-circles"></div>
+    <div class="map-room-markers" id="map-room-markers"></div>
   </section>
 
   <!-- 5) نمای اتاق (تور مجازی) -->
@@ -260,9 +266,13 @@
       <img class="scene-bg layer-b kenburns" id="room-bg-b" src="" alt="" />
       <div class="scene-caption" id="room-caption"></div>
       <div class="top-bar">
-        <button class="pill-btn" id="room-back-lobby">🏠 لابی</button>
-        <button class="pill-btn" id="room-back-map">↩ همه‌ی اتاق‌ها</button>
-        <div class="top-bar-left"><div class="theme-toggle" id="theme-toggle">
+        <div class="top-bar-nav-group">
+          <button class="pill-btn" id="room-back-lobby">🏠 لابی</button>
+          <button class="pill-btn" id="room-back-map">↩ همه‌ی اتاق‌ها</button>
+        </div>
+        <div class="top-bar-left">
+          <button class="pill-btn" id="room-view-content">📚 محتوای اتاق</button>
+          <div class="theme-toggle" id="theme-toggle">
             <button class="theme-btn active" data-theme="day" title="حالت روز">☀️</button>
             <button class="theme-btn" data-theme="night" title="حالت شب">🌙</button>
             <button class="theme-btn" data-theme="festival" title="حالت جشن">🎉</button>
@@ -325,6 +335,45 @@
         <h2>🔍 جستجو</h2>
         <input type="text" id="search-input" placeholder="جستجو در تمام محتواها..." />
       </div>
+      <div class="search-toolbar">
+        <div class="search-filter-group">
+          <span class="sf-label">نوع:</span>
+          <select id="search-type" class="sf-select">
+            <option value="">همه</option>
+            <option value="pdf">📄 کاربرگ</option>
+            <option value="video">🎬 ویدیو</option>
+            <option value="audio">🔊 صوت</option>
+            <option value="game">🎮 بازی</option>
+            <option value="activity">🎯 فعالیت</option>
+          </select>
+        </div>
+        <div class="search-filter-group">
+          <span class="sf-label">دسته:</span>
+          <select id="search-category" class="sf-select">
+            <option value="">همه</option>
+          </select>
+        </div>
+        <div class="search-filter-group">
+          <span class="sf-label">سن:</span>
+          <select id="search-age" class="sf-select">
+            <option value="">همه</option>
+            <option value="۲-۳ سال">۲-۳ سال</option>
+            <option value="۳-۴ سال">۳-۴ سال</option>
+            <option value="۴-۵ سال">۴-۵ سال</option>
+            <option value="۵-۶ سال">۵-۶ سال</option>
+          </select>
+        </div>
+        <div class="search-filter-group">
+          <span class="sf-label">مرتب‌سازی:</span>
+          <select id="search-sort" class="sf-select">
+            <option value="relevance">مرتبط‌ترین</option>
+            <option value="title">عنوان (الف-ی)</option>
+            <option value="newest">جدیدترین</option>
+            <option value="oldest">قدیمی‌ترین</option>
+          </select>
+        </div>
+      </div>
+      <div class="search-tags" id="search-tags"></div>
       <div class="search-results" id="search-results"></div>
     </div>
   </section>
@@ -373,7 +422,10 @@
 
 <script src="js/api.js"></script>
 <script src="js/rooms.js"></script>
+<script src="js/khaneh-yadgiri-desc.js"></script>
 <script src="js/archive-somayehrouhi.js"></script>
+<script src="js/castbox_episodes_full.js"></script>
+<script src="js/audio-library.js"></script>
 <script src="js/tour.js"></script>
 <script src="js/media.js"></script>
 <script src="js/explorer.js"></script>
@@ -382,13 +434,14 @@
 <script src="js/games2.js"></script>
 <script src="js/tags.js"></script>
 <script src="js/auth.js"></script>
+<script src="js/content.js"></script>
 <script src="js/app.js"></script>
 
   <!-- 10) Mini Player for Castbox audio -->
-  <!-- 10) Mini Player for Castbox audio -->
-  <div class="mini-player" id="mini-player">
+  <!-- 10) Mini Player for real audio playback -->
+  <div class="mini-player hidden" id="mini-player">
     <div class="mini-player-toggle" id="mini-player-toggle" title="پخشکننده">
-      <span class="mini-play-icon">▶</span>
+      <span class="mini-play-icon" id="mini-toggle-icon">▶</span>
     </div>
     <div class="mini-player-panel" id="mini-player-panel">
       <div class="mini-player-header">
@@ -397,16 +450,17 @@
       </div>
       <div class="mini-player-channel" id="mini-channel">—</div>
       <div class="mini-player-controls">
-        <button class="mini-player-btn" id="mini-next">▶</button>
-        <button class="mini-player-btn mini-play-btn" id="mini-play-pause">▶</button>
-        <button class="mini-player-btn" id="mini-prev">◀</button>
+        <button class="mini-player-btn" id="mini-next" title="بعدی">▶▶</button>
+        <button class="mini-player-btn mini-play-btn" id="mini-play-pause" title="پخش/توقف">▶</button>
+        <button class="mini-player-btn" id="mini-prev" title="قبلی">◀◀</button>
       </div>
       <div class="mini-player-progress">
-        <div class="mini-progress-bar" id="mini-progress-bar"></div>
+        <input type="range" id="mini-seek" class="mini-seek" min="0" max="100" value="0" step="0.1" />
+        <div class="mini-time"><span id="mini-cur">۰:۰۰</span> / <span id="mini-dur">۰:۰۰</span></div>
       </div>
+      <audio id="mini-audio" preload="metadata"></audio>
       <div class="mini-player-playlist" id="mini-playlist"></div>
     </div>
-  </div>
   </div>
 </body>
 </html>

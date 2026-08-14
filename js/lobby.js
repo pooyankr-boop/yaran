@@ -20,8 +20,23 @@ var PARENTING_TIPS = [
   { cat: "موسیقی", text: "آواز خواندن با کودک مهارت‌های زبانی و ریاضی را همزمان تقویت می‌کند.", src: "تحقیقات موسیقی درمانی" },
   { cat: "رشد", text: "هر کودک سرعت رشد متفاوتی دارد؛ مقایسه با همسالان می‌تواند به اعتماد به نفس او آسیب بزند.", src: "آکادمی اطفال آمریکا" },
   { cat: "خانواده", text: "روتین‌های ساده روزانه (صبحانه، بازی، داستانگویی، خواب) احساس امنیت و ثبات در کودک ایجاد می‌کند.", src: "روانشناسی رشد" },
-  { cat: "رفتار", text: "به جای گفتن «این کار بدیه»، بگویید «این رفتار درست نیست» — کودک را از رفتارش جدا کنید، نه شخصیتش.", src: "فرزندپروری مثبت" }
+  { cat: "رفتار", text: "به جای گفتن «این کار بدیه»، بگویید «این رفتار درست نیست» — کودک را از رفتارش جدا کنید، نه شخصیتش.", src: "فرزندپروری مثبت", srcUrl: "https://www.amazon.com/Parenting-Teens-Workbook-Christopher-Freytag/dp/157025295X" }
 ];
+
+/* نکته‌های بیشتر از منابع معتبر */
+var PARENTING_TIPS_EXTRA = [
+  { cat: "خواب", text: "روتین ثابت خواب (حمام، قصه، خواب) به کودک کمک می‌کند سریع‌تر و آرام‌تر بخوابد.", src: "بنیاد ملی خواب", srcUrl: "https://www.sleepfoundation.org/children-and-sleep" },
+  { cat: "تغذیه", text: "کاهش قند افزودنی در رژیم کودک، پرخاشگری و بیش‌فعالی را کاهش می‌دهد.", src: "انجمن تغذیه کودک", srcUrl: "https://www.eatright.org/" },
+  { cat: "زبان", text: "صحبت کردن با کودک به زبان کامل و غنی، مهارت زبانی‌اش را سریع‌تر رشد می‌دهد.", src: "انجمن گفتار درمانی", srcUrl: "https://www.asha.org/" },
+  { cat: "احساسات", text: "جعبه آرامش (با اسباب‌بازی نرم و کتاب) به کودک کمک می‌کند هنگام خشم خود را تنظیم کند.", src: "روانشناسی کودک", srcUrl: "https://www.zerotothree.org/" },
+  { cat: "بازی", text: "زمان بازی بدون وسیله (کارتون‌باکس، پارچه) خلاقیت را بیشتر از اسباب‌بازی‌های هوشمند تحریک می‌کند.", src: "پروژه بازی آزاد", srcUrl: "https://www.playworks.org/" },
+  { cat: "اجتماعی", text: "مدل‌سازی همدلی («وقتی دوستت ناراحت است، چه کاری مهربانانه‌ای می‌توانی بکنی؟») همدلی را می‌آموزد.", src: "یونیسف", srcUrl: "https://www.unicef.org/parenting" },
+  { cat: "ایمنی", text: "آموزش «بدن من مال منه» و نام درست اعضا، پیشگیری از سوءاستفاده را تقویت می‌کند.", src: "پروژه ایمنی کودک", srcUrl: "https://www.childhelplineinternational.org/" },
+  { cat: "رشد", text: "تحسین تلاش بیش از هوش، ذهنیت رشد و پشتکار را در کودک می‌سازد.", src: "کارول دوک — رشد ذهنیت", srcUrl: "https://mindsetworks.com/" },
+  { cat: "خانواده", text: "شام خانوادگی بدون گوشی، پیوند عاطفی و مهارت‌های گفتگو را تقویت می‌کند.", src: "تحقیقات خانواده", srcUrl: "https://www.familydinnerproject.org/" },
+  { cat: "هنر", text: "نمایش آثار هنری کودک در خانه، اعتماد به نفس و حس ارزشمندی او را بالا می‌برد.", src: "هنردرمانی", srcUrl: "https://www.arttherapy.org/" }
+];
+PARENTING_TIPS = PARENTING_TIPS.concat(PARENTING_TIPS_EXTRA);
 
 var tipIndex = 0;
 var tipTimer = null;
@@ -50,7 +65,10 @@ function renderTip() {
   var counter = document.getElementById("tip-counter");
   var datetime = document.getElementById("tip-datetime");
   if (!body) return;
-  body.innerHTML = '<div class="tip-category">' + tip.cat + '</div><div class="tip-text">' + tip.text + '</div><div class="tip-source">📚 ' + tip.src + '</div>';
+  var srcLink = tip.srcUrl
+    ? '<a class="tip-source-link" href="' + tip.srcUrl + '" target="_blank" rel="noopener">📚 ' + tip.src + '</a>'
+    : '<span class="tip-source-text">📚 ' + tip.src + '</span>';
+  body.innerHTML = '<div class="tip-category">' + tip.cat + '</div><div class="tip-text">' + tip.text + '</div><div class="tip-source">' + srcLink + '</div>';
   if (counter) counter.textContent = (tipIndex + 1) + ' / ' + PARENTING_TIPS.length;
   if (datetime) datetime.textContent = getIranDateTime();
 }
@@ -115,6 +133,7 @@ var _origShowScreen = window.showScreen;
 window.showScreen = function(id) {
   _origShowScreen(id);
   if (id === "screen-lobby") {
+    tipIndex = Math.floor(Math.random() * PARENTING_TIPS.length);  // نکته اول همیشه رندوم
     renderTip();
     startTipRotation();
     initSlideshow();

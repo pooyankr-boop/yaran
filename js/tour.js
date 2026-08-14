@@ -75,45 +75,98 @@ document.getElementById("plan-back-intro").addEventListener("click", () => showS
 
 /* ---------- لابی ---------- */
 document.getElementById("lobby-back-plan").addEventListener("click", () => showScreen("screen-plan"));
-document.getElementById("btn-goto-map").addEventListener("click", () => showScreen("screen-map"));
+document.getElementById("btn-goto-map").addEventListener("click", () => { playMapEnter(); showScreen("screen-map"); });
 document.getElementById("lobby-panel").addEventListener("click", () => { initPanel(); showScreen("screen-panel"); });
 document.getElementById("lobby-search").addEventListener("click", () => { showScreen("screen-search"); document.getElementById("search-input").focus(); });
 
-/* ---------- نقشه اتاقها ---------- */
-function renderRoomGrid() {
-  const grid = document.getElementById("room-grid");
-  grid.innerHTML = "";
+/* ---------- نقشه اتاقها: دایرههای انیمیشنی ---------- */
+// عکس پایه هر دایره = نمای کلی اتاق (hero.webp)؛ اسلایدشو هاور فقط گوشه‌های راست/چپ
+const MAP_BASE = { key: "hero", label: "نمای کلی" };
+const MAP_CORNERS = [
+  { key: "herog_right", label: "گوشه راست" },
+  { key: "herog_left",  label: "گوشه چپ" }
+];
+
+function renderMapCircles() {
+  const wrap = document.getElementById("map-circles");
+  const markers = document.getElementById("map-room-markers");
+  if (wrap) wrap.innerHTML = "";
+  if (markers) markers.innerHTML = "";
   ROOMS.forEach(room => {
-    const card = document.createElement("div");
-    card.className = "room-card";
-    card.innerHTML = '<img src="assets/images/' + room.folder + '/hero.webp" alt="' + room.name + '" loading="lazy" onerror="this.style.display=\'none\'"><div class="room-card-info"><span class="room-card-icon">' + room.icon + '</span><span class="room-card-name">' + room.name + '</span></div>';
-    card.addEventListener("mouseenter", () => {
-      const circle = document.getElementById("map-preview-" + room.id);
-      if (circle) { circle.classList.add("visible", "pulsing"); }
-    });
-    card.addEventListener("mouseleave", () => {
-      const circle = document.getElementById("map-preview-" + room.id);
-      if (circle) { circle.classList.remove("visible", "pulsing"); }
-    });
-    card.addEventListener("click", () => openRoomWithTransition(room.id));
-    grid.appendChild(card);
-    // Add preview circle overlay
-    const previewCircle = document.createElement("div");
-    previewCircle.id = "map-preview-" + room.id;
-    previewCircle.className = "room-preview-circle";
-    previewCircle.innerHTML = '<img src="assets/images/' + room.folder + '/herog.webp" alt="preview" onerror="this.src=\'assets/images/plan/hero.webp\'">';
-    previewCircle.style.position = "absolute";
-    previewCircle.style.top = "-180px";
-    previewCircle.style.left = "50%";
-    previewCircle.style.transform = "translateX(-50%)";
-    card.style.position = "relative";
-    card.appendChild(previewCircle);
+    const c = document.createElement("div");
+    c.className = "map-circle";
+    c.dataset.room = room.id;
+    const pid = "ring-" + room.id;
+    const base = "assets/images/" + room.folder + "/";
+    c.innerHTML =
+      '<div class="circle-inner">' +
+        '<img class="circle-base" src="' + base + MAP_BASE.key + '.webp" alt="' + room.name + '" loading="lazy" onerror="this.style.display=\'none\'">' +
+        '<div class="circle-slides">' +
+          MAP_CORNERS.map((cn, i) =>
+            '<img class="cs' + (i === 0 ? " active" : "") + '" data-corner="' + cn.label +
+            '" src="' + base + cn.key + '.webp" alt="" loading="lazy" onerror="this.style.display=\'none\'">'
+          ).join("") +
+        '</div>' +
+      '</div>' +
+      '<svg class="circle-ring" viewBox="0 0 100 100" aria-hidden="true">' +
+        '<defs><path id="' + pid + '" d="M50,50 m-40,0 a40,40 0 1,1 80,0 a40,40 0 1,1 -80,0"/></defs>' +
+        '<text><textPath href="#' + pid + '" startOffset="0">' + MAP_BASE.label + ' • ' + MAP_BASE.label + ' • </textPath></text>' +
+      '</svg>' +
+      '<div class="circle-name">' + room.icon + ' ' + room.name + '</div>';
+    c.addEventListener("click", () => openRoomWithTransition(room.id));
+
+    // هاور: اسلایدشو گوشه‌ها + متن چرخنده
+    const baseImg = c.querySelector(".circle-base");
+    const imgs = c.querySelectorAll(".circle-slides img");
+    const ring = c.querySelector(".circle-ring textPath");
+    let si = 0, timer = null;
+    function step() {
+      imgs[si].classList.remove("active");
+      si = (si + 1) % imgs.length;
+      imgs[si].classList.add("active");
+      if (ring) ring.textContent = imgs[si].dataset.corner + " • " + imgs[si].dataset.corner + " • ";
+    }
+    function reset() {
+      si = 0;
+      imgs.forEach((im, i) => im.classList.toggle("active", i === 0));
+      if (ring) ring.textContent = MAP_BASE.label + " • " + MAP_BASE.label + " • ";
+    }
+    c.addEventListener("mouseenter", () => { if (baseImg) baseImg.style.opacity = "0"; reset(); step(); timer = setInterval(step, 2000); });
+    c.addEventListener("mouseleave", () => { if (timer) clearInterval(timer); timer = null; reset(); if (baseImg) baseImg.style.opacity = "1"; });
+    if (wrap) wrap.appendChild(c);
+
+    // آیکون انتخاب اتاق — نوار پایین (بدون همپوشانی)
+    if (markers) {
+      const m = document.createElement("button");
+      m.className = "map-room-marker";
+      m.title = room.name;
+      m.innerHTML = '<span class="map-marker-icon">' + room.icon + '</span><span class="map-marker-label">' + room.name + '</span>';
+      m.addEventListener("click", () => openRoomWithTransition(room.id));
+      markers.appendChild(m);
+    }
   });
+}
+
+/* انیمیشن ورود نقشه: plan2 از دور فید+زوم، محو، پس‌زمینه باقی‌مانده */
+function playMapEnter() {
+  const screen = document.getElementById("screen-map");
+  if (!screen) return;
+  let fx = document.getElementById("map-enter-fx");
+  if (!fx) {
+    fx = document.createElement("div");
+    fx.id = "map-enter-fx";
+    fx.className = "map-enter-fx";
+    screen.appendChild(fx);
+  }
+  fx.style.animation = "none";
+  void fx.offsetWidth;
+  fx.style.animation = "";
+  setTimeout(() => { if (fx && fx.parentNode) fx.remove(); }, 2000);
 }
 
 /* ---------- Zoom + fade transition into room ---------- */
 function openRoomWithTransition(id) {
-  const grid = document.getElementById("room-grid");
+  const grid = document.getElementById("map-circles");
   if (!grid || transitioning) return;
   
   const room = ROOMS.find(r => r.id === id);
@@ -575,6 +628,7 @@ setInterval(() => {
 
 /* ---------- دکمه‌های بازگشت ---------- */
 document.getElementById("room-back-map").addEventListener("click", () => showScreen("screen-map"));
+document.getElementById("room-view-content").addEventListener("click", () => { if (currentRoom) openContentForRoom(currentRoom.id); });
 document.getElementById("room-back-lobby").addEventListener("click", () => showScreen("screen-lobby"));
 
 /* ---------- کلیدهای کیبورد ---------- */
@@ -587,4 +641,4 @@ document.addEventListener("keydown", (e) => {
 
 /* ---------- راه‌اندازی ---------- */
 renderDoors();
-renderRoomGrid();
+renderMapCircles();

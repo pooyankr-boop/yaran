@@ -532,3 +532,21 @@ var Games2 = (function() {
     list: function() { return Object.keys(games); }
   };
 })();
+
+/* ادغام ۱۵ بازی اضافه از games2.js در رجیستری مشترک GAMES (games2.js بعد از games.js لود میشود) */
+(function mergeGames2() {
+  if (typeof GAMES === "undefined" || typeof Games2 === "undefined") return;
+  Games2.list().forEach(function (id) {
+    GAMES[id] = function (body) { Games2.start(id, body); };
+  });
+  var G2_LABELS = {
+    "balloon-pop": "🎈 ترکاندن بادکنک", "drawing": "🖍️ نقاشی", "catch-fish": "🐟 گرفتن ماهی",
+    "maze": "🌀 هزارتو", "quiz": "❓ مسابقه‌ی دانستنی", "sorting": "🔴 دسته‌بندی رنگ",
+    "memory2": "🃏 حافظه‌ی بزرگ", "dot-connect": "🔢 نقطه به نقطه", "bingo": "🎱 بینگو",
+    "rhythm": "🎵 ریتم و رنگ", "word-search": "🔤 کلمات مخفی", "pattern-match": "🍎 الگوی میوه",
+    "story-builder": "📖 چیدن داستان", "magnet-fish": "🧲 ماهی‌گیری", "domino": "🁣 دومینو",
+  };
+  if (typeof GAME_LABELS !== "undefined") {
+    for (var k in G2_LABELS) if (G2_LABELS.hasOwnProperty(k)) GAME_LABELS[k] = G2_LABELS[k];
+  }
+})();
