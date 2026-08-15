@@ -248,6 +248,31 @@ var _archiveBack = document.getElementById("archive-back");
 if (_archiveBack) _archiveBack.addEventListener("click", () => showScreen("screen-lobby"));
 
 /* ---------- جستجوی عمومی (فاز ۳: فیلتر + تگ + سورت) ---------- */
+
+// همه آیتمها: بایگانی + همه آیتمهای اتاقها (injected MAHD شامل)
+let _allSearchItems = null;
+function getAllSearchItems() {
+  if (_allSearchItems) return _allSearchItems;
+  const seen = new Set();
+  const out = (typeof ARCHIVE_DATA !== "undefined" ? ARCHIVE_DATA : []).slice();
+  out.forEach(it => { if (it.id) seen.add(it.id); });
+  (typeof ROOMS !== "undefined" ? ROOMS : []).forEach(room => {
+    Object.keys(room.views || {}).forEach(vk => {
+      (room.views[vk].hotspots || []).forEach(h => {
+        (h.categories || []).forEach(cat => {
+          (cat.items || []).forEach(it => {
+            const key = (it.title || "") + "|" + (it.type || "");
+            if (seen.has(key)) return;
+            seen.add(key);
+            out.push(Object.assign({}, it, { _room: room.id, source: it.source || "اتاق " + (room.name || room.id) }));
+          });
+        });
+      });
+    });
+  });
+  _allSearchItems = out;
+  return out;
+}
 function applySearchFilters(results, q) {
   const type = document.getElementById("search-type")?.value || "";
   const cat = document.getElementById("search-category")?.value || "";
@@ -298,7 +323,7 @@ function clearSearchFilter(key) {
 function doSearch(q) {
   const el = document.getElementById("search-results");
   if (!q) { el.innerHTML = ""; return; }
-  let results = ARCHIVE_DATA.filter(a =>
+  let results = getAllSearchItems().filter(a =>
     (a.title || "").includes(q) ||
     (a.category || "").includes(q) ||
     (a.audience || "").includes(q) ||
@@ -334,6 +359,19 @@ document.getElementById("search-input").addEventListener("input", debounce(async
 
 var _searchBack = document.getElementById("search-back");
 if (_searchBack) _searchBack.addEventListener("click", () => showScreen("screen-lobby"));
+
+/* ---------- برگشت به بالا در صفحه جستجو ---------- */
+(function bindSearchToTop() {
+  const sc = document.getElementById("screen-search");
+  const btn = document.getElementById("search-to-top");
+  if (!sc || !btn) return;
+  sc.addEventListener("scroll", () => {
+    btn.classList.toggle("show", sc.scrollTop > 300);
+  });
+  btn.addEventListener("click", () => {
+    sc.scrollTo({ top: 0, behavior: "smooth" });
+  });
+})();
 
 /* ---------- اتاق‌ها از API (فاز ۴) ----------
    نکته‌ی مهم (بعد از بازطراحی هایلایت‌ها): بک‌اند هنوز ساختار قدیمی «zones» (چپ/وسط/راست
@@ -383,13 +421,19 @@ function _getAudio() {
   return _miniAudio;
 }
 
-// source url priority: explicit audio file (audioUrl) > nothing playable here
+// source url priority: explicit audio/video file (audioUrl/mediaUrl) > item.url when it is a media file
 function _resolveAudioSrc(item) {
-  return item && (item.audioUrl || item.audio_url || item.mediaUrl || null);
+  if (!item) return null;
+  if (item.audioUrl || item.audio_url || item.mediaUrl) return item.audioUrl || item.audio_url || item.mediaUrl;
+  var u = item.url || "";
+  if (/\.(m4a|mp3|ogg|wav|mp4|webm)(\?|#|$)/i.test(u)) return u;
+  return null;
 }
 
 function openMiniPlayer(item) {
-  if (!item || item.type !== 'audio') return;
+  if (!item) return;
+  var playable = /\.(m4a|mp3|ogg|wav|mp4|webm)(\?|#|$)/i.test((item.url || "") + " " + (item.mediaUrl || ""));
+  if (!playable && item.type !== 'audio' && item.type !== 'video') return;
   var player = document.getElementById('mini-player');
   if (!player) return;
 
@@ -502,14 +546,17 @@ function _nextEpisode() {
 
 function toggleMiniPlayer() {
   var player = document.getElementById('mini-player');
-  var a = _getAudio();
   if (!player) return;
   if (player.classList.contains('hidden')) {
     player.classList.remove('hidden');
-    _miniPlayerState.open = true;
+  }
+  // minimize: فقط پنل جمع میشود، پخش ادامه دارد، آیکون میماند
+  if (player.classList.contains('open')) {
+    player.classList.remove('open');
+    _miniPlayerState.open = false;
   } else {
-    if (a && !a.paused) { a.pause(); _syncPlayButton(); }
-    else { player.classList.add('hidden'); _miniPlayerState.open = false; }
+    player.classList.add('open');
+    _miniPlayerState.open = true;
   }
 }
 

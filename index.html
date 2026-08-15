@@ -143,6 +143,13 @@
   border-top: 1px solid #eee;
   padding-top: 8px;
 }
+#mini-audio {
+  width: 100%;
+  max-height: 200px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  display: block;
+}
 .mini-playlist-item {
   padding: 8px;
   cursor: pointer;
@@ -255,9 +262,6 @@
         </div>
         <h2 class="map-title-center">اتاق‌های یاران</h2>
         <p class="map-subtitle-center">یک اتاق را برای ورود به تور مجازی انتخاب کنید</p>
-      </div>
-      <div class="map-plan">
-        <img class="map-bg" src="assets/images/plan/plan2.webp" alt="نقشه اتاق‌های یاران" />
       </div>
       <div class="map-circles" id="map-circles"></div>
     </div>
@@ -379,10 +383,11 @@
       </div>
       <div class="search-tags" id="search-tags"></div>
       <div class="search-results" id="search-results"></div>
-    </div>
-  </section>
+          </div>
+          <button id="search-to-top" class="to-top-btn" title="بازگشت به بالا">↑</button>
+        </section>
 
-  <!-- 10) مدال رسانه -->
+        <!-- 10) مدال رسانه -->
   <div id="media-modal" class="modal-overlay hidden">
     <div class="modal-content">
       <button class="modal-close" id="media-close">✕</button>
@@ -426,6 +431,7 @@
 
 <script src="js/api.js"></script>
 <script src="js/rooms.js"></script>
+<script src="js/mahd-content.js"></script>
 <script src="js/khaneh-yadgiri-desc.js"></script>
 <script src="js/archive-somayehrouhi.js"></script>
 <script src="js/castbox_episodes_full.js"></script>
@@ -462,7 +468,7 @@
         <input type="range" id="mini-seek" class="mini-seek" min="0" max="100" value="0" step="0.1" />
         <div class="mini-time"><span id="mini-cur">۰:۰۰</span> / <span id="mini-dur">۰:۰۰</span></div>
       </div>
-      <audio id="mini-audio" preload="metadata"></audio>
+      <video id="mini-audio" preload="metadata"></video>
       <div class="mini-player-playlist" id="mini-playlist"></div>
     </div>
   </div>

@@ -24,7 +24,16 @@ function openMediaModal(item) {
   header.innerHTML = '<span>' + getTypeIcon(item.type) + '</span> — ' + item.title;
 
   if (item.type === "pdf") {
-    const canProxy = APP_API_ONLINE; // فقط وقتی سرور بالاست پراکسی تلاش کن
+      // فایلهای صوتی/تصویری که pdf تگ شدهاند (تزریق MAHD) → مینیپلیر
+      if (/\.(mp4|webm|m4a|mp3|ogg|wav)(\?|#|$)/i.test(item.url || "")) {
+        if (typeof openMiniPlayer === "function") {
+          openMiniPlayer(item);
+          modal.classList.add("hidden");
+          modal.classList.remove("active");
+          return;
+        }
+      }
+      const canProxy = APP_API_ONLINE; // فقط وقتی سرور بالاست پراکسی تلاش کن
     body.innerHTML =
       '<div class="pdfjs-wrap">' +
       (canProxy
@@ -34,9 +43,18 @@ function openMediaModal(item) {
     actions.innerHTML = '<a href="' + item.url + '" target="_blank" class="pill-btn" download>📥 دانلود</a>';
     if (canProxy) loadPdfIntoCanvas(item.url);
   } else if (item.type === "video") {
-    body.innerHTML = '<div class="media-iframe-wrap"><iframe src="' + item.url + '" class="media-iframe" allowfullscreen title="' + item.title + '"></iframe></div>';
-    actions.innerHTML = '<a href="' + item.url + '" target="_blank" class="pill-btn" download>📥 دانلود</a>';
-  } else if (item.type === "audio") {
+      // ویدیوی محلی → مینیپلیر؛ ویدیوی خارجی (یوتیوب/امبد) → iframe
+      if (/\.(mp4|webm)(\?|#|$)/i.test(item.url || "")) {
+        if (typeof openMiniPlayer === "function") {
+          openMiniPlayer(item);
+          modal.classList.add("hidden");
+          modal.classList.remove("active");
+          return;
+        }
+      }
+      body.innerHTML = '<div class="media-iframe-wrap"><iframe src="' + item.url + '" class="media-iframe" allowfullscreen title="' + item.title + '"></iframe></div>';
+      actions.innerHTML = '<a href="' + item.url + '" target="_blank" class="pill-btn" download>📥 دانلود</a>';
+    } else if (item.type === "audio") {
     // Route audio items to the real in-page mini player so the file actually plays.
     if (typeof openMiniPlayer === "function") {
       openMiniPlayer(item);
