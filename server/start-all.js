@@ -20,7 +20,13 @@ if (!fs.existsSync(path.join(botDir, 'node_modules'))) {
 }
 
 const server = spawn(process.execPath, [path.join(__dirname, 'index.js')], { stdio: 'inherit' });
-const bot = spawn(process.execPath, [path.join(botDir, 'bot.js')], { stdio: 'inherit', cwd: botDir });
+const botEnv = {
+  ...process.env,
+  // هر دو روی همان instance: ربات به سرور محلی وصل شود
+  SERVER_URL: process.env.SERVER_URL || `http://localhost:${process.env.PORT || 4000}`,
+  WS_URL: process.env.WS_URL || `ws://localhost:${process.env.PORT || 4000}/ws`,
+};
+const bot = spawn(process.execPath, [path.join(botDir, 'bot.js')], { stdio: 'inherit', cwd: botDir, env: botEnv });
 
 function killAll() {
   server.kill();

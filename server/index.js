@@ -16,7 +16,7 @@ const { WebSocketServer } = require('ws');
 
 const app = express();
 app.use(compression());
-const PORT = process.env.PORT || 4000;
+const PORT = Number(process.env.PORT) || 4000;
 const JWT_SECRET = process.env.JWT_SECRET || 'yaran-dev-secret-change-in-production';
 const TENANT = 'yaran';
 const GROUP_ID_STR = process.env.GROUP_ID || '-1003717678648';

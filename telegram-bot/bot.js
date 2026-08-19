@@ -17,7 +17,7 @@ const WebSocket = require('ws');
 // ── Config ──
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const GROUP_ID = process.env.GROUP_ID || '-1003717678648';
-const PORT = process.env.PORT || 3000;
+const PORT = Number(process.env.BOT_PORT) || 3000;
 const SERVER_URL = process.env.SERVER_URL || 'http://localhost:4000';
 const WS_URL = process.env.WS_URL || 'ws://localhost:4000/ws';
 const PROXY_URL = process.env.PROXY_URL || null;
