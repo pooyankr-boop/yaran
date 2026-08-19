@@ -15,6 +15,9 @@ function showScreen(id) {
   document.getElementById(id).classList.add("active");
   closeGlassMenu();
   if (id === "screen-plan") requestAnimationFrame(positionPlanLayout);
+  /* موسیقی: تور مجازی اتاق = آرامش شبانه؛ بقیه صفحهها = قطع */
+  if (id === "screen-room") { if (window.YaranMusic) window.YaranMusic.start("room"); }
+  else if (window.YaranMusic) window.YaranMusic.stop();
 }
 
 /* ---------- پلان: چیدمان دقیق عکس + درها ----------

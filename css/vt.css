@@ -231,7 +231,7 @@
   .vt-bottom-row { flex-direction: column; }
   .vt-bottom-left { flex-direction: column; }
   .vt-tip-box { max-width: 100%; min-width: auto; }
-  .vt-taskboard { max-width: 100%; max-height: 100px; }
+  .vt-taskboard { left: 10px; right: 10px; bottom: 70px; width: auto; max-height: 100px; }
   .vt-progress-bar-wrap { width: 100%; }
   .vt-room-sidebar { width: 240px; }
   .vt-content-inner { max-width: 100%; padding: 12px 14px; }

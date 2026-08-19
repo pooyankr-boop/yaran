@@ -20,7 +20,11 @@
   background: rgba(255,255,255,.9);
   border-bottom: 1px solid rgba(139,115,85,.1);
   border-radius: 16px 16px 0 0;
+  position: sticky;
+  top: 0;
+  z-index: 5;
 }
+.tb-tabs { position: sticky; top: 40px; z-index: 4; background: rgba(255,255,255,.92); }
 .tb-title { font-size: .8rem; font-weight: 700; color: #5a4030; flex: 1; }
 .tb-count { font-size: .65rem; color: #8b7355; background: rgba(139,115,85,.08); padding: 2px 8px; border-radius: 8px; }
 .tb-actions { display: flex; gap: 4px; }
@@ -82,6 +86,50 @@
 /* ── Hidden state ── */
 .tb-hidden { display: none; }
 
+/* ── Pinned (floats over all screens, stays in its own bottom-left spot) ── */
+.task-board.tb-pinned {
+  position: fixed !important;
+  top: auto !important;
+  bottom: 80px !important;
+  left: 15px !important;
+  right: auto !important;
+  width: 340px;
+  min-height: 80px;
+  max-height: 220px;
+  z-index: 9999 !important;
+  background: rgba(255,255,255,.92);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(139,115,85,.12);
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(0,0,0,.12);
+}
+
+/* ── Maximized ── */
+.task-board.tb-maximized {
+  position: fixed !important;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(560px, calc(100vw - 20px));
+  max-height: calc(100vh - 20px);
+  z-index: 9998 !important;
+  box-shadow: 0 12px 48px rgba(0,0,0,.3);
+}
+.tb-maximized .tb-header { border-radius: 16px 16px 0 0; }
+
+/* ── Clear-done button ── */
+.tb-btn-clear-done {
+  width: auto;
+  height: auto;
+  padding: 5px 12px;
+  margin-top: 6px;
+  font-size: .65rem;
+  border: 1px solid rgba(220,80,80,.2);
+  background: rgba(220,80,80,.08);
+  color: #c04040;
+}
+.tb-btn-clear-done:hover { background: rgba(220,80,80,.18); color: #a03030; }
+
 /* ── Lobby variant (absolute, below tip-box) ── */
 .task-board-light {
   position: absolute;
@@ -100,17 +148,21 @@
   z-index: 15;
 }
 
-/* ── VT variant (in bottom row) ── */
+/* ── VT variant (absolute bottom-left, same spot as lobby, above glass) ── */
 .vt-taskboard {
-  position: static !important;
-  width: auto !important;
-  max-width: 300px;
-  max-height: 120px;
+  position: absolute;
+  bottom: 80px;
+  left: 15px;
+  width: 340px;
+  min-height: 80px;
+  max-height: 200px;
   overflow-y: auto;
-  background: rgba(255,255,255,.6) !important;
-  border: 1px solid rgba(139,115,85,.1) !important;
-  margin: 0 !important;
-  box-shadow: none !important;
+  background: rgba(255,255,255,.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(139,115,85,.12);
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(0,0,0,.08);
+  z-index: 25;
 }
 
 /* ── Tabs ── */

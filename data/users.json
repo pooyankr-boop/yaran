@@ -1,0 +1,11 @@
+[
+  {
+    "id": "ce8a33f7-9fa3-41a2-9eea-4f56d062c4cd",
+    "name": "مدیر یاران",
+    "email": "admin@yaran.ir",
+    "password": "$2a$10$p53UFOawsgrNwnm6B/2qd.HJrQ5Ne5hZEvjPoDt2BRE1ru8jha0wq",
+    "role": "admin",
+    "tenant": "yaran",
+    "createdAt": "2026-08-19T08:01:35.270Z"
+  }
+]

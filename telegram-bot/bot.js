@@ -162,6 +162,7 @@ function isAdmin(ctx) {
 const mainMenu = Markup.inlineKeyboard([
   [Markup.button.callback('📋 لیست وظایف', 'task_list'), Markup.button.callback('➕ وظیفه جدید', 'task_add')],
   [Markup.button.callback('✅ انجام شد', 'task_pick_done'), Markup.button.callback('🗑 حذف وظیفه', 'task_pick_del')],
+  [Markup.button.callback('🧹 پاک کردن انجامشدهها', 'clear_done')],
   [Markup.button.callback('📊 گزارش روزانه', 'daily_report'), Markup.button.callback('📈 آمار', 'stats')],
   [Markup.button.callback('👶 کودکان', 'children'), Markup.button.callback('📝 یادداشت', 'note_add')],
   [Markup.button.callback('💬 پیام به پنل', 'msg_add'), Markup.button.callback('🔄 همگامسازی', 'sync_now')],
@@ -239,6 +240,31 @@ bot.action('task_add', async (ctx) => {
   await ctx.answerCbQuery();
   await ctx.reply(rtl('✍️ متن وظیفه جدید را بنویسید:'),
     Markup.inlineKeyboard([[Markup.button.callback('⏹️ انصراف', 'cancel_flow')]]));
+});
+
+// ── Clear all completed tasks (with confirm) ──
+bot.action('clear_done', async (ctx) => {
+  await ctx.answerCbQuery();
+  const doneCount = tasks.filter(t => String(t.groupId) === GROUP_ID && t.status === 'completed').length;
+  if (!doneCount) return ctx.reply(rtl('وظیفهٔ انجامشده‌ای وجود ندارد'), mainMenu);
+  await ctx.reply(rtl(`همه ${doneCount} وظیفهٔ انجام‌شده حذف شود؟`),
+    Markup.inlineKeyboard([
+      [Markup.button.callback('✅ بله، حذف کن', 'clear_done_yes'), Markup.button.callback('❌ نه', 'cancel_flow')],
+    ]));
+});
+
+bot.action('clear_done_yes', async (ctx) => {
+  await ctx.answerCbQuery();
+  try {
+    const r = await fetch(`${SERVER_URL}/api/tasks/done`, { method: 'DELETE' });
+    if (!r.ok) throw new Error('http ' + r.status);
+    const removed = (await r.json()).removed || 0;
+    const fresh = await serverGetTasks();
+    if (fresh) { tasks = fresh; saveData(TASKS_PATH, tasks); }
+    await ctx.reply(rtl(`🧹 ${removed} وظیفهٔ انجام‌شده پاک شد`), mainMenu);
+  } catch (e) {
+    await ctx.reply(rtl('خطا: سرور در دسترس نیست'), mainMenu);
+  }
 });
 
 // ── Pick task to mark done ──

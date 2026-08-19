@@ -53,12 +53,37 @@ function broadcastTaskUpdate(task) {
   wsClients.forEach(c => { if (c.readyState === 1) c.send(msg); });
 }
 
-// ── In-memory DB (replace with Firebase/Postgres later) ──
+// ── In-memory DB (users persisted to data/users.json) ──
 const DB = {
   users: [],
   children: [],
   reports: [],
 };
+
+const USERS_PATH = path.join(__dirname, '..', 'data', 'users.json');
+function loadUsers() {
+  try { DB.users = JSON.parse(fs.readFileSync(USERS_PATH, 'utf8')) || []; }
+  catch { DB.users = []; }
+}
+function saveUsers() {
+  try { fs.writeFileSync(USERS_PATH, JSON.stringify(DB.users, null, 2), 'utf8'); }
+  catch { /* read-only fs (Render free) */ }
+}
+loadUsers();
+
+// Seed admin account on first run (env overridable, bcrypt-hashed)
+if (!DB.users.some(u => u.role === 'admin')) {
+  DB.users.push({
+    id: uuid(),
+    name: process.env.ADMIN_NAME || 'مدیر یاران',
+    email: (process.env.ADMIN_EMAIL || 'admin@yaran.ir').toLowerCase(),
+    password: bcrypt.hashSync(process.env.ADMIN_PASSWORD || 'Yaran@1403Admin', 10),
+    role: 'admin',
+    tenant: TENANT,
+    createdAt: new Date().toISOString(),
+  });
+  saveUsers();
+}
 
 // Seed demo data
 const demoId = uuid();
@@ -156,6 +181,7 @@ app.post('/api/auth/register', (req, res) => {
     createdAt: new Date().toISOString(),
   };
   DB.users.push(user);
+  saveUsers();
 
   const token = jwt.sign({ id: user.id, email: user.email, role: user.role, name: user.name }, JWT_SECRET, { expiresIn: '7d' });
   res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
@@ -249,10 +275,21 @@ app.post('/api/tasks', (req, res) => {
 app.patch('/api/tasks/:id', (req, res) => {
   const task = memoryTasks.find(t => String(t.id) === req.params.id);
   if (!task) return res.status(404).json({ error: 'not found' });
-  Object.assign(task, req.body, req.body.status === 'completed' ? { completed_at: new Date().toISOString() } : {});
+  Object.assign(task, req.body,
+    { updated_at: new Date().toISOString() },
+    req.body.status === 'completed' ? { completed_at: new Date().toISOString() } : {});
   saveTasks();
   broadcastTaskUpdate(task);
   res.json(task);
+});
+
+// DELETE /api/tasks/done — clear all completed (must precede /:id)
+app.delete('/api/tasks/done', (req, res) => {
+  const before = memoryTasks.length;
+  memoryTasks = memoryTasks.filter(t => t.status !== 'completed');
+  saveTasks();
+  broadcastTaskUpdate({ _cleared: true, removed: before - memoryTasks.length });
+  res.json({ ok: true, removed: before - memoryTasks.length });
 });
 
 // DELETE /api/tasks/:id

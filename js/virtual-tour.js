@@ -799,54 +799,20 @@ var VirtualTour = (function () {
 
   function startWithRole(role) { start(role); }
 
-  /* ── mini music player ── */
-  var audioCtx = null;
-  var musicPlaying = false;
-  var musicNodes = [];
-
+  /* ── music: soft melody via YaranMusic ── */
   function startMusic() {
-    if (musicPlaying) return;
-    try {
-      audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
-      var master = audioCtx.createGain();
-      master.gain.value = 0.06;
-      master.connect(audioCtx.destination);
-
-      /* soft pad chord: C major spread */
-      [261.63, 329.63, 392.00, 523.25].forEach(function (freq, i) {
-        var osc = audioCtx.createOscillator();
-        var g = audioCtx.createGain();
-        osc.type = 'sine';
-        osc.frequency.value = freq;
-        g.gain.value = 0;
-        g.gain.linearRampToValueAtTime(0.15, audioCtx.currentTime + 2 + i * 0.5);
-        osc.connect(g);
-        g.connect(master);
-        osc.start(audioCtx.currentTime + i * 0.5);
-        musicNodes.push({ osc: osc, gain: g });
-      });
-
-      musicPlaying = true;
-    } catch (e) { }
+    window.YaranMusic && window.YaranMusic.start('tour');
   }
 
   function stopMusic() {
-    if (!musicPlaying) return;
-    musicNodes.forEach(function (n) {
-      try {
-        n.gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 1);
-        n.osc.stop(audioCtx.currentTime + 1.5);
-      } catch (e) { }
-    });
-    musicNodes = [];
-    musicPlaying = false;
+    window.YaranMusic && window.YaranMusic.stop();
   }
 
   function toggleMusic() {
-    if (musicPlaying) stopMusic();
+    if (window.YaranMusic && window.YaranMusic.isPlaying()) stopMusic();
     else startMusic();
     var btn = document.querySelector('[data-vt="music"]');
-    if (btn) btn.textContent = musicPlaying ? '🔊' : '🔇';
+    if (btn) btn.textContent = (window.YaranMusic && window.YaranMusic.isPlaying()) ? '🔊' : '🔇';
   }
 
   return { start: start, exit: exit, startWithRole: startWithRole };
