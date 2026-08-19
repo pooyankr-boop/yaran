@@ -2,11 +2,24 @@
    Render/هاست رایگان: یک پروسه → سرور API + ربات تلگرام
    هر دو را همزمان اجرا میکند (Render free = 1 instance)
    ══════════════════════════════════════════════════════════════ */
-const { spawn } = require('child_process');
+const { spawn, execSync } = require('child_process');
 const path = require('path');
+const fs = require('fs');
+
+const botDir = path.join(__dirname, '..', 'telegram-bot');
+
+// Render فقط server/ را npm install میکند — ربات را هم نصب کن
+if (!fs.existsSync(path.join(botDir, 'node_modules'))) {
+  console.log('[start-all] installing telegram-bot deps...');
+  try {
+    execSync('npm install --omit=dev', { cwd: botDir, stdio: 'inherit' });
+  } catch (e) {
+    console.error('[start-all] bot install failed:', e.message);
+    process.exit(1);
+  }
+}
 
 const server = spawn(process.execPath, [path.join(__dirname, 'index.js')], { stdio: 'inherit' });
-const botDir = path.join(__dirname, '..', 'telegram-bot');
 const bot = spawn(process.execPath, [path.join(botDir, 'bot.js')], { stdio: 'inherit', cwd: botDir });
 
 function killAll() {
