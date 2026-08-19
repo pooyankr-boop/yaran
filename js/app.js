@@ -555,11 +555,10 @@ function openMiniPlayer(item) {
   if (!player) return;
 
   var src = _resolveAudioSrc(item);
-  if (!src) {
-    // No local audio file (castbox blocks direct mp3). Open the page in a new tab
-    // and still show the player panel with a direct link so playback is reachable.
-    if (item.url) window.open(item.url, '_blank');
-    _miniPlayerState.queue.push(item);
+    if (!src) {
+      // No direct audio file (castbox blocks direct mp3). Show the mini player
+      // with a fallback link — no auto popup (browsers block them anyway).
+      _miniPlayerState.queue.push(item);
     _miniPlayerState.currentIndex = _miniPlayerState.queue.length - 1;
     _updateMiniPlayerUI();
     var player = document.getElementById('mini-player');

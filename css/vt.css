@@ -72,8 +72,10 @@
 .vt-two-col-media img { width: 100%; max-height: 60vh; object-fit: contain; border-radius: 14px; box-shadow: 0 4px 20px rgba(0,0,0,.12); background: rgba(0,0,0,.05); }
 
 /* ── Tip box top-right (mirrored from lobby) ── */
-.vt-tip-top { position: fixed; top: 60px; left: 15px; width: 300px; max-height: 160px; overflow-y: auto; background: rgba(255,255,255,.85); backdrop-filter: blur(12px); border: 1px solid rgba(139,115,85,.12); border-radius: 16px; padding: 12px 16px; z-index: 30; box-shadow: 0 4px 24px rgba(0,0,0,.08); }
+.vt-tip-top { position: fixed; top: 60px; left: 15px; width: 300px; max-height: 160px; overflow-y: auto; background: rgba(255,255,255,.92); backdrop-filter: blur(12px); border: 1px solid rgba(255,184,77,.45); border-radius: 16px; padding: 12px 16px; z-index: 40; box-shadow: 0 4px 24px rgba(0,0,0,.12); }
 .vt-tip-top .tip-header { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+.vt-tip-top .vt-tip-close { margin-right: auto; background: none; border: none; cursor: pointer; font-size: .8rem; color: #a09080; padding: 2px 6px; border-radius: 8px; }
+.vt-tip-top .vt-tip-close:hover { background: rgba(0,0,0,.06); color: #5a4030; }
 .vt-tip-top .tip-icon { font-size: 1.2rem; }
 .vt-tip-top .tip-title { font-size: .78rem; font-weight: 700; color: #8b6020; }
 .vt-tip-top .tip-body { font-size: .75rem; color: #5a4030; line-height: 1.6; }
@@ -163,7 +165,7 @@
 .vt-cd-desc { font-size: .88rem; color: #3a2810; line-height: 1.8; }
 .vt-cd-materials { font-size: .85rem; color: #5a4030; line-height: 1.7; }
 .vt-cd-steps { list-style: none; padding: 0; }
-.vt-cd-steps li { position: relative; padding: 6px 0 6px 28px; font-size: .85rem; color: #3a2810; line-height: 1.7; }
+.vt-cd-steps li { position: relative; padding: 6px 28px 6px 0; font-size: .85rem; color: #3a2810; line-height: 1.7; }
 .vt-cd-steps li::before { content: counter(vt-step); counter-increment: vt-step; position: absolute; right: 0; top: 6px; width: 20px; height: 20px; background: linear-gradient(135deg, #ffb84d, #f0960f); color: #fff; border-radius: 50%; font-size: .65rem; font-weight: 700; display: flex; align-items: center; justify-content: center; }
 .vt-cd-steps { counter-reset: vt-step; }
 .vt-cd-safety { border-color: rgba(220,120,60,.2); background: rgba(255,200,100,.1); }
@@ -192,7 +194,7 @@
 .vt-tip-box-title { font-size: .68rem; font-weight: 700; color: #8b6020; margin-bottom: 3px; }
 .vt-tip-box-text { font-size: .72rem; color: #3a2810; line-height: 1.5; }
 .vt-tip-box-source { font-size: .6rem; color: #a09080; margin-top: 3px; }
-.vt-taskboard { position: static !important; width: auto !important; max-width: 300px; max-height: 120px; overflow-y: auto; background: rgba(255,255,255,.6) !important; border: 1px solid rgba(139,115,85,.1) !important; margin: 0 !important; box-shadow: none !important; }
+.vt-taskboard { position: absolute !important; bottom: 76px !important; left: 15px !important; right: auto !important; width: 340px !important; max-width: 340px !important; max-height: 200px; overflow-y: auto; background: rgba(255,255,255,.85) !important; border: 1px solid rgba(139,115,85,.12) !important; box-shadow: 0 4px 24px rgba(0,0,0,.08) !important; }
 
 /* ── 11. Progress ── */
 .vt-progress-bar-wrap { flex-shrink: 0; width: 120px; text-align: center; }
@@ -240,9 +242,48 @@
   .vt-two-col-media img { max-height: 40vh; }
   .vt-cd-desc { font-size: .95rem; }
   .vt-room-nav { gap: 4px; }
+  /* floating chrome joins the content flow on mobile → nothing covers the slideshow */
+  .vt-tip-top { position: relative; top: auto; left: auto; width: auto; max-height: none; margin: 0 0 12px; z-index: auto; }
+  .vt-taskboard { position: relative !important; left: auto !important; right: auto !important; bottom: auto !important; width: auto !important; max-height: 140px; margin: 14px 0 0; }
 }
 @media (max-width: 480px) {
-  .vt-top-inner { flex-wrap: wrap; }
+  .vt-top-inner { flex-wrap: wrap; gap: 8px; row-gap: 6px; }
   .vt-tags { gap: 3px; }
   .vt-tag { font-size: .62rem; padding: 2px 7px; }
 }
+
+/* ══════════ Themes: variables → recolor glass, bars, boxes, menus, board ══════════ */
+#screen-tour { --t-glass: rgba(255,255,255,.12); --t-panel: rgba(255,255,255,.92); --t-soft: rgba(255,255,255,.6); --t-text: #3a2a1a; --t-muted: #a09080; --t-accent: #ffb84d; --t-line: rgba(139,115,85,.12); }
+#screen-tour.vt-theme-blue { --t-glass: rgba(120,160,255,.28); --t-panel: rgba(235,242,255,.95); --t-soft: rgba(220,235,255,.7); --t-text: #16304d; --t-muted: #6a7f9a; --t-accent: #5ba3e6; --t-line: rgba(60,110,200,.18); }
+#screen-tour.vt-theme-dark  { --t-glass: rgba(15,15,25,.62); --t-panel: rgba(28,28,40,.94); --t-soft: rgba(40,40,55,.75); --t-text: #e8e6ef; --t-muted: #9a97ad; --t-accent: #8f7bff; --t-line: rgba(255,255,255,.12); }
+#screen-tour.vt-theme-pink  { --t-glass: rgba(255,150,180,.28); --t-panel: rgba(255,240,244,.96); --t-soft: rgba(255,225,232,.75); --t-text: #5a2138; --t-muted: #b08a9a; --t-accent: #e06a9a; --t-line: rgba(220,90,130,.18); }
+
+#screen-tour .vt-glass { background: var(--t-glass); color: var(--t-text); }
+#screen-tour .vt-top-bar { background: var(--t-panel); color: var(--t-text); }
+#screen-tour .vt-tb-btn { color: var(--t-text); }
+#screen-tour .vt-content { color: var(--t-text); }
+#screen-tour .vt-content-inner { color: var(--t-text); }
+#screen-tour .vt-content-detail { color: var(--t-text); }
+#screen-tour .vt-tib { color: var(--t-text); }
+#screen-tour .vt-tip-top { background: var(--t-panel); color: var(--t-text); border-color: var(--t-accent); }
+#screen-tour .vt-tip-top .tip-body { color: var(--t-text); }
+#screen-tour .vt-tip-top .tip-title { color: var(--t-accent); }
+#screen-tour .vt-tip-top .vt-tip-close { color: var(--t-muted); }
+#screen-tour .vt-taskboard { background: var(--t-panel) !important; color: var(--t-text) !important; border-color: var(--t-line) !important; }
+#screen-tour .vt-taskboard .tb-header { background: var(--t-panel); color: var(--t-text); }
+#screen-tour .vt-taskboard .tb-tabs { background: var(--t-panel); color: var(--t-text); }
+#screen-tour .vt-taskboard .tb-task { background: var(--t-soft); color: var(--t-text); }
+#screen-tour .vt-room-sidebar { background: var(--t-panel); color: var(--t-text); border-color: var(--t-line); }
+#screen-tour .vt-room-sidebar .vt-rl-header { color: var(--t-text); }
+#screen-tour .vt-room-sidebar .vt-rl-close { color: var(--t-muted); }
+#screen-tour .vt-room-sidebar .vt-rl-item { color: var(--t-text); }
+#screen-tour .vt-room-sidebar .vt-rl-active { background: var(--t-accent); color: #fff; }
+#screen-tour .vt-cd-breadcrumb { background: var(--t-soft); color: var(--t-muted); }
+#screen-tour .vt-cd-section { background: var(--t-soft); color: var(--t-text); }
+#screen-tour .vt-cd-badge { color: var(--t-accent); }
+#screen-tour .vt-stat-chip { color: var(--t-accent); }
+#screen-tour .vt-item-row { background: var(--t-soft); color: var(--t-text); border-color: var(--t-line); }
+#screen-tour .vt-sc-title { color: var(--t-text); }
+#screen-tour .vt-sc-desc { color: var(--t-text); }
+#screen-tour .vt-bottom-row { background: var(--t-panel); }
+#screen-tour .vt-nav-btn { background: var(--t-panel); color: var(--t-text); }

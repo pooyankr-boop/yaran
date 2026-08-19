@@ -33,6 +33,12 @@ const AUDIO_LIBRARY = buildAudioLibrary();
 
 // Merge into ARCHIVE_DATA so audio episodes appear in archive/search/room views.
 if (typeof ARCHIVE_DATA !== "undefined" && ARCHIVE_DATA) {
+  // drop legacy castbox rows (generic titles "اپیزود …", no id, empty desc) —
+  // the full dataset below carries real titles/links/descriptions.
+  for (var i = ARCHIVE_DATA.length - 1; i >= 0; i--) {
+    var a = ARCHIVE_DATA[i];
+    if (a.source === "کستباکس" && !a.id) ARCHIVE_DATA.splice(i, 1);
+  }
   // avoid duplicates by id
   const existing = new Set(ARCHIVE_DATA.map(function (a) { return a.id; }));
   AUDIO_LIBRARY.forEach(function (a) {

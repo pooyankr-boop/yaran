@@ -29,8 +29,16 @@ function openMediaModal(item) {
         showItemDetails(item, "");
         return;
       }
-      // فایلهای صوتی/تصویری که pdf تگ شدهاند (تزریق MAHD) → مینیپلیر
-      if (/\.(mp4|webm|m4a|mp3|ogg|wav)(\?|#|$)/i.test(item.url || "")) {
+      // فایل‌های ویدیویی که pdf تگ شده‌اند (تزریق MAHD) → پخش در پنجره با <video>
+            if (/\.(mp4|webm)(\?|#|$)/i.test(item.url || "")) {
+              body.innerHTML = '<div class="media-iframe-wrap"><video src="' + item.url + '" controls autoplay class="media-frame-video" style="width:100%;max-height:75vh;border-radius:14px;background:#000"></video></div>';
+              actions.innerHTML = '<a href="' + item.url + '" target="_blank" class="pill-btn">📥 دانلود ویدیو</a>';
+              modal.classList.remove("hidden");
+              modal.classList.add("active");
+              return;
+            }
+            // فایل‌های صوتی که pdf تگ شده‌اند (تزریق MAHD) → مینی‌پلیر
+            if (/\.(m4a|mp3|ogg|wav)(\?|#|$)/i.test(item.url || "")) {
         if (typeof openMiniPlayer === "function") {
           openMiniPlayer(item);
           modal.classList.add("hidden");
@@ -45,8 +53,12 @@ function openMediaModal(item) {
         ? '<div id="pdfjs-status">در حال بارگذاری PDF...</div><canvas id="pdfjs-canvas"></canvas>'
         : '<div class="pdf-iframe-wrap"><iframe src="' + item.url + '#toolbar=1&view=FitH" class="media-iframe" title="' + item.title + '"></iframe></div>') +
       '</div>';
-    actions.innerHTML = '<a href="' + item.url + '" target="_blank" class="pill-btn">📥 دانلود</a>';
-    if (canProxy) loadPdfIntoCanvas(item.url);
+    actions.innerHTML =
+          '<button class="pill-btn" id="pdf-prev">◀ صفحه قبلی</button>' +
+          '<span class="pill-btn" id="pdf-page-indicator" style="cursor:default">…</span>' +
+          '<button class="pill-btn" id="pdf-next">صفحه بعدی ▶</button>' +
+          '<a href="' + item.url + '" target="_blank" class="pill-btn">📥 دانلود</a>';
+        if (canProxy) loadPdfIntoCanvas(item.url);
   } else if (item.type === "video") {
       // ویدیوی محلی → مینیپلیر؛ ویدیوی خارجی (یوتیوب/امبد) → iframe
       if (/\.(mp4|webm)(\?|#|$)/i.test(item.url || "")) {
@@ -193,21 +205,11 @@ function readerPrev() {
 }
 
 function readerPrint() {
-  const img = readerImages[readerIndex];
-  if (!img) return;
-  const title = String(readerItem.title || '').replace(/</g, '&lt;');
-  const src = String(img.url || '').replace(/"/g, '&quot;');
-  const w = window.open("", "_blank");
+  const url = readerItem.url || (readerImages[readerIndex] && readerImages[readerIndex].url);
+  if (!url) return;
+  const w = window.open(url, "_blank");
   if (!w) return;
-  var doc = w.document;
-  doc.title = title;
-  var style = doc.createElement('style');
-  style.textContent = 'body{margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh}img{max-width:100%;max-height:90vh}@media print{img{max-width:100%}}';
-  doc.head.appendChild(style);
-  var imgEl = doc.createElement('img');
-  imgEl.src = src;
-  doc.body.appendChild(imgEl);
-  w.print();
+  setTimeout(function () { w.print(); }, 700);
 }
 
 function readerZoom() {

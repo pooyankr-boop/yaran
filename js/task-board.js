@@ -102,7 +102,17 @@ var TaskBoard = (function () {
     function renderTasks(tasks) {
       if (!tasks) return '<div class="tb-empty"><div class="tb-empty-text">در حال بارگذاری…</div></div>';
       var pending = tasks.filter(function (t) { return t.status === 'pending' || t.status === 'in_progress' || t.status === 'open'; });
+      /* جدیدترین اول (created_at نزولی) — تسکهای بدون تاریخ آخر بمانند */
+      var byNew = function (a, b) {
+        var ta = a.created_at || '', tb = b.created_at || '';
+        if (ta === tb) return 0;
+        if (!ta) return 1;
+        if (!tb) return -1;
+        return ta < tb ? 1 : -1;
+      };
+      pending.sort(byNew);
       var done = tasks.filter(function (t) { return t.status === 'done' || t.status === 'completed'; });
+      done.sort(byNew);
       var h = '';
       if (pending.length) {
         h += '<div class="tb-section"><div class="tb-section-title">⏳ در حال انجام (' + pending.length + ')</div>';
@@ -156,7 +166,7 @@ var TaskBoard = (function () {
           else if (a === 'close') container.classList.add('tb-hidden');
           else if (a === 'refresh') fetch();
           else if (a === 'pin') togglePin();
-          else if (a === 'maximize') container.classList.toggle('tb-maximized');
+          else if (a === 'maximize') toggleMax();
           else if (a === 'clear-done') {
             if (!window.confirm('همه وظایف انجامشده حذف شوند؟')) return;
             var x = new XMLHttpRequest();
@@ -187,9 +197,24 @@ var TaskBoard = (function () {
       if (pinHost) pinHost.appendChild(container);
       container.classList.remove('tb-pinned');
     } else {
+      /* پین با ماکسیمایز ناسازگار است — فقط یکی فعال */
+      container.classList.remove('tb-maximized');
       pinHost = container.parentNode;
       document.body.appendChild(container);
       container.classList.add('tb-pinned');
+    }
+  }
+  function toggleMax() {
+    if (container.classList.contains('tb-maximized')) {
+      container.classList.remove('tb-maximized');
+    } else {
+      if (container.classList.contains('tb-pinned')) {
+        if (pinHost) pinHost.appendChild(container);
+        container.classList.remove('tb-pinned');
+      } else {
+        pinHost = container.parentNode;
+      }
+      container.classList.add('tb-maximized');
     }
   }
 
@@ -237,15 +262,28 @@ var TaskBoard = (function () {
   }
 
   return {
-    init: function (id) {
-      /* اگر تخته قبلی پین شده بود، برگردانش — فقط یک تخته پین در هر لحظه */
-      if (container && container.classList.contains('tb-pinned') && pinHost) {
-        pinHost.appendChild(container);
-        container.classList.remove('tb-pinned');
+      init: function (id) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        /* همواره یک تخته: اگر همین تخته فعال است، کاری نکن (رندرهای مکرر تور دوباره init میکنند) */
+        if (container === el) return;
+      /* فقط یک تخته فعال در هر لحظه:
+         - تخته قبلی پین‌شده → روی body می‌ماند، جایگاه جدید را برای بازگشت پین ثبت کن
+         - تخته قبلی عادی → مخفی کن */
+      if (container && container !== el) {
+        if (container.classList.contains('tb-pinned')) {
+          pinHost = el;
+          container = el;
+          el.classList.remove('tb-hidden');
+          fetch();
+          if (timer) clearInterval(timer);
+          timer = setInterval(fetch, 180000);
+          return;
+        }
+        container.classList.add('tb-hidden');
       }
-      container = document.getElementById(id);
-      if (!container) return;
-      container.classList.remove('tb-hidden');
+      container = el;
+      el.classList.remove('tb-hidden');
       showEmpty('در حال بارگذاری...');
       fetch();
       if (timer) clearInterval(timer);

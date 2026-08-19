@@ -1579,3 +1579,37 @@ body.theme-night .slideshow-caption { color: #b8a8d0 !important; }
 @media (max-width: 600px) {
   .content-card-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
 }
+
+/* ===== Mobile redesign: lobby / map / plan (max-width 768px) ===== */
+@media (max-width: 768px) {
+  /* fixed-stage screens become scrollable so boxes never overlap */
+  #screen-lobby, #screen-map, #screen-plan { overflow-y: auto; }
+  #screen-lobby { padding-bottom: 24px; }
+  #screen-lobby .scene, #screen-map .scene, #screen-plan .scene { height: auto; min-height: 100%; }
+
+  /* lobby: sticky top bar, boxes stack in document flow */
+  #screen-lobby .top-bar { position: sticky; top: 0; z-index: 40; padding: .5rem .6rem; background: linear-gradient(rgba(0,0,0,.28), rgba(0,0,0,0)); }
+  #screen-lobby .scene-caption { position: relative; top: auto; right: auto; transform: none; margin: 70px auto 0; width: max-content; max-width: 92%; font-size: .95rem; white-space: normal; text-align: center; }
+  .tip-nav { flex-wrap: wrap; gap: .5rem; }
+  .tip-nav .pill-btn { padding: 4px 8px; }
+  .lobby-tip-box { position: relative; top: auto; left: auto; width: calc(100% - 20px); margin: 12px auto 0; max-height: none; }
+  .lobby-slideshow-box { position: relative; top: auto; right: auto; width: calc(100% - 20px); margin: 12px auto 0; max-height: none; }
+  .slideshow-body { height: 190px; }
+  .lobby-bottom { position: relative; bottom: auto; left: auto; transform: none; margin: 14px auto; display: flex; flex-direction: column; gap: .5rem; width: calc(100% - 20px); align-items: stretch; }
+  .lobby-bottom .btn { width: 100%; font-size: 1rem; padding: .7rem 1rem; }
+  /* lobby task board joins the flow (id beats .task-board-light in task-board.css) */
+  #lobby-task-board { position: relative; right: auto; bottom: auto; width: calc(100% - 20px); margin: 8px auto 20px; max-height: 260px; }
+
+  /* map: smaller static circles (hover grow is desktop-only) */
+  #screen-map .top-bar { position: sticky; top: 0; z-index: 40; padding: .5rem .6rem; background: linear-gradient(rgba(0,0,0,.28), rgba(0,0,0,0)); }
+  .map-circle, .map-circle:hover { --d: 56px; }
+  .map-circle { box-shadow: 0 2px 8px rgba(0,0,0,.3); }
+  .circle-slides { display: none; }
+  .circle-ring { opacity: 0 !important; }
+  .circle-name { font-size: .55rem; bottom: -16px; }
+
+  /* plan: compact doors */
+  #screen-plan .top-bar { position: sticky; top: 0; z-index: 40; padding: .5rem .6rem; }
+  .door-hotspot .door-icon { width: 36px; height: 36px; font-size: 1rem; }
+  .door-hotspot .door-label { font-size: .75rem; }
+}

@@ -45,7 +45,7 @@ var VirtualTour = (function () {
     phase: 'overview', vi: 0, hi: 0, ci: 0,
     items: [], playing: true, shuffleMode: 'all',
     filters: { pdf: true, video: true, audio: true, game: true, activity: true, story: true, song: true },
-    timer: null, role: 'مربی', kbIndex: 0, tipUsed: {}, sidebarOpen: false
+    timer: null, role: 'مربی', kbIndex: 0, tipUsed: {}, sidebarOpen: false, tipClosed: false
   };
 
   /* ── helpers ── */
@@ -259,6 +259,8 @@ var VirtualTour = (function () {
     document.querySelectorAll('.screen').forEach(function (s) { s.classList.remove('active'); });
     var lobby = $('screen-lobby');
     if (lobby) lobby.classList.add('active');
+    /* برگرداندن تخته لابی (تور تختهی خودش را فعال کرده بود) */
+    if (typeof TaskBoard !== 'undefined') TaskBoard.init('lobby-task-board');
     if (typeof TaskBoard !== 'undefined') TaskBoard.refresh();
   }
 
@@ -282,22 +284,10 @@ var VirtualTour = (function () {
   function toggleTheme() {
     themeIdx = (themeIdx + 1) % THEMES.length;
     var t = THEMES[themeIdx];
-    var glass = $('vt-glass');
-    if (!glass) return;
-    glass.className = 'vt-glass vt-theme-' + t;
-    if (t === 'dark') {
-      glass.style.background = 'rgba(20,20,30,.55)';
-      glass.style.color = '#eee';
-    } else if (t === 'blue') {
-      glass.style.background = 'rgba(180,210,255,.3)';
-      glass.style.color = '#1a2a40';
-    } else if (t === 'pink') {
-      glass.style.background = 'rgba(255,200,210,.3)';
-      glass.style.color = '#402030';
-    } else {
-      glass.style.background = '';
-      glass.style.color = '';
-    }
+    var st = document.getElementById('screen-tour');
+    if (!st) return;
+    ['light', 'blue', 'dark', 'pink'].forEach(function (c) { st.classList.remove('vt-theme-' + c); });
+    st.classList.add('vt-theme-' + t);
     var btn = document.querySelector('[data-vt="theme"]');
     if (btn) btn.textContent = THEME_LABELS[t] || '🎨';
   }
@@ -325,11 +315,14 @@ var VirtualTour = (function () {
 
   function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 
-  /* ── tip box top-left (mirrored from lobby) ── */
+  /* ── tip box top-left (mirrored from lobby, closable) ── */
   function renderTipTop(el) {
     if (!el) return;
+    if (state.tipClosed) { el.style.display = 'none'; return; }
+    el.style.display = '';
     var tip = pickTip();
-    el.innerHTML = '<div class="tip-header"><span class="tip-icon">💡</span><span class="tip-title">نکته ' + esc(tip.cat) + '</span></div>' +
+    el.innerHTML = '<div class="tip-header"><span class="tip-icon">💡</span><span class="tip-title">نکته روز</span>' +
+      '<button class="vt-tip-close" data-vt="tip-close" title="بستن نکته">✕</button></div>' +
       '<div class="tip-body">' + esc(tip.text) + '</div>' +
       '<div style="font-size:.6rem;color:#a09080;margin-top:4px">— ' + esc(tip.src) + '</div>';
   }
@@ -398,6 +391,14 @@ var VirtualTour = (function () {
       TaskBoard.init('vt-task-board');
     }
 
+    /* mobile: pull floating tip/taskboard into the content flow so they never cover the slideshow */
+    if (window.innerWidth <= 768 && contentEl) {
+      var cEl2 = contentEl;
+      var tEl = $('vt-tip-top'), bEl = $('vt-task-board');
+      if (tEl && tEl.parentElement !== cEl2) cEl2.insertBefore(tEl, cEl2.firstChild);
+      if (bEl && bEl.parentElement !== cEl2) cEl2.appendChild(bEl);
+    }
+
     /* ── Ken burns ── */
     updateKenBurns();
   }
@@ -424,16 +425,16 @@ var VirtualTour = (function () {
     html += '<button class="vt-tb-btn vt-tb-exit" data-vt="exit">✕</button>';
     /* room list toggle — next to exit */
     html += '<button class="vt-tb-btn vt-tb-list-toggle" data-vt="sidebar">☰ فهرست</button>';
-    /* prev room */
-    html += '<button class="vt-tb-btn" data-vt="prev-room" title="اتاق قبلی">⏮</button>';
-    /* prev */
-    html += '<button class="vt-tb-btn" data-vt="prev" title="قبلی">▶▶</button>';
-    /* play/pause */
-    html += '<button class="vt-tb-btn vt-tb-play" data-vt="play">' + (state.playing ? '⏸' : '▶') + '</button>';
-    /* next */
-    html += '<button class="vt-tb-btn" data-vt="next" title="بعدی">◀◀</button>';
     /* next room */
     html += '<button class="vt-tb-btn" data-vt="next-room" title="اتاق بعدی">⏭</button>';
+    /* next — in RTL the forward button sits right of play */
+    html += '<button class="vt-tb-btn" data-vt="next" title="بعدی">◀◀</button>';
+    /* play/pause */
+    html += '<button class="vt-tb-btn vt-tb-play" data-vt="play">' + (state.playing ? '⏸' : '▶') + '</button>';
+    /* prev — in RTL the back button sits left of play */
+    html += '<button class="vt-tb-btn" data-vt="prev" title="قبلی">▶▶</button>';
+    /* prev room */
+    html += '<button class="vt-tb-btn" data-vt="prev-room" title="اتاق قبلی">⏮</button>';
     /* shuffle */
     var shLabel = state.shuffleMode === 'all' ? '🔀 تصادفی' : state.shuffleMode === 'rooms' ? '📋 ترتیبی' : '➡️ ثابت';
     html += '<button class="vt-tb-btn vt-tb-shuffle" data-vt="shuffle">' + shLabel + '</button>';
@@ -682,6 +683,16 @@ var VirtualTour = (function () {
 
   function bindEvents() {
     var glass = $('vt-glass');
+    /* tip-top lives OUTSIDE #vt-glass → needs its own closer */
+    var tipTop = $('vt-tip-top');
+    if (tipTop) {
+      tipTop.addEventListener('click', function (e) {
+        if (e.target.closest('[data-vt="tip-close"]')) {
+          state.tipClosed = true;
+          tipTop.style.display = 'none';
+        }
+      });
+    }
     if (glass) {
       glass.addEventListener('click', function (e) {
         var btn = e.target.closest('[data-vt]');
@@ -698,6 +709,11 @@ var VirtualTour = (function () {
           case 'sidebar': toggleSidebar(); break;
           case 'theme': toggleTheme(); break;
           case 'music': toggleMusic(); break;
+          case 'tip-close':
+            state.tipClosed = true;
+            var tipEl = $('vt-tip-top');
+            if (tipEl) tipEl.style.display = 'none';
+            break;
           case 'restart': start(); break;
           case 'tag':
             var tag = btn.getAttribute('data-tag');
@@ -713,6 +729,13 @@ var VirtualTour = (function () {
     var sidebar = $('vt-room-list');
     if (sidebar) {
       sidebar.addEventListener('click', function (e) {
+        var closeBtn = e.target.closest && e.target.closest('[data-vt="sidebar"]');
+        if (closeBtn) {
+          /* دکمه بستن (✕) داخل سایدبار — خارج از vt-glass است، اینجا handle می‌شود */
+          state.sidebarOpen = false;
+          sidebar.classList.remove('vt-rl-open');
+          return;
+        }
         var item = e.target.closest('[data-vt="jump"]');
         if (!item) return;
         var idx = parseInt(item.getAttribute('data-ri'), 10);

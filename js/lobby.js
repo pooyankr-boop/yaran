@@ -108,12 +108,18 @@ function startSlideshow() { clearInterval(slideTimer); slideTimer = setInterval(
 /* آب‌المزرده */
 document.getElementById("tip-next").addEventListener("click", function() { nextTip(); startTipRotation(); });
 document.getElementById("tip-prev").addEventListener("click", function() { prevTip(); startTipRotation(); });
+var _tipBox = document.getElementById("lobby-tip-box");
+var _tipClose = document.getElementById("tip-close");
+if (_tipBox && _tipClose) _tipClose.addEventListener("click", function() { _tipBox.style.display = "none"; });
 document.getElementById("tip-share").addEventListener("click", function() {
   var tip = PARENTING_TIPS[tipIndex];
   if (navigator.share) navigator.share({ title: 'نکته فرزندپروری یاران', text: tip.cat + ': ' + tip.text });
 });
 document.getElementById("slide-next").addEventListener("click", function() { nextSlide(); startSlideshow(); });
 document.getElementById("slide-prev").addEventListener("click", function() { prevSlide(); startSlideshow(); });
+var _slideBox = document.getElementById("lobby-slideshow-box");
+var _slideClose = document.getElementById("slide-close");
+if (_slideBox && _slideClose) _slideClose.addEventListener("click", function() { _slideBox.style.display = "none"; });
 document.getElementById("slide-share").addEventListener("click", function() {
   if (slideshowItems.length === 0) return;
   var item = slideshowItems[slideIndex];

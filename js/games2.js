@@ -472,7 +472,7 @@ var Games2 = (function() {
     clean(c);c.style.cssText += 'background:#f5f0e8;border-radius:16px;padding:16px;overflow:hidden';
     var story=['🌅 صبح شد','🧒 کودک از خواب بیدار شد','🪥 مسواک زد','🥣 صبحانه خورد','📚 به مهدکودک رفت','👫 با دوستان بازی کرد','🎨 نقاشی کشید','🍽️ ناهار خورد','😴 چُرت زد','🏠 به خانه برگشت','📖 قصه شنید','🌙 خوابید'];
     var shuffled=shuffle(story.slice());
-    msg=document.createElement('div');msg.style.cssText='text-align:center;font-weight:700;font-size:1.1rem;color:#3d2f1f;margin-bottom:12px';msg.textContent='داستان را به ترتیب درست بچینید';c.appendChild(msg);
+    var msg=document.createElement('div');msg.style.cssText='text-align:center;font-weight:700;font-size:1.1rem;color:#3d2f1f;margin-bottom:12px';msg.textContent='داستان را به ترتیب درست بچینید';c.appendChild(msg);
     var list=document.createElement('div');list.style.cssText='display:flex;flex-direction:column;gap:6px;max-height:320px;overflow-y:auto;padding:4px';
     shuffled.forEach(function(s,i){var item=document.createElement('div');item.textContent=s;item.draggable=true;item.style.cssText='padding:10px 14px;background:#fff;border:2px solid #ddd;border-radius:10px;cursor:grab;font-size:1rem;display:flex;align-items:center;gap:8px';
     var num=document.createElement('span');num.textContent=i+1;num.style.cssText='min-width:24px;font-weight:700;color:#888';item.prepend(num);list.appendChild(item);});
