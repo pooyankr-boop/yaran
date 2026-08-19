@@ -3,8 +3,12 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; img-src 'self' https://somayehrouhi.ir data: blob:; connect-src 'self' https: http://localhost:* ws://localhost:*; font-src 'self' https://fonts.gstatic.com https://fonts.googleapis.com https://cdnjs.cloudflare.com; frame-src 'self' https://www.youtube.com https://somayehrouhi.ir;" />
 <title>مهدکودک و پیش‌دبستانی مجازی یاران</title>
+<link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin />
 <link rel="stylesheet" href="css/main.css" />
+<link rel="stylesheet" href="css/vt.css" />
+<link rel="stylesheet" href="css/task-board.css" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>
   if (window["pdfjsLib"]) {
@@ -166,13 +170,14 @@
 
 </head>
 <body>
+  <a href="#screen-lobby" class="sr-only" style="position:absolute;top:-100px;left:0;background:#fff;padding:8px;z-index:9999;">رفتن به محتوای اصلی</a>
 
   <!-- 1) اینترو -->
   <section id="screen-intro" class="screen active">
     <video id="intro-video" src="assets/video/intro1.mp4" autoplay muted loop playsinline></video>
     <div class="intro-overlay">
       <h1>به مهدکودک و پیش‌دبستانی مجازی یاران خوش آمدید</h1>
-      <button class="btn btn-glow" id="btn-enter">ورود به یاران 🧸</button>
+      <button class="btn btn-glow" id="btn-enter" aria-label="ورود به مهدکودک یاران">ورود به یاران 🧸</button>
     </div>
   </section>
 
@@ -182,7 +187,7 @@
       <img class="scene-bg" id="plan-img" src="assets/images/plan/hero.webp" alt="نقشه پلان مهدکودک یاران" />
       <div class="scene-caption">از کدام در وارد میشوید؟</div>
       <div class="top-bar">
-        <button class="pill-btn" id="plan-back-intro">↩ بازگشت</button>
+        <button class="pill-btn" id="plan-back-intro" aria-label="بازگشت به صفحه اینترو">↩ بازگشت</button>
         <div class="theme-toggle" id="theme-toggle-plan">
           <button class="theme-btn" data-theme="day" title="روز">☀️</button>
           <button class="theme-btn" data-theme="night" title="شب">🌙</button>
@@ -199,10 +204,10 @@
       <img class="scene-bg kenburns" src="assets/images/lobby/hero.webp" alt="لابی مهدکودک یاران" />
       <div class="scene-caption">به لابی یاران خوش آمدید</div>
       <div class="top-bar">
-        <button class="pill-btn" id="lobby-back-plan">↩ بازگشت به نقشه</button>
+        <button class="pill-btn" id="lobby-back-plan" aria-label="بازگشت به نقشه پلان">↩ بازگشت به نقشه</button>
         <div class="top-bar-left">
-          <button class="pill-btn" id="lobby-search">🔍 جستجو</button>
-          <button class="pill-btn" id="lobby-panel">👤 پنل کاربری</button>
+          <button class="pill-btn" id="lobby-search" aria-label="جستجوی محتوا">🔍 جستجو</button>
+          <button class="pill-btn" id="lobby-panel" aria-label="پنل کاربری">👤 پنل کاربری</button>
           <div class="theme-toggle" id="theme-toggle-lobby">
             <button class="theme-btn" data-theme="day" title="روز">☀️</button>
             <button class="theme-btn" data-theme="night" title="شب">🌙</button>
@@ -239,10 +244,13 @@
         <div class="slideshow-caption" id="slideshow-caption"></div>
       </div>
       <div class="lobby-bottom">
-        <button class="btn btn-glow" id="btn-goto-map">گشت‌وگذار در اتاق‌ها 🚪</button>
-        <button class="btn" id="btn-goto-games">بازی‌های بیشتر 🎮</button>
+        <button class="btn btn-glow" id="btn-goto-map" aria-label="گشت و گذار در اتاق‌ها">گشت‌وگذار در اتاق‌ها 🚪</button>
+        <button class="btn" id="btn-goto-games" aria-label="بازی‌های بیشتر">بازی‌های بیشتر 🎮</button>
+        <button class="btn" id="btn-virtual-tour" aria-label="گردش مجازی">🎬 گردش مجازی</button>
       </div>
     </div>
+    <!-- تخته پیگیری وظایف — outside .scene (overflow:hidden) -->
+    <div class="task-board task-board-light" id="lobby-task-board"></div>
   </section>
 
   <!-- 4) نقشه اتاقها -->
@@ -429,23 +437,31 @@
     </div>
   </div>
 
-<script src="js/api.js"></script>
-<script src="js/rooms.js"></script>
-<script src="js/mahd-content.js"></script>
-<script src="js/khaneh-yadgiri-desc.js"></script>
-<script src="js/archive-somayehrouhi.js"></script>
-<script src="js/castbox_episodes_full.js"></script>
-<script src="js/audio-library.js"></script>
-<script src="js/tour.js"></script>
-<script src="js/media.js"></script>
-<script src="js/explorer.js"></script>
-<script src="js/lobby.js"></script>
-<script src="js/games.js"></script>
-<script src="js/games2.js"></script>
-<script src="js/tags.js"></script>
-<script src="js/auth.js"></script>
-<script src="js/content.js"></script>
-<script src="js/app.js"></script>
+<script defer src="js/config.js">
+<script defer src="js/api.js"></script>
+<script defer src="js/rooms.js"></script>
+<script defer src="js/mahd-content.js"></script>
+<script defer src="js/corner-content.js"></script>
+<script defer src="js/room-fixes.js"></script>
+<script defer src="js/orphan-fix.js"></script>
+<script defer src="js/archive-hotspot-fix.js"></script>
+<script defer src="js/khaneh-yadgiri-desc.js"></script>
+<script defer src="js/archive-somayehrouhi.js"></script>
+<script defer src="js/castbox_episodes_full.js"></script>
+<script defer src="js/mahd-explorer-data.js"></script>
+<script defer src="js/audio-library.js"></script>
+<script defer src="js/tour.js"></script>
+<script defer src="js/media.js"></script>
+<script defer src="js/explorer.js"></script>
+<script defer src="js/lobby.js"></script>
+<script defer src="js/games.js"></script>
+<script defer src="js/games2.js"></script>
+<script defer src="js/tags.js"></script>
+<script defer src="js/auth.js"></script>
+<script defer src="js/content.js"></script>
+<script defer src="js/task-board.js"></script>
+<script defer src="js/app.js"></script>
+<script defer src="js/virtual-tour.js"></script>
 
   <!-- 10) Mini Player for Castbox audio -->
   <!-- 10) Mini Player for real audio playback -->
@@ -471,6 +487,24 @@
       <video id="mini-audio" preload="metadata"></video>
       <div class="mini-player-playlist" id="mini-playlist"></div>
     </div>
-  </div>
+    </div>
+
+    <!-- گردش مجازی — Virtual Tour Screen -->
+    <section id="screen-tour" class="screen">
+      <!-- Full-screen room image background -->
+      <div class="vt-bg-wrap" id="vt-bg-wrap"></div>
+      <!-- نکته روز — بالای صفحه سمت چپ (قرینه لابی) -->
+      <div class="vt-tip-top" id="vt-tip-top"></div>
+      <!-- Glass overlay -->
+      <div class="vt-glass" id="vt-glass">
+        <div id="vt-top-bar" class="vt-top-bar"></div>
+        <div id="vt-content" class="vt-content"></div>
+        <div id="vt-progress" class="vt-progress-bar-wrap"></div>
+      </div>
+      <!-- تخته پیگیری وظایف در گردش — same position as lobby -->
+      <div class="task-board task-board-light vt-taskboard" id="vt-task-board"></div>
+      <!-- Room list sidebar -->
+      <div class="vt-room-sidebar" id="vt-room-list"></div>
+    </section>
 </body>
 </html>

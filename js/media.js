@@ -24,6 +24,11 @@ function openMediaModal(item) {
   header.innerHTML = '<span>' + getTypeIcon(item.type) + '</span> — ' + item.title;
 
   if (item.type === "pdf") {
+      // PDF without URL and without image → show details
+      if (!item.url && !item.image) {
+        showItemDetails(item, "");
+        return;
+      }
       // فایلهای صوتی/تصویری که pdf تگ شدهاند (تزریق MAHD) → مینیپلیر
       if (/\.(mp4|webm|m4a|mp3|ogg|wav)(\?|#|$)/i.test(item.url || "")) {
         if (typeof openMiniPlayer === "function") {
@@ -40,7 +45,7 @@ function openMediaModal(item) {
         ? '<div id="pdfjs-status">در حال بارگذاری PDF...</div><canvas id="pdfjs-canvas"></canvas>'
         : '<div class="pdf-iframe-wrap"><iframe src="' + item.url + '#toolbar=1&view=FitH" class="media-iframe" title="' + item.title + '"></iframe></div>') +
       '</div>';
-    actions.innerHTML = '<a href="' + item.url + '" target="_blank" class="pill-btn" download>📥 دانلود</a>';
+    actions.innerHTML = '<a href="' + item.url + '" target="_blank" class="pill-btn">📥 دانلود</a>';
     if (canProxy) loadPdfIntoCanvas(item.url);
   } else if (item.type === "video") {
       // ویدیوی محلی → مینیپلیر؛ ویدیوی خارجی (یوتیوب/امبد) → iframe
@@ -53,7 +58,7 @@ function openMediaModal(item) {
         }
       }
       body.innerHTML = '<div class="media-iframe-wrap"><iframe src="' + item.url + '" class="media-iframe" allowfullscreen title="' + item.title + '"></iframe></div>';
-      actions.innerHTML = '<a href="' + item.url + '" target="_blank" class="pill-btn" download>📥 دانلود</a>';
+      actions.innerHTML = '<a href="' + item.url + '" target="_blank" class="pill-btn">📥 دانلود</a>';
     } else if (item.type === "audio") {
     // Route audio items to the real in-page mini player so the file actually plays.
     if (typeof openMiniPlayer === "function") {
@@ -146,7 +151,7 @@ function renderReaderPage(body, actions) {
   body.innerHTML =
     '<div class="media-reader">' +
     '<div class="media-reader-images">' +
-    '<img class="media-reader-img" src="' + img.url + '" alt="' + (img.title || readerItem.title) + '" />' +
+    '<img class="media-reader-img" src="' + img.url + '" alt="' + (img.title || readerItem.title) + '" loading="lazy" />' +
     navHtml +
     '</div>' +
     '<div class="media-reader-desc">' + descHtml + '</div>' +
@@ -154,8 +159,10 @@ function renderReaderPage(body, actions) {
 
   // Actions
   let actionsHtml = '';
-  if (readerItem.url) {
-    actionsHtml += '<a href="' + readerItem.url + '" target="_blank" class="pill-btn" download>📥 دانلود PDF</a>';
+  if (readerItem.url && !readerItem._noDownload && (!readerItem.type || readerItem.type === "pdf")) {
+    actionsHtml += '<a href="' + readerItem.url + '" target="_blank" class="pill-btn">📥 دانلود PDF</a>';
+  } else if (readerItem.image) {
+    actionsHtml += '<a href="' + readerItem.image + '" target="_blank" download="' + (readerItem.title || 'image') + '.jpg" class="pill-btn">📥 دانلود تصویر</a>';
   }
   actionsHtml += '<button class="pill-btn" onclick="readerPrint()">🖨️ پرینت</button>';
   if (readerItem.page) {
@@ -188,13 +195,18 @@ function readerPrev() {
 function readerPrint() {
   const img = readerImages[readerIndex];
   if (!img) return;
+  const title = String(readerItem.title || '').replace(/</g, '&lt;');
+  const src = String(img.url || '').replace(/"/g, '&quot;');
   const w = window.open("", "_blank");
-  w.document.write('<html><head><title>' + readerItem.title + '</title>');
-  w.document.write('<style>body{margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;}img{max-width:100%;max-height:90vh;}@media print{img{max-width:100%;}}</style>');
-  w.document.write('</head><body>');
-  w.document.write('<img src="' + img.url + '" />');
-  w.document.write('</body></html>');
-  w.document.close();
+  if (!w) return;
+  var doc = w.document;
+  doc.title = title;
+  var style = doc.createElement('style');
+  style.textContent = 'body{margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh}img{max-width:100%;max-height:90vh}@media print{img{max-width:100%}}';
+  doc.head.appendChild(style);
+  var imgEl = doc.createElement('img');
+  imgEl.src = src;
+  doc.body.appendChild(imgEl);
   w.print();
 }
 
@@ -226,7 +238,7 @@ async function loadPdfIntoCanvas(url) {
     pdfDoc = await loadingTask.promise;
     await renderPdfPage(pdfPageNum);
   } catch (e) {
-    console.warn("PDF.js failed to load:", e);
+    /* silent */
     if (statusEl) statusEl.textContent = "نمایش زنده‌ی این فایل ممکن نشد؛ از دکمه‌ی دانلود استفاده کنید.";
   }
 }

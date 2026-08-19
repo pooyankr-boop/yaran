@@ -26,6 +26,23 @@ ENV/
 .DS_Store
 Thumbs.db
 
+# Local agent workspaces
+.agents/
+.claude/
+.hermes/
+
+# Environment
+.env
+.env.*
+
+# Runtime data (ephemeral — نسخه پایه tasks.json در ریپو می‌ماند)
+data/panel.json
+telegram-bot/yaran.db
+*.log
+
+# Server
+server/node_modules/
+
 # Large media - consider using Git LFS or external CDN
 # Uncomment if needed:
 # assets/video/*.mp4

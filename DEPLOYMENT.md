@@ -1,129 +1,94 @@
-# 🎯 Yaran Kindergarten - GitHub Deployment Ready
+# 🎯 یاران — راهنمای استقرار رایگان
 
-**Status:** ✅ Complete and ready for deployment
+پروژه ۳ بخش دارد:
+| بخش | تکنولوژی | هاست رایگان |
+|-----|----------|-------------|
+| **سایت** (HTML/CSS/JS استاتیک) | Vanilla JS | GitHub Pages |
+| **سرور API** (tasks, panel, WS) | Node.js + Express | Render (free) |
+| **ربات تلگرام** | Node.js + Telegraf | Render (free — با سرور یک‌جا) |
 
----
-
-## 📦 Package Summary
-
-| Metric | Value |
-|--------|-------|
-| **Total Size** | 12.58 MB |
-| **Total Files** | 75 |
-| **Location** | `D:\openclaw\Projects\Yaran Kindergarten\main\` |
-
-### File Breakdown
-- **HTML:** 1 file (index.html)
-- **CSS:** 1 file (main.css, 40KB)
-- **JavaScript:** 12 files (1.7MB total)
-- **Images:** 57 WebP thumbnails (6MB)
-- **Videos:** 2 intro videos (4.9MB)
-- **Docs:** README.md + .gitignore
+هزینه: ۰ تومان. هر دو سرویس سقف رایگان دارند.
 
 ---
 
-## 🚀 Deployment Steps
+## مرحله ۱ — ریپازیتوری گیت‌هاب
 
-### Option 1: GitHub Pages (Recommended)
+1. برو https://github.com/new
+2. نام: `yaran` — **Public** — بدون README (فایل‌ها همین‌جا هستند)
+3. Create repository
+
 ```bash
-# 1. Create new repository on GitHub
-gh repo create yaran-kindergarten --private
-
-# 2. Clone and copy
-cd D:\openclaw\Projects\Yaran Kindergarten\main
-git init
-git add .
-git commit -m "Initial deployment"
+cd D:/openclaw/Projects/yaran
+git remote remove origin        # اگر remote قدیمی هست
+git add -A
+git commit -m "Yaran v1 — site + server + bot"
 git branch -M main
-git remote add origin https://github.com/[username]/yaran-kindergarten.git
+git remote add origin https://github.com/نام‌کاربری‌تو/yaran.git
 git push -u origin main
-
-# 3. Enable GitHub Pages
-gh repo edit yaran-kindergarten --add-topic=yarden-kindergarten
-# Settings → Pages → Source: main branch → / (root)
 ```
 
-### Option 2: Manual Upload
-1. Zip the `main/` folder
-2. Upload to GitHub repository
-3. Enable Pages in repository settings
+> ⚠️ حجم ریپو ~۲۶۰MB (عکس‌ها). اولین push چند دقیقه طول می‌کشد.
+> فایل `.env` (توکن ربات) **در گیت نیست** — در .gitignore است.
 
 ---
 
-## 📁 Directory Structure
+## مرحله ۲ — سایت روی GitHub Pages
 
-```
-main/
-├── index.html                 # Entry point (10KB)
-├── README.md                  # This documentation
-├── .gitignore                 # Git ignore rules
-├── css/
-│   └── main.css              # All styles (40KB)
-├── js/
-│   ├── rooms.js              # Room data (948KB)
-│   ├── tour.js               # Navigation logic (22KB)
-│   ├── games.js              # Educational games (15KB)
-│   ├── games2.js             # Additional games (33KB)
-│   ├── lobby.js              # Tips & slideshow (9KB)
-│   ├── archive-somayehrouhi.js  # 834 worksheets (622KB)
-│   ├── api.js                # API client (3KB)
-│   ├── media.js              # PDF/video player (10KB)
-│   ├── explorer.js           # Content explorer (7KB)
-│   ├── auth.js               # Auth system (5KB)
-│   ├── app.js                # App controller (14KB)
-│   └── tags.js               # Tag management (3KB)
-└── assets/
-    ├── images/               # 57 WebP thumbnails (6MB)
-    │   ├── amoozesh/
-    │   ├── bazi/
-    │   ├── khab/
-    │   └── ... (13 rooms × 4 views)
-    ├── pdf/                  # Sample documents (2KB)
-    └── video/                # Intro videos (5MB)
-        ├── intro1.mp4
-        └── intro2.mp4
-```
+1. گیت‌هاب → ریپو `yaran` → **Settings** → **Pages**
+2. **Source**: `Deploy from a branch` → branch: `main` → folder: `/ (root)` → **Save**
+3. صبر کن تا deploy شود (یک دقیقه) — آدرس: `https://نام‌کاربری‌تو.github.io/yaran/`
+4. **مهم**: چون سرور API جای دیگری است، به سایت بگو کجا دنبال API بگردد:
+   - فایل `js/config.js` را باز کن و آدرس سرور Render (مرحله ۳) را بگذار:
+   ```js
+   window.YARAN_API_BASE = "https://yaran-api.onrender.com";
+   ```
+   - commit و push کن. سایت deploy دوباره می‌شود.
 
 ---
 
-## ✨ Features
+## مرحله ۳ — سرور + ربات روی Render (رایگان)
 
-- **13 Interactive Rooms** with 4-view panoramic tours
-- **8 Educational Games** (Memory, Simon Says, Pattern, Puzzle, etc.)
-- **834 Printable Worksheets** from somayehrouhi.ir
-- **Daily Parenting Tips** with rotation
-- **Content Slideshow** with auto-play
-- **Responsive Design** (mobile-friendly)
-- **Theme System** (Day/Night/Festival)
-- **Offline Support** (after first load)
+1. حساب بساز: https://render.com (GitHub login)
+2. **New** → **Web Service** → اتصال به ریپو `yaran`
+3. تنظیمات:
+   | گزینه | مقدار |
+   |-------|-------|
+   | Name | `yaran-api` |
+   | Root Directory | `server` |
+   | Build Command | `npm install` |
+   | Start Command | `npm start` |
+   | Instance Type | **Free** |
 
----
+4. **Environment Variables** (روی همین صفحه):
+   ```
+   BOT_TOKEN=<توکن ربات — از @BotFather>
+   GROUP_ID=-1003717678648
+   ADMIN_ID=51948593
+   SERVER_URL=https://yaran-api.onrender.com
+   WS_URL=wss://yaran-api.onrender.com/ws
+   # PROXY_URL را نگذار — سرور خارج از ایران است، مستقیم وصل می‌شود
+   ```
+5. **Create Web Service** → صبر کن build شود (۲–۳ دقیقه)
+6. لاگ‌ها را ببین: باید `Yaran server running` + `Bot server on` + `WebSocket connected` بیاید
 
-## 🔧 Technical Details
+> ⚠️ **مهم — پروکسی**: در ایران ربات با `PROXY_URL` کار می‌کرد. در Render این متغیر را **نگذار** — سرور Render خارج از تحریم است و مستقیم به تلگرام وصل می‌شود. فقط لوکال/ایران پروکسی لازم دارد.
 
-- **Framework:** Vanilla JS + CSS (no dependencies)
-- **Browser Support:** Chrome/Edge 90+, Firefox 88+, Safari 14+
-- **PDF Viewer:** PDF.js (CDN loaded)
-- **Language:** Persian (Farsi) with RTL layout
-- **SEO:** Semantic HTML with proper meta tags
-
----
-
-## ⚠️ Notes
-
-- Largest file: `rooms.js` (948KB) - contains all room data
-- Images use WebP format for optimal compression
-- Videos are optional (site works without them)
-- API client has graceful fallback to static data
-- Consider Git LFS if repo grows beyond 1GB
+> 💤 **خواب Render**: نسخه رایگان بعد از ~۱۵ دقیقه بدون ترافیک می‌خوابد و اولین درخواست ۳۰–۶۰ ثانیه طول می‌کشد. برای بیدار نگه‌داشتن: https://cron-job.org رایگان → هر ۱۰ دقیقه یک GET به `https://yaran-api.onrender.com/api/health`
 
 ---
 
-## 📝 License
+## مرحله ۴ — تست نهایی
 
-Same as parent project - check original LICENSE file.
+1. **سایت**: باز کن `https://نام‌کاربری‌تو.github.io/yaran/` → تخته وظایف باید وظایف را نشان دهد (از سرور Render)
+2. **ربات**: تلگرام → `@yaran_robot` → `/start` → لیست وظایف → افزودن وظیفه تست
+3. **سینک**: وظیفه در سایت ظاهر شود (۱۰ ثانیه poll)
+4. **گزارش**: در ربات گزارش روزانه بفرست → تب «😊 گزارش» در سایت
 
 ---
 
-**Deployed:** 2026-08-12  
-**Version:** 1.0.0
+## نکات
+
+- **داده‌ها**: `data/tasks.json` و `data/panel.json` روی Render ذخیره می‌شوند ولی بعد از هر deploy جدید ریست می‌شوند (دیسک موقتی). برای نگهداری طولانی: هر چند وقت یک‌بار `git add data/` + push.
+- **لوکال**: `cd server && npm start` → `http://localhost:4000` (سایت + API + ربات با هم)
+- **ربات فقط لوکال**: `cd telegram-bot && node bot.js` (با `.env` لوکال که PROXY_URL دارد)
+- بدون Firebase — همه‌چیز JSON فایل است.

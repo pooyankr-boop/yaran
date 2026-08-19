@@ -4,6 +4,12 @@
 
 let currentUserRole = "teacher";
 
+/* ---------- XSS escape ---------- */
+function escHtml(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
 /* ---------- پنل کاربری ---------- */
 function initPanel() {
   if (typeof renderAuthStatus === "function") renderAuthStatus();
@@ -129,7 +135,7 @@ async function loadChildReports(childId) {
             ${r.food ? '<span class="report-badge">' + (FOOD_FA[r.food] || r.food) + '</span>' : ""}
             ${r.sleep ? '<span class="report-badge">' + (SLEEP_FA[r.sleep] || r.sleep) + '</span>' : ""}
           </div>
-          ${r.note ? '<div class="report-entry-note">' + r.note + '</div>' : ""}
+          ${r.note ? '<div class="report-entry-note">' + escHtml(r.note) + '</div>' : ""}
         </div>`;
     }).join("");
   } catch (e) {
@@ -176,7 +182,7 @@ async function initArchive() {
   const filtersEl = document.getElementById("archive-filters");
   let cats = [];
   if (APP_API_ONLINE) {
-    try { cats = await Api.categories(); } catch (e) { console.warn(e); }
+    try { cats = await Api.categories(); } catch (e) { /* fallback */ }
   }
   if (!cats.length) cats = [...new Set(ARCHIVE_DATA.map(a => a.category).filter(Boolean))];
   cats = ["همه", ...cats];
@@ -229,7 +235,7 @@ async function filterArchive() {
       renderArchiveResults("archive-results", res.items);
       return;
     } catch (e) {
-      console.warn("Archive API failed, falling back to static data:", e);
+      /* fallback to static data */
     }
   }
   // Fallback: فیلتر روی داده‌ی استاتیک
@@ -390,25 +396,22 @@ async function loadRoomsFromApi() {
   renderDoors();
   renderMapCircles();
   initArchive();
+  if (typeof TaskBoard !== "undefined") TaskBoard.init("lobby-task-board");
 })();
 
-/* ---------- 按鈕進入 INTRO ---------- */
-(function() {
-  var _btnEnter = document.getElementById("btn-enter");
-  console.log('DEBUG: btn-enter found:', !!_btnEnter);
-  if (_btnEnter) {
-    _btnEnter.addEventListener("click", function(e) {
-      console.log('DEBUG: btn-enter clicked!');
-      showScreen("screen-plan");
-    });
-  } else {
-    console.error('DEBUG: btn-enter NOT found in DOM');
-  }
-})();
+
 
 var _btnGotoGames = document.getElementById("btn-goto-games");
 if (_btnGotoGames) _btnGotoGames.addEventListener("click", () => {
   if (typeof openGamePicker === "function") openGamePicker();
+});
+
+/* ---------- Lobby: Virtual Tour button ---------- */
+var _btnTour = document.getElementById("btn-virtual-tour");
+if (_btnTour) _btnTour.addEventListener("click", () => {
+  if (typeof VirtualTour !== "undefined") {
+    try { VirtualTour.start(); } catch(e) { /* silent */ }
+  }
 });
 
 
@@ -526,7 +529,7 @@ function _playEpisode(item) {
   var a = _getAudio();
   if (!a) return;
   if (a.src !== src) a.src = src;
-  a.play().catch(function(err) { console.warn('Audio playback failed:', err); });
+  a.play().catch(function(err) { /* silent */ });
   _syncPlayButton();
 }
 
@@ -574,7 +577,7 @@ function toggleMiniPlayer() {
     if (playPause) playPause.addEventListener('click', function () {
       var a = _getAudio();
       if (!a || !a.src) return;
-      if (a.paused) { a.play().catch(function (err) { console.warn('play failed', err); }); }
+      if (a.paused) { a.play().catch(function (err) { /* silent */ }); }
       else { a.pause(); }
       _syncPlayButton();
     });

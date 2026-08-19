@@ -632,7 +632,7 @@ function showItemDetails(item, zoneTitle) {
   }
   if (item.url) {
     actionsHtml += '<a href="' + item.url + '" target="_blank" class="pill-btn">باز کردن</a>';
-    if (item.type === "pdf") actionsHtml += '<a href="' + item.url + '" target="_blank" class="pill-btn" download>دانلود PDF</a>';
+    if (item.type === "pdf") actionsHtml += '<a href="' + item.url + '" target="_blank" class="pill-btn">دانلود PDF</a>';
   }
   if (navigator.share && item.title) {
     actionsHtml += '<button class="pill-btn" onclick="navigator.share({title:\'' + item.title.replace(/'/g, "\\'") + '\',url:location.href})">اشتراکگذاری</button>';

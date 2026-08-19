@@ -40,7 +40,7 @@ function renderLoginForm() {
     '<input type="password" id="auth-password" placeholder="رمز عبور" style="width:100%;padding:.6rem;margin-bottom:.8rem;border-radius:10px;border:1px solid #ddd;" />' +
     '<button class="btn" id="auth-submit-login" style="width:100%;margin-bottom:.6rem;">ورود</button>' +
     '<div style="text-align:center;font-size:.85rem;">حساب نداری؟ <a href="#" id="auth-goto-register">ثبت‌نام کن</a></div>' +
-    '<div style="text-align:center;font-size:.75rem;color:#999;margin-top:.6rem;">نمونه مدیر: admin@yaran.local / admin1234</div>';
+    '';
 
   document.getElementById("auth-goto-register").addEventListener("click", (e) => { e.preventDefault(); renderRegisterForm(); });
   document.getElementById("auth-submit-login").addEventListener("click", async () => {
@@ -69,7 +69,7 @@ function renderRegisterForm() {
     '<input type="email" id="auth-email" placeholder="ایمیل" style="width:100%;padding:.6rem;margin-bottom:.5rem;border-radius:10px;border:1px solid #ddd;" />' +
     '<input type="password" id="auth-password" placeholder="رمز عبور" style="width:100%;padding:.6rem;margin-bottom:.5rem;border-radius:10px;border:1px solid #ddd;" />' +
     '<select id="auth-role" style="width:100%;padding:.6rem;margin-bottom:.8rem;border-radius:10px;border:1px solid #ddd;">' +
-    '<option value="teacher">مربی</option><option value="parent">والد</option><option value="admin">مدیر</option>' +
+    '<option value="teacher">مربی</option><option value="parent">والد</option>' +
     '</select>' +
     '<button class="btn" id="auth-submit-register" style="width:100%;margin-bottom:.6rem;">ثبت‌نام</button>' +
     '<div style="text-align:center;font-size:.85rem;">حساب داری؟ <a href="#" id="auth-goto-login">وارد شو</a></div>';

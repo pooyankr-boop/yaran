@@ -1,54 +1,105 @@
-# Yaran Kindergarten Virtual Tour
+# یاران — مهدکودک و پیش‌دبستانی مجازی
 
- Persian kindergarten virtual tour with interactive room exploration.
+تور مجازی تعاملی مهدکودک با ۱۳ اتاق، ۸ بازی آموزشی، ۸۳۴ کاربرگ، سیستم گزارش‌دهی روزانه، تخته پیگیری وظایف، و ربات تلگرام همگام.
 
-## Quick Deploy to GitHub Pages
+## 🚀 شروع سریع (لوکال)
 
-1. Create new GitHub repository
-2. Upload all contents of this folder as root
-3. Go to Settings → Pages → Source: main branch
-4. Site live at: `https://[your-username].github.io/[repo-name]`
-
-## Structure
-
-```
-├── index.html          # Entry point
-├── css/main.css        # Styles (40KB)
-├── js/                 # JavaScript modules
-│   ├── rooms.js        # Room data (948KB)
-│   ├── tour.js         # Navigation logic
-│   ├── games.js        # Educational games
-│   ├── games2.js       # Additional games
-│   ├── lobby.js        # Tips & slideshow
-│   ├── archive.js      # 834 worksheets
-│   ├── api.js          # API client (graceful fallback)
-│   ├── media.js        # PDF/video player
-│   └── tags.js         # Tag system
-└── assets/
-    ├── images/         # 57 WebP thumbnails (6MB)
-    ├── pdf/            # Sample documents
-    └── video/          # Intro videos (5MB)
+```bash
+# کل پروژه (سایت + سرور API + ربات تلگرام) با یک فرمان:
+cd server
+npm install
+npm start
+# سایت: http://localhost:4000
 ```
 
-## Features
+### فقط سایت (استاتیک)
+```bash
+npx serve .
+```
 
-- 13 interactive rooms with 4-view panoramic tours
-- 8 educational games
-- 834 printable worksheets (from somayehrouhi.ir)
-- Daily parenting tips
-- Content slideshow
-- Responsive design (mobile-friendly)
-- Day/Night/Festival themes
+### فقط ربات (با .env لوکال)
+```bash
+cd telegram-bot
+npm install
+node bot.js
+```
 
-## Offline Support
+## 🌍 استقرار رایگان
 
-All dependencies are loaded from CDN or bundled locally. Works offline after first load.
+راهنمای کامل قدم‌به‌قدم: **[DEPLOYMENT.md](DEPLOYMENT.md)**
+- سایت → GitHub Pages
+- سرور + ربات → Render (free)
+- بدون Firebase، بدون دیتابیس — همه‌چیز فایل JSON
 
-## Browser Support
+## 🔧 تنظیمات
 
-- Chrome/Edge 90+
-- Firefox 88+
-- Safari 14+
+| فایل | نقش |
+|------|-----|
+| `telegram-bot/.env` | توکن ربات، ADMIN_ID، پروکسی (در گیت نیست — نمونه: `.env.example`) |
+| `js/config.js` | آدرس سرور API برای GitHub Pages (`window.YARAN_API_BASE`) |
+| `server/start-all.js` | اجرای سرور + ربات در یک پروسه (برای Render) |
 
----
-Built with vanilla JS + CSS, no frameworks required.
+## 📁 ساختار
+
+```
+├── index.html                 # نقطه ورود
+├── firebase.json              # تنظیمات Firebase Hosting
+├── css/
+│   ├── main.css              # طراحی اصلی (50KB)
+│   ├── vt.css                # استایل تور مجازی
+│   └── task-board.css        # تخته وظایف
+├── js/
+│   ├── api.js                # کلاینت API
+│   ├── rooms.js              # داده اتاق‌ها (1.1MB)
+│   ├── tour.js               # موتور ناوبری
+│   ├── virtual-tour.js       # تور خودکار
+│   ├── app.js                # کنترلر اصلی
+│   ├── auth.js               # احراز هویت
+│   ├── games.js / games2.js  # بازی‌های آموزشی
+│   ├── media.js              # پلیر PDF/ویدیو
+│   ├── lobby.js              # لابی + نکات
+│   └── ...                   # ماژول‌های دیگر
+├── server/
+│   ├── index.js              # Express API
+│   └── package.json
+├── assets/
+│   ├── images/               # تصاویر WebP
+│   ├── mahd/worksheets/      # کاربرگ‌ها
+│   └── audio/                # فایل‌های صوتی
+└── .github/workflows/        # CI/CD
+```
+
+## ✨ امکانات
+
+- **۱۳ اتاق تعاملی** با تور ۴ نمایه
+- **۸ بازی آموزشی** (حافظه، سایمون، الگو، پازل و...)
+- **۸۳۴ کاربرگ** قابل چاپ
+- **نکات روزانه فرزندپروری**
+- **سیستم گزارش‌دهی** (خوراک، خواب، احساسات)
+- **طراحی واکنش‌گرا** (موبایل + دسکتاپ)
+- **پوسته روز/شب/جشن**
+- **پشتیبانی آفلاین** (پس از بارگذاری اولیه)
+
+## 🔒 امنیت
+
+- CSP header فعال
+- XSS protection روی محتوای کاربر
+- Rate limiting روی فرم‌ها
+- JWT auth با bcrypt
+- حذف نقش admin از فرم ثبت‌نام
+- توکن ربات فقط در `.env` (در گیت نیست)
+
+## 📄 مجوز
+
+فقط برای استفاده آموزشی/مهدکودک یاران.
+
+## 🛠️ فناوری
+
+- **فرانت:** Vanilla JS + CSS (بدون framework)
+- **بک‌اند:** Express.js + JWT + bcrypt
+- **هاست:** Firebase Hosting
+- **زبان:** فارسی (RTL)
+
+## 📝 مجوز
+
+MIT

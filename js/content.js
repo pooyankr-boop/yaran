@@ -94,7 +94,9 @@ function openContentForRoom(roomId) {
     return '<div class="content-section">' +
       '<h3 class="content-section-title">' + sec.label + ' <span class="content-section-count">(' + sec.items.length + ')</span></h3>' +
       '<div class="content-card-grid">' + cards + '</div></div>';
-  }).join("");
+  }).join("") +
+  // Scroll-to-top button at bottom
+  '<div style="text-align:center;padding:2rem 0 1rem;"><button class="pill-btn" onclick="document.getElementById(\'screen-content\').scrollTo({top:0,behavior:\'smooth\'})">⬆️ بازگشت به بالا</button></div>';
 
   // نوار جستجو + تگ نوع بالای محتوا
   const toolbar = '<div class="content-toolbar">' +

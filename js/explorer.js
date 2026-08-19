@@ -14,10 +14,14 @@ async function loadExplorerSource() {
       explorerSourceItems = res.items.filter(it => it.image);
       return;
     } catch (e) {
-      console.warn("Explorer: API failed, falling back to static ARCHIVE_DATA", e);
+      return;
     }
   }
   explorerSourceItems = ARCHIVE_DATA.filter(it => it.image && it.image.length > 0);
+  // Merge MAHD explorer data
+  if (typeof MAHD_EXPLORER_DATA !== "undefined" && MAHD_EXPLORER_DATA) {
+    explorerSourceItems = explorerSourceItems.concat(MAHD_EXPLORER_DATA);
+  }
 }
 
 async function initExplorer() {
@@ -35,9 +39,9 @@ async function initExplorer() {
 
   filtersEl.innerHTML =
     '<div style="width:100%;font-size:.75rem;color:#999;margin-bottom:2px;">سن:</div>' +
-    ages.map((a, i) => '<span class="filter-chip' + (i === 0 ? ' active' : '') + '" data-group="age" data-val="' + a + '">' + a + '</span>').join("") +
+    '<div class="filter-row">' + ages.map((a, i) => '<span class="filter-chip' + (i === 0 ? ' active' : '') + '" data-group="age" data-val="' + a + '">' + a + '</span>').join("") + '</div>' +
     '<div style="width:100%;font-size:.75rem;color:#999;margin-bottom:2px;margin-top:4px;">دسته:</div>' +
-    typeCats.map((t, i) => '<span class="filter-chip' + (i === 0 ? ' active' : '') + '" data-group="type" data-val="' + t + '">' + t + '</span>').join("");
+    '<div class="filter-row">' + typeCats.map((t, i) => '<span class="filter-chip' + (i === 0 ? ' active' : '') + '" data-group="type" data-val="' + t + '">' + t + '</span>').join("") + '</div>';
 
   // Filter chip clicks
   filtersEl.querySelectorAll(".filter-chip").forEach(chip => {
@@ -124,7 +128,7 @@ function renderExplorerItems() {
       html += '</div>';
       html += '<div class="explorer-items open">';
       catItems.forEach((it, i) => {
-        const thumbHtml = it.image ? '<img class="explorer-item-thumb" src="' + it.image + '" loading="lazy" />' : '';
+        const thumbHtml = it.image ? '<img class="explorer-item-thumb" src="' + it.image + '" loading="lazy" />' : '<div class="explorer-item-thumb" style="display:flex;align-items:center;justify-content:center;font-size:1.5rem;background:rgba(255,184,77,0.15);">📄</div>';
         const meta = [it.age, it.category].filter(Boolean).join(' • ');
         html += '<div class="explorer-item" onclick="openExplorerItem(' + JSON.stringify(it).replace(/"/g, '&quot;').replace(/\n/g, ' ') + ')">';
         html += thumbHtml;
@@ -140,6 +144,10 @@ function renderExplorerItems() {
 }
 
 function openExplorerItem(item) {
+  // اگر آیتم تصویر دارد و PDF نیست، دانلود PDF را حذف کن
+  if (item.image && (!item.type || item.type !== "pdf")) {
+    item._noDownload = true;
+  }
   // Open in enhanced media reader
   openMediaReader(item);
 }

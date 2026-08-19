@@ -1,5 +1,5 @@
 /* ---------- API Client — فاز ۳: اتصال فرانت به بک‌اند واقعی (server/) ---------- */
-const API_BASE = "http://localhost:4000/api";
+const API_BASE = (window.YARAN_API_BASE || window.location.origin) + "/api";
 const API_TENANT = "yaran";
 
 function authToken() {
@@ -60,5 +60,5 @@ const Api = {
 // روی false می‌ماند و بقیه‌ی فایل‌ها می‌توانند به‌جای کرش‌کردن، به داده‌ی استاتیک قدیمی برگردند.
 let APP_API_ONLINE = false;
 const API_READY = Api.health()
-  .then(() => { APP_API_ONLINE = true; console.log("✅ API آنلاین است."); })
-  .catch(() => { APP_API_ONLINE = false; console.warn("⚠️ API در دسترس نیست؛ روی داده‌ی استاتیک ادامه می‌دهیم."); });
+  .then(() => { APP_API_ONLINE = true; })
+  .catch(() => { APP_API_ONLINE = false; });
