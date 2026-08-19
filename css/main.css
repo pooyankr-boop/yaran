@@ -688,6 +688,8 @@ html, body {
   animation: fadeIn .3s ease;
 }
 .modal-overlay.hidden { display: none; }
+/* کلاس عمومی مخفی‌سازی — قبلاً فقط برای modal-overlay تعریف شده بود ولی در چند جای دیگر کد هم استفاده می‌شد */
+.hidden { display: none !important; }
 .modal-content {
   background: #fff;
   border-radius: 20px;
@@ -1373,6 +1375,30 @@ body.theme-night .slideshow-caption { color: #b8a8d0 !important; }
   padding: .4rem;
   border-radius: 8px;
   border: 1px solid #ddd;
+  margin-inline-end: .4rem;
+}
+
+/* ---------- پنل مدیریت (تب admin) ---------- */
+.admin-user-list, .admin-mod-list {
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+}
+.admin-user-row, .admin-mod-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #fbf7f0;
+  border-radius: 12px;
+  padding: .7rem .9rem;
+  gap: .6rem;
+}
+.admin-mod-row span { font-size: .9rem; color: #4a3b2c; flex: 1; }
+.admin-role-select {
+  padding: .3rem .5rem;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  font-family: inherit;
   margin-inline-end: .4rem;
 }
 

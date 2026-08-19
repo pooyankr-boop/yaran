@@ -67,6 +67,13 @@ git push -u origin main
    SERVER_URL=https://yaran-api.onrender.com
    WS_URL=wss://yaran-api.onrender.com/ws
    # PROXY_URL را نگذار — سرور خارج از ایران است، مستقیم وصل می‌شود
+
+   # ⚠️ امنیتی — حتماً تنظیم کنید، وگرنه هر بار ری‌استارت سرور مقدار تصادفی جدید می‌سازد:
+   JWT_SECRET=<یک رشته‌ی تصادفی طولانی و مخفی — مثلاً با: openssl rand -hex 32>
+   ADMIN_EMAIL=<ایمیل ورود ادمین>
+   ADMIN_PASSWORD=<رمز عبور قوی و دلخواه برای ادمین>
+   # اگر دامنه‌ی GitHub Pages شما چیزی غیر از pooyankr-boop.github.io شد:
+   # ALLOWED_ORIGINS=https://username.github.io
    ```
 5. **Create Web Service** → صبر کن build شود (۲–۳ دقیقه)
 6. لاگ‌ها را ببین: باید `Yaran server running` + `Bot server on` + `WebSocket connected` بیاید

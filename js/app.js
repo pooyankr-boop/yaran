@@ -11,8 +11,15 @@ function escHtml(s) {
 }
 
 /* ---------- پنل کاربری ---------- */
+function updateAdminTabVisibility() {
+  const user = typeof currentUser === "function" ? currentUser() : null;
+  const adminBtn = document.getElementById("panel-admin-tab-btn");
+  if (adminBtn) adminBtn.classList.toggle("hidden", !(user && user.role === "admin"));
+}
+
 function initPanel() {
   if (typeof renderAuthStatus === "function") renderAuthStatus();
+  updateAdminTabVisibility();
   renderPanelTab("dashboard");
   document.querySelectorAll(".tab-btn").forEach(btn => {
     btn.addEventListener("click", () => {
@@ -43,29 +50,136 @@ function renderPanelTab(tab) {
       </div>
     `;
   } else if (tab === "tasks") {
-    const tasks = [
-      "بررسی حضور غیاب کودکان",
-      "تهیه گزارش روزانه",
-      "بررسی وضعیت بهداشتی کودکان",
-      "آماده‌سازی فعالیت‌های فردای کلاس",
-      "ارسال پیام به والدین",
-    ];
-    body.innerHTML = `
-      <h3 style="margin-bottom:.8rem;">کارهای امروز</h3>
-      <ul class="task-list">
-        ${tasks.map(t => `<li class="task-item"><div class="task-check" onclick="this.classList.toggle('done')"></div><span>${t}</span></li>`).join("")}
-      </ul>
-    `;
+    renderTasksTab(body);
   } else if (tab === "messages") {
-    body.innerHTML = `
-      <h3 style="margin-bottom:.8rem;">پیام‌های اخیر</h3>
-      <div style="color:#7a6b55;text-align:center;padding:2rem;">
-        <div style="font-size:2rem;margin-bottom:.5rem;">💬</div>
-        <p>پیام جدیدی نیست</p>
-      </div>
-    `;
+    renderMessagesTab(body);
   } else if (tab === "reports") {
     renderReportsTab(body);
+  } else if (tab === "admin") {
+    renderAdminTab(body);
+  }
+}
+
+/* ---------- کارهای روزانه — داده‌ی واقعی از تخته وظایف ---------- */
+async function renderTasksTab(body) {
+  body.innerHTML = `<div style="text-align:center;color:#7a6b55;padding:1rem;">در حال بارگذاری...</div>`;
+  try {
+    const data = await Api.tasks();
+    const tasks = data.tasks || [];
+    const pending = tasks.filter(t => t.status !== 'completed' && t.status !== 'done');
+    const done = tasks.filter(t => t.status === 'completed' || t.status === 'done');
+    body.innerHTML = `
+      <h3 style="margin-bottom:.8rem;">کارهای در جریان (${pending.length})</h3>
+      ${pending.length ? '<ul class="task-list">' + pending.map(t =>
+        `<li class="task-item"><span>${escHtml(t.title)}</span>${t.assigned_to ? '<small style="color:#a09080;"> — ' + escHtml(t.assigned_to) + '</small>' : ''}</li>`
+      ).join("") + '</ul>' : '<p style="color:#7a6b55;text-align:center;padding:1rem;">وظیفه‌ای در جریان نیست.</p>'}
+      ${done.length ? '<h3 style="margin:1rem 0 .5rem;">تمام‌شده (' + done.length + ')</h3><ul class="task-list">' +
+        done.map(t => `<li class="task-item done"><span>${escHtml(t.title)}</span></li>`).join("") + '</ul>' : ''}
+    `;
+  } catch (e) {
+    body.innerHTML = `<div style="text-align:center;color:#c0392b;padding:2rem;">${escHtml(e.message)}</div>`;
+  }
+}
+
+/* ---------- پیام‌های اخیر — داده‌ی واقعی از پنل ---------- */
+async function renderMessagesTab(body) {
+  body.innerHTML = `<div style="text-align:center;color:#7a6b55;padding:1rem;">در حال بارگذاری...</div>`;
+  try {
+    const data = await Api.panel();
+    const messages = data.messages || [];
+    body.innerHTML = `
+      <h3 style="margin-bottom:.8rem;">پیام‌های اخیر</h3>
+      ${messages.length ? messages.map(m => `
+        <div class="report-entry">
+          <div class="report-entry-note">${escHtml(m.text)}</div>
+          <div class="report-entry-date">${escHtml(m.author || '')} · ${escHtml((m.date || '').slice(0,10))}</div>
+        </div>`).join("") : `
+        <div style="color:#7a6b55;text-align:center;padding:2rem;">
+          <div style="font-size:2rem;margin-bottom:.5rem;">💬</div>
+          <p>پیام جدیدی نیست</p>
+        </div>`}
+    `;
+  } catch (e) {
+    body.innerHTML = `<div style="text-align:center;color:#c0392b;padding:2rem;">${escHtml(e.message)}</div>`;
+  }
+}
+
+/* ---------- پنل مدیریت — فقط برای نقش admin ---------- */
+async function renderAdminTab(body) {
+  const user = typeof currentUser === "function" ? currentUser() : null;
+  if (!user || user.role !== "admin") {
+    body.innerHTML = `<div style="text-align:center;color:#7a6b55;padding:2rem;">دسترسی فقط برای مدیر.</div>`;
+    return;
+  }
+  body.innerHTML = `<div style="text-align:center;color:#7a6b55;padding:1rem;">در حال بارگذاری...</div>`;
+  try {
+    const [usersRes, panelRes] = await Promise.all([Api.adminUsers(), Api.panel()]);
+    const users = usersRes.users || [];
+    const roleFa = { teacher: "مربی", parent: "والد", admin: "مدیر" };
+    body.innerHTML = `
+      <h3 style="margin-bottom:.8rem;">👥 کاربران (${users.length})</h3>
+      <div class="admin-user-list">
+        ${users.map(u => `
+          <div class="admin-user-row" data-user-id="${escHtml(u.id)}">
+            <div><strong>${escHtml(u.name)}</strong><br><small style="color:#a09080;">${escHtml(u.email)}</small></div>
+            <div>
+              ${u.role === 'admin' ? '<span class="pill-btn">مدیر</span>' : `
+                <select class="admin-role-select" data-user-id="${escHtml(u.id)}">
+                  <option value="teacher" ${u.role === 'teacher' ? 'selected' : ''}>مربی</option>
+                  <option value="parent" ${u.role === 'parent' ? 'selected' : ''}>والد</option>
+                </select>
+                <button class="pill-btn admin-delete-user" data-user-id="${escHtml(u.id)}" title="حذف کاربر">🗑</button>
+              `}
+            </div>
+          </div>`).join("")}
+      </div>
+
+      <h3 style="margin:1.5rem 0 .8rem;">📝 یادداشت‌ها (${(panelRes.notes||[]).length})</h3>
+      <div class="admin-mod-list">
+        ${(panelRes.notes || []).map(n => `
+          <div class="admin-mod-row" data-note-id="${escHtml(n.id)}">
+            <span>${escHtml(n.text)}</span>
+            <button class="pill-btn admin-delete-note" data-note-id="${escHtml(n.id)}">🗑</button>
+          </div>`).join("") || '<p style="color:#7a6b55;">یادداشتی نیست.</p>'}
+      </div>
+
+      <h3 style="margin:1.5rem 0 .8rem;">💬 پیام‌ها (${(panelRes.messages||[]).length})</h3>
+      <div class="admin-mod-list">
+        ${(panelRes.messages || []).map(m => `
+          <div class="admin-mod-row" data-message-id="${escHtml(m.id)}">
+            <span>${escHtml(m.text)}</span>
+            <button class="pill-btn admin-delete-message" data-message-id="${escHtml(m.id)}">🗑</button>
+          </div>`).join("") || '<p style="color:#7a6b55;">پیامی نیست.</p>'}
+      </div>
+    `;
+
+    body.querySelectorAll(".admin-role-select").forEach(sel => {
+      sel.addEventListener("change", async () => {
+        try { await Api.adminSetRole(sel.dataset.userId, sel.value); }
+        catch (e) { alert(e.message); renderAdminTab(body); }
+      });
+    });
+    body.querySelectorAll(".admin-delete-user").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        if (!confirm("این کاربر حذف شود؟")) return;
+        try { await Api.adminDeleteUser(btn.dataset.userId); renderAdminTab(body); }
+        catch (e) { alert(e.message); }
+      });
+    });
+    body.querySelectorAll(".admin-delete-note").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        try { await Api.deleteNote(btn.dataset.noteId); renderAdminTab(body); }
+        catch (e) { alert(e.message); }
+      });
+    });
+    body.querySelectorAll(".admin-delete-message").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        try { await Api.deleteMessage(btn.dataset.messageId); renderAdminTab(body); }
+        catch (e) { alert(e.message); }
+      });
+    });
+  } catch (e) {
+    body.innerHTML = `<div style="text-align:center;color:#c0392b;padding:2rem;">${escHtml(e.message)}</div>`;
   }
 }
 
@@ -129,7 +243,7 @@ async function loadChildReports(childId) {
       const dateStr = d.toLocaleDateString("fa-IR");
       return `
         <div class="report-entry">
-          <div class="report-entry-date">${dateStr}${r.teacher ? " — " + r.teacher.name : ""}</div>
+          <div class="report-entry-date">${dateStr}${r.teacher ? " — " + escHtml(r.teacher.name || "") : ""}</div>
           <div class="report-entry-badges">
             ${r.mood ? '<span class="report-badge">' + (MOOD_FA[r.mood] || r.mood) + '</span>' : ""}
             ${r.food ? '<span class="report-badge">' + (FOOD_FA[r.food] || r.food) + '</span>' : ""}

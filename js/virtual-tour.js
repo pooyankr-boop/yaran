@@ -441,7 +441,7 @@ var VirtualTour = (function () {
     html += '<span class="vt-tb-divider"></span>';
     html += '<button class="vt-tb-btn vt-tb-theme" data-vt="theme">🎨 تم</button>';
     /* music toggle */
-    html += '<button class="vt-tb-btn" data-vt="music">' + (musicPlaying ? '🔊' : '🔇') + '</button>';
+    html += '<button class="vt-tb-btn" data-vt="music">' + ((window.YaranMusic && window.YaranMusic.isPlaying()) ? '🔊' : '🔇') + '</button>';
 
     html += '<span class="vt-tb-spacer"></span>';
 

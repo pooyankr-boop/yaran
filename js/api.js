@@ -54,6 +54,15 @@ const Api = {
       method: "POST",
       body: JSON.stringify({ name, email, password, role, tenant: API_TENANT }),
     }),
+  panel: () => apiFetch("/panel"),
+  tasks: () => apiFetch("/tasks"),
+  deleteNote: (id) => apiFetch("/notes/" + id, { method: "DELETE" }),
+  deleteMessage: (id) => apiFetch("/messages/" + id, { method: "DELETE" }),
+  deleteReport: (id) => apiFetch("/reports/" + id, { method: "DELETE" }),
+  adminUsers: () => apiFetch("/admin/users"),
+  adminSetRole: (id, role) =>
+    apiFetch("/admin/users/" + id + "/role", { method: "PATCH", body: JSON.stringify({ role }) }),
+  adminDeleteUser: (id) => apiFetch("/admin/users/" + id, { method: "DELETE" }),
 };
 
 // اگر سرور بک‌اند بالا نباشد (مثلاً پایلوت روی سیستمی که هنوز server/ اجرا نشده)، APP_API_ONLINE

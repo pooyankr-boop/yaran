@@ -7,10 +7,10 @@ function renderAuthStatus() {
   if (user) {
     const roleFa = { child: "کودک", parent: "والد", teacher: "مربی", admin: "مدیر" }[user.role] || user.role;
     el.innerHTML =
-      '<span class="pill-btn">👋 ' + user.name + ' (' + roleFa + ')</span>' +
+      '<span class="pill-btn">👋 ' + escHtml(user.name || "") + ' (' + roleFa + ')</span>' +
       '<button class="pill-btn" id="auth-logout-btn">خروج</button>';
     const logoutBtn = document.getElementById("auth-logout-btn");
-    if (logoutBtn) logoutBtn.addEventListener("click", () => { clearSession(); renderAuthStatus(); renderPanelTab("dashboard"); });
+    if (logoutBtn) logoutBtn.addEventListener("click", () => { clearSession(); renderAuthStatus(); if (typeof updateAdminTabVisibility === "function") updateAdminTabVisibility(); renderPanelTab("dashboard"); });
   } else {
     el.innerHTML = '<button class="pill-btn" id="auth-open-btn">ورود / ثبت‌نام</button>';
     const openBtn = document.getElementById("auth-open-btn");
@@ -53,6 +53,7 @@ function renderLoginForm() {
       setSession(res.token, res.user);
       closeAuthModal();
       renderAuthStatus();
+      if (typeof updateAdminTabVisibility === "function") updateAdminTabVisibility();
       renderPanelTab("dashboard");
     } catch (e) {
       errEl.textContent = e.message || "خطا در ورود";

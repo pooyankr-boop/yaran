@@ -11,10 +11,10 @@ async function loadExplorerSource() {
   if (typeof APP_API_ONLINE !== "undefined" && APP_API_ONLINE) {
     try {
       const res = await Api.archive({ type: "pdf", pageSize: "1000" });
-      explorerSourceItems = res.items.filter(it => it.image);
-      return;
+      explorerSourceItems = (res && res.items || []).filter(it => it.image);
+      if (explorerSourceItems.length > 0) return;
     } catch (e) {
-      return;
+      // fall through to static data
     }
   }
   explorerSourceItems = ARCHIVE_DATA.filter(it => it.image && it.image.length > 0);

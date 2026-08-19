@@ -12,12 +12,24 @@ const { v4: uuid } = require('uuid');
 const fs = require('fs');
 const path = require('path');
 const http = require('http');
+const crypto = require('crypto');
+const dns = require('dns');
+const net = require('net');
 const { WebSocketServer } = require('ws');
 
 const app = express();
 app.use(compression());
 const PORT = Number(process.env.PORT) || 4000;
-const JWT_SECRET = process.env.JWT_SECRET || 'yaran-dev-secret-change-in-production';
+
+// ── امنیت: هرگز مقدار پیش‌فرض ثابت برای رمزهای حساس استفاده نکن ──
+// اگر JWT_SECRET در env تنظیم نشده باشد، یک مقدار تصادفی امن در هر اجرا ساخته می‌شود
+// (توکن‌های قبلی بعد از ری‌استارت باطل می‌شوند — امن‌تر از یک secret ثابت و عمومی).
+let JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  JWT_SECRET = crypto.randomBytes(48).toString('hex');
+  console.warn('⚠️  JWT_SECRET در env تنظیم نشده — یک مقدار تصادفی موقت ساخته شد.');
+  console.warn('⚠️  برای پایداری نشست کاربران بین ری‌استارت‌ها، JWT_SECRET را در Render/محیط تنظیم کنید.');
+}
 const TENANT = 'yaran';
 const GROUP_ID_STR = process.env.GROUP_ID || '-1003717678648';
 
@@ -73,11 +85,19 @@ loadUsers();
 
 // Seed admin account on first run (env overridable, bcrypt-hashed)
 if (!DB.users.some(u => u.role === 'admin')) {
+  let adminPassword = process.env.ADMIN_PASSWORD;
+  if (!adminPassword) {
+    // هرگز رمز پیش‌فرض ثابت نساز — یک رمز تصادفی امن بساز و در لاگ چاپ کن
+    adminPassword = crypto.randomBytes(9).toString('base64url');
+    console.warn('⚠️  ADMIN_PASSWORD در env تنظیم نشده — رمز موقت ادمین ساخته شد:');
+    console.warn(`⚠️  ایمیل: ${(process.env.ADMIN_EMAIL || 'admin@yaran.ir').toLowerCase()}  |  رمز موقت: ${adminPassword}`);
+    console.warn('⚠️  این رمز فقط در همین اجرا معتبر است. برای رمز ثابت، ADMIN_PASSWORD را در env تنظیم کنید.');
+  }
   DB.users.push({
     id: uuid(),
     name: process.env.ADMIN_NAME || 'مدیر یاران',
     email: (process.env.ADMIN_EMAIL || 'admin@yaran.ir').toLowerCase(),
-    password: bcrypt.hashSync(process.env.ADMIN_PASSWORD || 'Yaran@1403Admin', 10),
+    password: bcrypt.hashSync(adminPassword, 10),
     role: 'admin',
     tenant: TENANT,
     createdAt: new Date().toISOString(),
@@ -93,7 +113,20 @@ DB.children.push(
 );
 
 // ── Middleware ──
-app.use(cors({ origin: true }));
+// CORS: فقط دامنه‌های شناخته‌شده مجازند (GitHub Pages + لوکال) — با ALLOWED_ORIGINS در env قابل افزودن
+const defaultOrigins = [
+  'https://pooyankr-boop.github.io',
+  'http://localhost:4000',
+  'http://127.0.0.1:4000',
+];
+const extraOrigins = (process.env.ALLOWED_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean);
+const allowedOrigins = [...defaultOrigins, ...extraOrigins];
+app.use(cors({
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+    callback(new Error('Not allowed by CORS'));
+  },
+}));
 app.use(express.json());
 
 // Serve static frontend
@@ -113,6 +146,13 @@ function authMiddleware(req, res, next) {
 function staffOnly(req, res, next) {
   if (!['teacher', 'admin'].includes(req.user.role)) {
     return res.status(403).json({ error: 'دسترسی غیرمجاز' });
+  }
+  next();
+}
+
+function adminOnly(req, res, next) {
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'دسترسی فقط برای مدیر' });
   }
   next();
 }
@@ -248,6 +288,9 @@ loadTasks();
 
 // POST /api/tasks — create task (from whiteboard or Telegram)
 app.post('/api/tasks', (req, res) => {
+  if (!rateLimitCheck('tasks:' + req.ip, 40)) {
+    return res.status(429).json({ error: 'تعداد درخواستها بیش از حد مجاز' });
+  }
   const { title, description, assigned_to, priority, due_date, room, source, groupId, id } = req.body;
   if (!title) return res.status(400).json({ error: 'title required' });
   const task = {
@@ -314,6 +357,23 @@ app.put('/api/content/:id', authMiddleware, staffOnly, (req, res) => {
 // ── PDF Proxy (for PDF.js canvas rendering) ──
 const https = require('https');
 
+// جلوگیری از SSRF: آی‌پی‌های خصوصی/لوکال/متادیتای ابری اجازه‌ی درخواست ندارند
+function isPrivateOrLocalIp(ip) {
+  if (net.isIPv4(ip)) {
+    const [a, b] = ip.split('.').map(Number);
+    if (a === 127 || a === 10 || a === 0) return true;
+    if (a === 169 && b === 254) return true; // link-local + cloud metadata (169.254.169.254)
+    if (a === 172 && b >= 16 && b <= 31) return true;
+    if (a === 192 && b === 168) return true;
+    return false;
+  }
+  if (net.isIPv6(ip)) {
+    const lower = ip.toLowerCase();
+    return lower === '::1' || lower.startsWith('fe80') || lower.startsWith('fc') || lower.startsWith('fd');
+  }
+  return false;
+}
+
 app.get('/api/pdf-proxy', (req, res) => {
   const { url } = req.query;
   if (!url) return res.status(400).json({ error: 'URL required' });
@@ -322,6 +382,20 @@ app.get('/api/pdf-proxy', (req, res) => {
   if (!['http:', 'https:'].includes(parsed.protocol)) {
     return res.status(400).json({ error: 'Invalid protocol' });
   }
+  const hostname = parsed.hostname.toLowerCase();
+  if (hostname === 'localhost' || isPrivateOrLocalIp(hostname)) {
+    return res.status(400).json({ error: 'Host not allowed' });
+  }
+  dns.lookup(hostname, (dnsErr, resolvedIp) => {
+    if (dnsErr) return res.status(400).json({ error: 'DNS resolve failed' });
+    if (isPrivateOrLocalIp(resolvedIp)) {
+      return res.status(400).json({ error: 'Host not allowed' });
+    }
+    fetchPdf(parsed, url, res);
+  });
+});
+
+function fetchPdf(parsed, url, res) {
   const mod = parsed.protocol === 'https:' ? https : http;
   const proxyReq = mod.get(url, { headers: { 'User-Agent': 'Yaran-PDF-Proxy/1.0' }, timeout: 15000 }, (proxyRes) => {
     if (proxyRes.statusCode >= 300 && proxyRes.statusCode < 400 && proxyRes.headers.location) {
@@ -340,10 +414,13 @@ app.get('/api/pdf-proxy', (req, res) => {
   });
   proxyReq.on('error', () => res.status(502).json({ error: 'Could not fetch PDF' }));
   proxyReq.on('timeout', () => { proxyReq.destroy(); res.status(504).json({ error: 'Timeout' }); });
-});
+}
 
 // ── Reports (from bot) ──
 app.post('/api/reports', (req, res) => {
+  if (!rateLimitCheck('reports:' + req.ip, 20)) {
+    return res.status(429).json({ error: 'تعداد درخواستها بیش از حد مجاز' });
+  }
   const { childName, mood, food, sleep, note, groupId, date, fromBot } = req.body;
   if (!mood || !food || !sleep) {
     return res.status(400).json({ error: 'mood, food, sleep required' });
@@ -366,6 +443,9 @@ app.post('/api/reports', (req, res) => {
 // Panel reads — no auth (same origin, local tool)
 app.get('/api/reports', (_req, res) => res.json({ reports: panel.reports.slice().reverse() }));
 app.post('/api/notes', (req, res) => {
+  if (!rateLimitCheck('notes:' + req.ip, 20)) {
+    return res.status(429).json({ error: 'تعداد درخواستها بیش از حد مجاز' });
+  }
   const { text, author, groupId, date } = req.body;
   if (!text) return res.status(400).json({ error: 'text required' });
   const note = {
@@ -382,6 +462,9 @@ app.post('/api/notes', (req, res) => {
 });
 app.get('/api/notes', (_req, res) => res.json({ notes: panel.notes.slice().reverse() }));
 app.post('/api/messages', (req, res) => {
+  if (!rateLimitCheck('messages:' + req.ip, 20)) {
+    return res.status(429).json({ error: 'تعداد درخواستها بیش از حد مجاز' });
+  }
   const { text, author, groupId, date } = req.body;
   if (!text) return res.status(400).json({ error: 'text required' });
   const msg = {
@@ -404,6 +487,58 @@ app.get('/api/panel', (_req, res) => res.json({
   notes: [...panel.notes].reverse().slice(0, 30),
   messages: [...panel.messages].reverse().slice(0, 30),
 }));
+
+// ── Panel moderation (admin/staff only) ──
+app.delete('/api/notes/:id', authMiddleware, staffOnly, (req, res) => {
+  const before = panel.notes.length;
+  panel.notes = panel.notes.filter(n => n.id !== req.params.id);
+  if (panel.notes.length === before) return res.status(404).json({ error: 'not found' });
+  savePanel();
+  res.json({ ok: true });
+});
+app.delete('/api/messages/:id', authMiddleware, staffOnly, (req, res) => {
+  const before = panel.messages.length;
+  panel.messages = panel.messages.filter(m => m.id !== req.params.id);
+  if (panel.messages.length === before) return res.status(404).json({ error: 'not found' });
+  savePanel();
+  res.json({ ok: true });
+});
+app.delete('/api/reports/:id', authMiddleware, staffOnly, (req, res) => {
+  const before = panel.reports.length;
+  panel.reports = panel.reports.filter(r => r.id !== req.params.id);
+  if (panel.reports.length === before) return res.status(404).json({ error: 'not found' });
+  savePanel();
+  res.json({ ok: true });
+});
+
+// ── Admin: user management ──
+app.get('/api/admin/users', authMiddleware, adminOnly, (_req, res) => {
+  const users = DB.users
+    .filter(u => u.tenant === TENANT)
+    .map(u => ({ id: u.id, name: u.name, email: u.email, role: u.role, createdAt: u.createdAt }));
+  res.json({ users });
+});
+// تغییر نقش کاربر — فقط بین teacher/parent (ارتقا به admin از این مسیر ممنوع، برای جلوگیری از افزایش سطح دسترسی خودسرانه)
+app.patch('/api/admin/users/:id/role', authMiddleware, adminOnly, (req, res) => {
+  const { role } = req.body;
+  if (!['teacher', 'parent'].includes(role)) {
+    return res.status(400).json({ error: 'نقش نامعتبر' });
+  }
+  const user = DB.users.find(u => u.id === req.params.id && u.tenant === TENANT);
+  if (!user) return res.status(404).json({ error: 'not found' });
+  if (user.role === 'admin') return res.status(400).json({ error: 'نمی‌توان نقش ادمین را از این مسیر تغییر داد' });
+  user.role = role;
+  saveUsers();
+  res.json({ ok: true, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
+});
+app.delete('/api/admin/users/:id', authMiddleware, adminOnly, (req, res) => {
+  const target = DB.users.find(u => u.id === req.params.id && u.tenant === TENANT);
+  if (!target) return res.status(404).json({ error: 'not found' });
+  if (target.role === 'admin') return res.status(400).json({ error: 'نمی‌توان حساب ادمین را حذف کرد' });
+  DB.users = DB.users.filter(u => u.id !== req.params.id);
+  saveUsers();
+  res.json({ ok: true });
+});
 
 // ── Children ──
 app.get('/api/children', authMiddleware, (req, res) => {
@@ -449,7 +584,6 @@ app.get('*', (_req, res) => {
 });
 
 // ── Start (auto free port) ──
-const net = require('net');
 function findFreePort(start) {
   return new Promise((resolve) => {
     const s = net.createServer();
