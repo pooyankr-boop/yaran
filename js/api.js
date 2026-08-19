@@ -56,6 +56,9 @@ const Api = {
     }),
   panel: () => apiFetch("/panel"),
   tasks: () => apiFetch("/tasks"),
+  updateTask: (id, patch) =>
+    apiFetch("/tasks/" + id, { method: "PATCH", body: JSON.stringify(patch) }),
+  deleteTask: (id) => apiFetch("/tasks/" + id, { method: "DELETE" }),
   deleteNote: (id) => apiFetch("/notes/" + id, { method: "DELETE" }),
   deleteMessage: (id) => apiFetch("/messages/" + id, { method: "DELETE" }),
   deleteReport: (id) => apiFetch("/reports/" + id, { method: "DELETE" }),

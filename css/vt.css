@@ -287,3 +287,11 @@
 #screen-tour .vt-sc-desc { color: var(--t-text); }
 #screen-tour .vt-bottom-row { background: var(--t-panel); }
 #screen-tour .vt-nav-btn { background: var(--t-panel); color: var(--t-text); }
+
+/* ── soft transition between rooms/phases ── */
+.vt-swap { animation: vtFadeUp .45s ease; }
+@keyframes vtFadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) { .vt-swap { animation: none; } }

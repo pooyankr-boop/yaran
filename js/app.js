@@ -113,11 +113,14 @@ async function renderAdminTab(body) {
   }
   body.innerHTML = `<div style="text-align:center;color:#7a6b55;padding:1rem;">در حال بارگذاری...</div>`;
   try {
-    const [usersRes, panelRes] = await Promise.all([Api.adminUsers(), Api.panel()]);
-    const users = usersRes.users || [];
-    const roleFa = { teacher: "مربی", parent: "والد", admin: "مدیر" };
-    body.innerHTML = `
-      <h3 style="margin-bottom:.8rem;">👥 کاربران (${users.length})</h3>
+      const [usersRes, panelRes, tasksRes] = await Promise.all([Api.adminUsers(), Api.panel(), Api.tasks()]);
+      const users = usersRes.users || [];
+      const allTasks = tasksRes.tasks || [];
+      const openTasks = allTasks.filter(t => t.status !== 'completed' && t.status !== 'done');
+      const doneTasks = allTasks.filter(t => t.status === 'completed' || t.status === 'done');
+      const taskIcon = t => t.status === 'in_progress' ? '🔄' : '⬜';
+      body.innerHTML = `
+        <h3 style="margin-bottom:.8rem;">👥 کاربران (${users.length})</h3>
       <div class="admin-user-list">
         ${users.map(u => `
           <div class="admin-user-row" data-user-id="${escHtml(u.id)}">
@@ -132,6 +135,24 @@ async function renderAdminTab(body) {
               `}
             </div>
           </div>`).join("")}
+      </div>
+
+      <h3 style="margin:1.5rem 0 .8rem;">📋 وظایف (${allTasks.length})</h3>
+      <div class="admin-mod-list">
+        ${openTasks.map(t => `
+          <div class="admin-mod-row" data-task-id="${escHtml(t.id)}">
+            <span>${taskIcon(t)} ${escHtml(t.title)}${t.assigned_to ? ' <small style="color:#a09080;">👤' + escHtml(t.assigned_to) + '</small>' : ''}</span>
+            <span style="display:flex;gap:4px;">
+              ${t.status !== 'in_progress' ? '<button class="pill-btn admin-task-start" data-task-id="' + escHtml(t.id) + '" title="در جریان">🔄</button>' : ''}
+              <button class="pill-btn admin-task-done" data-task-id="${escHtml(t.id)}" title="انجام شد">✅</button>
+              <button class="pill-btn admin-delete-task" data-task-id="${escHtml(t.id)}" title="حذف">🗑</button>
+            </span>
+          </div>`).join("") || '<p style="color:#7a6b55;">وظیفه‌ای در جریان نیست.</p>'}
+        ${doneTasks.length ? '<details style="margin-top:6px;"><summary style="color:#a09080;cursor:pointer;font-size:.85rem;">تمام‌شده (' + doneTasks.length + ')</summary>' + doneTasks.map(t => `
+          <div class="admin-mod-row" data-task-id="${escHtml(t.id)}">
+            <span style="opacity:.6;text-decoration:line-through;">✅ ${escHtml(t.title)}</span>
+            <button class="pill-btn admin-delete-task" data-task-id="${escHtml(t.id)}" title="حذف">🗑</button>
+          </div>`).join("") + '</details>' : ''}
       </div>
 
       <h3 style="margin:1.5rem 0 .8rem;">📝 یادداشت‌ها (${(panelRes.notes||[]).length})</h3>
@@ -163,6 +184,25 @@ async function renderAdminTab(body) {
       btn.addEventListener("click", async () => {
         if (!confirm("این کاربر حذف شود؟")) return;
         try { await Api.adminDeleteUser(btn.dataset.userId); renderAdminTab(body); }
+        catch (e) { alert(e.message); }
+      });
+    });
+    body.querySelectorAll(".admin-task-done").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        try { await Api.updateTask(btn.dataset.taskId, { status: "completed" }); renderAdminTab(body); }
+        catch (e) { alert(e.message); }
+      });
+    });
+    body.querySelectorAll(".admin-task-start").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        try { await Api.updateTask(btn.dataset.taskId, { status: "in_progress" }); renderAdminTab(body); }
+        catch (e) { alert(e.message); }
+      });
+    });
+    body.querySelectorAll(".admin-delete-task").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        if (!confirm("این وظیفه حذف شود؟")) return;
+        try { await Api.deleteTask(btn.dataset.taskId); renderAdminTab(body); }
         catch (e) { alert(e.message); }
       });
     });

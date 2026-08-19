@@ -383,6 +383,13 @@ var VirtualTour = (function () {
     /* ── progress ── */
     renderProgress(progEl);
 
+    /* ── soft crossfade on every tour change ── */
+    [contentEl, bgWrap].forEach(function (n) {
+      n.classList.remove('vt-swap');
+      void n.offsetWidth;
+      n.classList.add('vt-swap');
+    });
+
     /* ── room sidebar ── */
     renderRoomSidebar();
 
@@ -657,7 +664,7 @@ var VirtualTour = (function () {
     var current = state.ri + 1;
     var pct = total > 0 ? Math.round((current / total) * 100) : 0;
     el.innerHTML = '<div class="vt-prog-bar"><div class="vt-prog-fill" style="width:' + pct + '%"></div></div>' +
-      '<div class="vt-prog-text">' + current + ' / ' + total + ' اتاق</div>';
+      '<div class="vt-prog-text">اتاق ' + current + ' از ' + total + '</div>';
   }
 
   /* ── room sidebar ── */
