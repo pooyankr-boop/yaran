@@ -33,6 +33,7 @@
   background: rgba(139,115,85,.06); cursor: pointer; font-size: .7rem; display: flex; align-items: center; justify-content: center;
   transition: all .2s; color: #8b7355;
 }
+.tb-btn-active { background: #ffb84d !important; color: #3a2a10 !important; }
 .tb-btn:hover { background: rgba(139,115,85,.15); }
 .tb-btn-collapse { font-size: .8rem; font-weight: 700; }
 .tb-btn-close:hover { background: rgba(220,80,80,.15); color: #c04040; }
@@ -87,7 +88,8 @@
 .tb-hidden { display: none; }
 
 /* ── Pinned (floats over all screens, stays in its own bottom-left spot) ── */
-.task-board.tb-pinned {
+.task-board.tb-pinned,
+#screen-tour .task-board.tb-pinned {
   position: fixed !important;
   top: auto !important;
   bottom: 80px !important;
@@ -105,14 +107,19 @@
 }
 
 /* ── Maximized ── */
-.task-board.tb-maximized {
+.task-board.tb-maximized,
+#screen-tour .task-board.tb-maximized {
   position: fixed !important;
-  top: 10px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: min(560px, calc(100vw - 20px));
+  top: 10px !important;
+  bottom: auto !important;
+  left: 50% !important;
+  right: auto !important;
+  width: min(560px, calc(100vw - 20px)) !important;
+  max-width: min(560px, calc(100vw - 20px)) !important;
   max-height: calc(100vh - 20px);
+  transform: translateX(-50%);
   z-index: 9998 !important;
+  background: rgba(255,255,255,.92);
   box-shadow: 0 12px 48px rgba(0,0,0,.3);
 }
 .tb-maximized .tb-header { border-radius: 16px 16px 0 0; }

@@ -117,6 +117,11 @@ html, body {
   from { transform: scale(1); }
   to   { transform: scale(1.07); }
 }
+/* نمای جلو (چند‌رسانه‌ای): همان عکس نمای کلی، زوم ثابت ۳۰٪ بیشتر از نمای کلی */
+.scene img.scene-bg.zoom {
+  animation: none;
+  transform: scale(1.3);
+}
 
 .scene-caption {
   position: absolute; top: 9%; right: 50%;
@@ -155,8 +160,8 @@ html, body {
   border: 3px solid #ffb84d;
   display: flex; align-items: center; justify-content: center;
   cursor: pointer;
-  animation: pulse 1.8s infinite, popIn .5s ease backwards;
-  z-index: 10;
+    animation: pulse 1.8s infinite, popIn .5s ease backwards;
+      z-index: 25;
   transition: background .2s, border-color .2s, transform .2s;
 }
 .hotspot:hover {
@@ -1147,6 +1152,22 @@ body.theme-festival .explorer-filters .filter-chip.active { background: #ff3366;
 .vn-center:hover { background: rgba(255, 184, 77, 0.3); border-color: #ffb84d; }
 .vn-center.active { background: #ffb84d; color: #333; border-color: #ffb84d; }
 
+/* Front (media) view button - teal */
+.vn-media {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'Vazirmatn', sans-serif;
+  white-space: nowrap;
+}
+.vn-media:hover { background: rgba(122, 230, 190, 0.3); border-color: #7ae6be; }
+.vn-media.active { background: #7ae6be; color: #333; border-color: #7ae6be; }
+
 #plan-img, #door-hotspots { transition: left .3s ease, top .3s ease, width .3s ease, height .3s ease; }
 
 /* Plan image: removed CSS scale override — JS positionPlanLayout handles sizing */
@@ -1160,6 +1181,8 @@ body.theme-festival .explorer-filters .filter-chip.active { background: #ff3366;
 /* Center button: icon-only, same size as hero */
 .view-nav .vn-stack .vn-center { width: 38px; height: 38px; font-size: .9rem; opacity: .85; }
 .view-nav .vn-stack .vn-center.active { opacity: 1; background: rgba(255,184,77,.4); }
+.view-nav .vn-stack .vn-media { width: 38px; height: 38px; font-size: .9rem; opacity: .85; }
+.view-nav .vn-stack .vn-media.active { opacity: 1; background: rgba(122,230,190,.4); }
 
 /* ===== Lobby Tip-of-Day Box (right side) ===== */
 .lobby-tip-box {
@@ -1436,11 +1459,144 @@ body.theme-night .slideshow-caption { color: #b8a8d0 !important; }
   pointer-events: auto;
 }
 .hero-zone:hover { background: rgba(0,0,0,.22); }
-/* مثلث: قاعده = لبه‌ی پایین کادر، رأس = وسط دقیق صفحه */
-.hero-zone-front { clip-path: polygon(0% 100%, 100% 100%, 50% 50%); }
-/* ذوزنقه‌ی چپ و راست، قرینه‌ی هم، از رأس مثلث تا گوشه‌های بالا */
-.hero-zone-left  { clip-path: polygon(0% 0%, 50% 0%, 50% 50%, 0% 100%); }
-.hero-zone-right { clip-path: polygon(50% 0%, 100% 0%, 100% 100%, 50% 50%); }
+/* بخش‌بندی نمای کلی (طبق طرح کاربر): ذوزنقه‌های چپ/راست + مثلث پشت، هم‌شکل قبل —
+   دایرهٔ نمای جلو روی همان ساختار اضافه شده (در مرکز، بالای رأس مثلث) */
+.hero-zone-front { clip-path: polygon(38% 32%, 62% 32%, 100% 100%, 0% 100%); }
+.hero-zone-left  { clip-path: polygon(0% 0%, 50% 0%, 50% 20%, 38% 32%, 0% 100%); }
+.hero-zone-right { clip-path: polygon(50% 0%, 100% 0%, 100% 100%, 62% 32%, 50% 20%); }
+/* دایرهٔ نمای جلو (چند‌رسانه‌ای) — وسط صفحه، روی رأس مثلث؛ بی‌رنگ مثل بقیه گوشه‌ها، هایلایت فقط هاور */
+.hero-zone-media {
+  clip-path: none;
+  inset: auto;
+  border-radius: 50%;
+  width: 24%;
+  aspect-ratio: 1;
+  left: 38%;
+  top: 20%;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+.hero-zone-media:hover { background: rgba(0, 0, 0, .22); } /* هم‌رنگ هاور بقیه گوشه‌ها */
+
+/* تور مجازی نمای جلو — مثل تور گردش لابی: باکس افقی بزرگ + دکمه‌های بعدی/قبلی/گوشه/شافل + محتوای کامل */
+.media-slideshow {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(72%, 960px);
+  aspect-ratio: 16 / 9;
+  background: rgba(10, 12, 30, .72);
+  border: 1px solid rgba(255, 255, 255, .28);
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 14px 48px rgba(0, 0, 0, .6);
+  z-index: 12;
+  display: flex;
+  flex-direction: column;
+}
+.media-slideshow .ms-bg {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; filter: blur(6px) brightness(.38);
+}
+.ms-top {
+  position: relative; z-index: 2;
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px 10px;
+  background: linear-gradient(180deg, rgba(0, 0, 0, .55), rgba(0, 0, 0, .15));
+}
+.ms-btn {
+  background: rgba(255, 255, 255, .18);
+  border: none; color: #fff; border-radius: 10px;
+  padding: 5px 10px; cursor: pointer;
+  font-size: .85rem; line-height: 1.2;
+  font-family: inherit;
+  white-space: nowrap;
+}
+.ms-btn:hover { background: rgba(255, 184, 77, .35); }
+.ms-count { margin-inline-start: auto; font-size: .75rem; opacity: .85; color: #ffd98a; }
+.ms-body {
+  position: relative; z-index: 1;
+  flex: 1; overflow-y: auto; overflow-x: hidden;
+  padding: 12px 16px;
+  color: #fff;
+}
+/* اسلاید «باز شدن فهرست» */
+.ms-cat-slide { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 10px; }
+.ms-cat-title {
+  font-size: 1.7rem; font-weight: 800;
+  background: rgba(0, 0, 0, .55); padding: 12px 30px; border-radius: 999px;
+  border: 2px solid #ffb84d; max-width: 92%;
+}
+.ms-cat-view { font-size: .95rem; color: #ffd98a; background: rgba(0, 0, 0, .4); padding: 4px 14px; border-radius: 999px; }
+/* اسلاید آیتم — دو ستون: متن + عکس */
+.ms-two-col { display: flex; gap: 16px; align-items: flex-start; height: 100%; }
+.ms-text { flex: 1; min-width: 0; }
+.ms-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+.ms-badge { background: #ffb84d; color: #2a1800; font-weight: 800; font-size: .72rem; padding: 2px 10px; border-radius: 999px; }
+.ms-viewtag { font-size: .72rem; opacity: .78; }
+.ms-title { font-size: 1.25rem; font-weight: 800; line-height: 1.6; margin-bottom: 8px; cursor: pointer; }
+.ms-title:hover { color: #ffd98a; }
+.ms-sec { margin-bottom: 8px; }
+.ms-sec-t { font-size: .72rem; font-weight: 700; color: #ffd98a; margin-bottom: 2px; }
+.ms-desc { font-size: .84rem; line-height: 1.8; opacity: .92; }
+.ms-steps { counter-reset: msstep; list-style: none; margin: 0; padding: 0; font-size: .84rem; line-height: 1.9; }
+.ms-steps li { counter-increment: msstep; position: relative; padding: 4px 28px 4px 0; }
+.ms-steps li::before { content: counter(msstep); position: absolute; right: 0; top: 5px; width: 20px; height: 20px; background: linear-gradient(135deg, #ffb84d, #f0960f); color: #fff; border-radius: 50%; font-size: .65rem; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.ms-safety { background: rgba(255, 90, 90, .14); border-radius: 10px; padding: 6px 10px; }
+.ms-actions { margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap; }
+.ms-act {
+  background: rgba(255, 255, 255, .16); color: #fff; text-decoration: none;
+  padding: 7px 16px; border-radius: 999px; font-size: .82rem; border: 1px solid rgba(255, 255, 255, .3);
+}
+.ms-act:hover { background: rgba(255, 184, 77, .3); }
+.ms-act-primary { background: #ffb84d; color: #2a1800; border: none; font-weight: 700; }
+.ms-media { flex: 0 0 34%; max-width: 34%; }
+.ms-media-frame { border-radius: 12px; overflow: hidden; border: 1px solid rgba(255, 255, 255, .3); background: rgba(0, 0, 0, .35); cursor: pointer; }
+.ms-media-frame:hover { border-color: #ffb84d; }
+.ms-media-frame img { width: 100%; max-height: 36vh; object-fit: contain; display: block; }
+/* منوی dropdown گوشه‌ها */
+.ms-menu {
+  position: absolute; z-index: 5;
+  top: 46px; inset-inline-start: 10px;
+  display: none; flex-direction: column; gap: 2px;
+  background: rgba(10, 12, 30, .95);
+  border: 1px solid rgba(255, 255, 255, .25);
+  border-radius: 12px; padding: 6px;
+  min-width: 240px; max-height: 66%;
+  overflow-y: auto;
+}
+.ms-menu.open { display: flex; }
+.ms-menu-view {
+  font-weight: 800; color: #ffd98a;
+  padding: 7px 10px 3px; font-size: .86rem;
+  border-top: 1px solid rgba(255, 255, 255, .15);
+  cursor: pointer;
+}
+.ms-menu-view:first-child { border-top: none; }
+.ms-menu-view:hover { color: #fff; }
+.ms-menu-item {
+  background: none; border: none; color: #ddd; text-align: start;
+  padding: 5px 10px; border-radius: 8px; cursor: pointer; font-size: .82rem; font-family: inherit;
+}
+.ms-menu-item:hover { background: rgba(255, 184, 77, .2); color: #fff; }
+.ms-menu-cat { font-weight: 700; color: #ffb84d; padding-inline-start: 16px; }
+.ms-menu-sub { padding-inline-start: 32px; }
+.ms-menu-on { color: #fff; background: rgba(255, 184, 77, .18); }
+@media (max-width: 900px) {
+  .media-slideshow { width: 94%; }
+  .ms-media { flex: 0 0 30%; max-width: 30%; }
+}
+@media (max-width: 640px) {
+  .media-slideshow { width: 96%; aspect-ratio: 3 / 2; top: auto; bottom: 4%; transform: translateX(-50%); }
+  .ms-two-col { flex-direction: column; }
+  .ms-media { order: -1; flex: none; max-width: 100%; }
+  .ms-media-frame img { max-height: 26vh; }
+  .ms-cat-title { font-size: 1.25rem; }
+  .hero-zone-media { inset: auto; width: 18%; left: 41%; top: 41%; }
+  .hotspot { width: 38px; height: 38px; }
+}
 
 /* ---------- منوی دودرجه‌ای (دسته → زیرفهرست) ---------- */
 .menu-category { margin-bottom: .6rem; }
@@ -1484,6 +1640,7 @@ body.theme-night .slideshow-caption { color: #b8a8d0 !important; }
 .hero-zone-front:hover .hero-zone-label { background: #f6a94a; }
 .hero-zone-left:hover .hero-zone-label { background: #5aa9e6; }
 .hero-zone-right:hover .hero-zone-label { background: #e6739f; }
+.hero-zone-media:hover .hero-zone-label { background: #7ae6be; }
 
 /* ===== بخش محتوای اتاق (screen-content) ===== */
 .content-section { margin-bottom: 2.5rem; max-width: 1100px; margin-left: auto; margin-right: auto; }

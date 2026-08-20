@@ -54,8 +54,8 @@ var TaskBoard = (function () {
       h += '<div class="tb-header"><span class="tb-title">📋 تخته پیگیری وظایف</span>';
       h += '<span class="tb-count"></span>';
       h += '<div class="tb-actions">';
-      h += '<button class="tb-btn" data-tb="pin" title="پین در همه صفحات">📌</button>';
-      h += '<button class="tb-btn" data-tb="maximize" title="تمامصفحه">⛶</button>';
+      h += '<button class="tb-btn' + (container.classList.contains('tb-pinned') ? ' tb-btn-active' : '') + '" data-tb="pin" title="پین در همه صفحات">📌</button>';
+            h += '<button class="tb-btn' + (container.classList.contains('tb-maximized') ? ' tb-btn-active' : '') + '" data-tb="maximize" title="تمامصفحه">⛶</button>';
       h += '<button class="tb-btn tb-btn-collapse" data-tb="collapse">' + (collapsed ? '+' : '−') + '</button>';
       h += '<button class="tb-btn" data-tb="refresh" title="بروزرسانی">🔄</button>';
       h += '<button class="tb-btn tb-btn-close" data-tb="close">✕</button>';
@@ -192,31 +192,38 @@ var TaskBoard = (function () {
   function shortId(id) { return String(id || '').slice(-6); }
 
   var pinHost = null;
-  function togglePin() {
-    if (container.classList.contains('tb-pinned')) {
-      if (pinHost) pinHost.appendChild(container);
-      container.classList.remove('tb-pinned');
-    } else {
-      /* پین با ماکسیمایز ناسازگار است — فقط یکی فعال */
-      container.classList.remove('tb-maximized');
-      pinHost = container.parentNode;
-      document.body.appendChild(container);
-      container.classList.add('tb-pinned');
+    function syncBtnState() {
+      var p = container.querySelector('[data-tb="pin"]');
+      var m = container.querySelector('[data-tb="maximize"]');
+      if (p) p.classList.toggle('tb-btn-active', container.classList.contains('tb-pinned'));
+      if (m) m.classList.toggle('tb-btn-active', container.classList.contains('tb-maximized'));
     }
-  }
-  function toggleMax() {
-    if (container.classList.contains('tb-maximized')) {
-      container.classList.remove('tb-maximized');
-    } else {
+    function togglePin() {
       if (container.classList.contains('tb-pinned')) {
         if (pinHost) pinHost.appendChild(container);
         container.classList.remove('tb-pinned');
       } else {
+        /* پین با ماکسیمایز ناسازگار است — فقط یکی فعال */
+        container.classList.remove('tb-maximized');
         pinHost = container.parentNode;
+        document.body.appendChild(container);
+        container.classList.add('tb-pinned');
+        fetch();
       }
-      container.classList.add('tb-maximized');
+      syncBtnState();
     }
-  }
+    function toggleMax() {
+      if (container.classList.contains('tb-maximized')) {
+        container.classList.remove('tb-maximized');
+      } else {
+        if (!container.classList.contains('tb-pinned')) {
+          /* اگر پین نیست، خانهٔ فعلی برای بازگشت ثبت شود؛ اگر پین است در body می‌ماند */
+          pinHost = container.parentNode;
+        }
+        container.classList.add('tb-maximized');
+      }
+      syncBtnState();
+    }
 
   function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 

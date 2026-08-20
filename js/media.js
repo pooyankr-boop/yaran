@@ -145,10 +145,12 @@ function renderReaderPage(body, actions) {
     descHtml += '<div style="color:#999;text-align:center;padding:2rem;">توضیحی موجود نیست</div>';
   }
 
-  // Source link
-  if (readerItem.page) {
-    descHtml += '<div class="desc-source">منبع: <a href="' + readerItem.page + '" target="_blank">samayehrouhi.ir</a></div>';
-  }
+  // Source link: صفحهٔ خود کاربرگ + لینک صفحهٔ اصلی سایت
+    if (readerItem.page) {
+      descHtml += '<div class="desc-source">📄 <a href="' + readerItem.page + '" target="_blank">صفحهٔ این کاربرگ</a> · <a href="https://somayehrouhi.ir/" target="_blank">صفحهٔ اصلی</a></div>';
+    } else {
+      descHtml += '<div class="desc-source"><a href="https://somayehrouhi.ir/" target="_blank">صفحهٔ اصلی samayehrouhi.ir</a></div>';
+    }
 
   // Navigation
   let navHtml = '';

@@ -2,7 +2,7 @@
     چرخه تککلیک + منو فقط هاور + RTL + دکمه نمای جلو + plan zoom-out
 */
 
-const VIEW_LABELS = { hero: "نمای کلی", herog: "نمای جلو", herog_left: "نمای چپ", herog_right: "نمای راست" };
+const VIEW_LABELS = { hero: "نمای کلی", herog: "نمای پشت", herog_left: "نمای چپ", herog_right: "نمای راست", media: "چند‌رسانه‌ای" };
 
 let currentRoom = null;
 let currentView = "hero";
@@ -256,7 +256,11 @@ function openRoomWithTransition(id) {
 document.getElementById("map-back-lobby").addEventListener("click", () => showScreen("screen-lobby"));
 
 /* ---------- اتاق ---------- */
+function isPortrait() {
+  return window.innerHeight > window.innerWidth * 1.05 || window.innerWidth < 640;
+}
 function openRoom(id) {
+  clearSlideTimer();
   currentRoom = ROOMS.find(r => r.id === id);
   currentView = "hero";
   transitioning = false;
@@ -266,7 +270,7 @@ function openRoom(id) {
   // ریست کامل هر دو لایه (باگ قبلی: کلاس off هیچوقت پاک نمیشد و لایهی a برای همیشه مخفی میماند)
   a.classList.remove("on", "off");
   b.classList.remove("on", "off");
-  a.src = "assets/images/" + currentRoom.folder + "/hero.webp";
+  a.src = "assets/images/" + currentRoom.folder + "/" + (isPortrait() ? "hero-v" : "hero") + ".webp";
   a.classList.add("on");
   activeLayer = "a";
   updateRoomChrome();
@@ -276,11 +280,15 @@ function openRoom(id) {
 function setRoomView(view) {
   if (transitioning) return;
   if (view === currentView) return;
+  clearSlideTimer();
   transitioning = true;
   const nextView = view;
   const a = document.getElementById("room-bg-a");
   const b = document.getElementById("room-bg-b");
-  const src = "assets/images/" + currentRoom.folder + "/" + view + ".webp";
+  // نمای جلو: همان عکس جدید اتاق (افقی = hero با زوم، عمودی = hero-v)
+  const file = view === "media" ? (isPortrait() ? "hero-v" : "hero")
+    : (view === "hero" && isPortrait() ? "hero-v" : view);
+  const src = "assets/images/" + currentRoom.folder + "/" + file + ".webp";
   const showEl = activeLayer === "a" ? b : a;
   const hideEl = activeLayer === "a" ? a : b;
 
@@ -295,6 +303,8 @@ function setRoomView(view) {
   preload.onload = () => {
     currentView = nextView;
     showEl.src = src;
+    showEl.classList.toggle("zoom", view === "media"); // نمای جلو: زوم بیشتر نسبت به نمای کلی
+    hideEl.classList.remove("zoom");
     showEl.classList.remove("off");
     showEl.classList.add("on");
     hideEl.classList.remove("on");
@@ -330,10 +340,14 @@ function renderHotspots() {
   const wrap = document.getElementById("room-hotspots");
   wrap.innerHTML = "";
   openHotspotEl = null;
+  closeGlassMenu();
+  clearTimeout(menuHideTimer);
   renderHeroNavZones();
-  if (currentView === "hero" || !currentRoom.views) return; // نمای کلی: بدون هاتسپات محتوا
+  if (!currentRoom.views) return;
   const viewData = currentRoom.views[currentView];
-  const hotspots = (viewData && viewData.hotspots) || [];
+  let hotspots = (viewData && viewData.hotspots) || [];
+  // منوی محتوای تصویری/صوتی فقط در نمای جلو؛ نمای کلی فقط زون‌های ناوبری دارد
+  if (currentView === "media") hotspots = buildMediaHotspots();
   hotspots.forEach((hotspot) => {
     const el = document.createElement("div");
     el.className = "hotspot";
@@ -363,27 +377,219 @@ function renderHotspots() {
     });
     wrap.appendChild(el);
   });
+  if (currentView === "media") renderMediaSlideshow();
 }
 
-/* ---------- ناوبری روی نمای کلی: مثلث وسط + ذوزنقه چپ/راست ----------
-   مثلث: قاعده = لبهی پایین کادر، رأس = وسط دقیق صفحه (کلیک → نمای جلو/herog)
-   ذوزنقهی چپ/راست: قرینه، هرکدام کل نیمهی بالا-کنار خودشان تا رأس مثلث (کلیک → herog_left/right)
-   برچسبِ هر جهت مستقیماًٌ روی همان گوشه و با رنگ مخصوص خودش نشان داده میشود. */
+/* ---------- محتوای رسانهای اتاق: صوتی (چپ) / تصویری (راست) ---------- */
+function buildMediaHotspots() {
+  const all = [];
+  Object.values(currentRoom.views).forEach((v) => (v.hotspots || []).forEach((h) => (h.categories || []).forEach((c) => (c.items || []).forEach((it) => all.push(it)))));
+  const audio = [], visual = [];
+  all.forEach((it) => (it.type === "audio" ? audio : visual).push(it));
+  const byType = (items) => {
+    const g = {};
+    items.forEach((it) => { (g[it.type] = g[it.type] || []).push(it); });
+    return Object.keys(g).map((t) => ({
+      title: t === "game" ? "بازی و سرگرمی" : t === "activity" ? "فعالیت و رنگآمیزی" : t === "pdf" ? "جزوه و کاربرگ" : t,
+      items: g[t]
+    }));
+  };
+  const p = isPortrait(); // موبایل: باکس تور پایین صفحه → منوها بروند بالا؛ دسکتاپ: کناره‌ها خارج از کادر
+  return [
+      { title: "🖼 محتوای تصویری", x: p ? 15 : 92, y: p ? 12 : 50, categories: byType(visual) },
+      { title: "🎧 محتوای صوتی", x: p ? 85 : 8, y: p ? 12 : 50, categories: byType(audio) },
+    ];
+  }
+
+/* ---------- تور مجازی نمای جلو: مثل تور گردش لابی — گوشه‌به‌گوشه، محتوای کامل هر آیتم ---------- */
+let mslideTimer = null; // نام m- تا با lobby.js (slideTimer) تداخل global نداشته باشد
+let slideIdx = 0;
+let slideList = [];
+let slideViews = [];
+let slideViewStart = {};
+let slideViewEnd = {};
+let slideShuffle = false;
+function clearSlideTimer() { if (mslideTimer) { clearInterval(mslideTimer); mslideTimer = null; } }
+const SLIDE_MS = 15000; // مدت نمایش هر اسلاید (سه برابر حالت قبلی)
+const msImg = (view) => "assets/images/" + currentRoom.folder + "/" + view + ".webp";
+const msSafe = (i, n) => ((i % n) + n) % n;
+
+function buildSlides() {
+  // ترتیب گوشه‌ها = چرخه راهبری تور اتاق (راست‌گرد): herog_right → herog → herog_left
+  const cyc = (k) => { const i = CYCLE_ORDER.indexOf(k); return i < 0 ? 99 : i; };
+  const views = Object.keys(currentRoom.views).filter((k) => k !== "hero" && k !== "media"
+    && (currentRoom.views[k].hotspots || []).some((h) => (h.categories || []).some((c) => (c.items || []).length)))
+    .sort((a, b) => cyc(a) - cyc(b));
+  if (slideShuffle) {
+    for (let i = views.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [views[i], views[j]] = [views[j], views[i]]; }
+  }
+  slideViews = views;
+  slideList = [];
+  slideViewStart = {};
+  slideViewEnd = {};
+  views.forEach((k) => {
+    slideViewStart[k] = slideList.length; // اولین اسلایدِ این گوشه
+    const v = currentRoom.views[k];
+    (v.hotspots || []).forEach((h) =>
+      (h.categories || []).forEach((c) => {
+        slideList.push({ view: k, cat: c.title, item: null }); // باز شدن فهرست
+        (c.items || []).forEach((it) => slideList.push({ view: k, cat: c.title, item: it }));
+      })
+    );
+    slideViewEnd[k] = slideList.length; // آخرین اسلایدِ این گوشه
+  });
+}
+
+function renderMediaSlideshow() {
+  clearSlideTimer();
+  const old = document.getElementById("media-slideshow");
+  if (old) old.remove();
+  const wrap = document.getElementById("room-hotspots");
+  buildSlides();
+  if (!slideList.length) return;
+  slideIdx = 0;
+
+  const box = document.createElement("div");
+  box.id = "media-slideshow";
+  box.className = "media-slideshow";
+  const bg = document.createElement("img");
+  bg.className = "ms-bg"; bg.alt = "";
+  const top = document.createElement("div");
+  top.className = "ms-top";
+  const body = document.createElement("div");
+  body.className = "ms-body";
+  const viewMenu = document.createElement("div");
+  viewMenu.className = "ms-menu";
+  const count = document.createElement("div");
+  count.className = "ms-count";
+
+  const tbtn = (label, title, fn) => {
+    const b = document.createElement("button");
+    b.textContent = label; b.title = title; b.className = "ms-btn";
+    b.addEventListener("click", (e) => { e.stopPropagation(); fn(); });
+    return b;
+  };
+  const btnClose = tbtn("✕", "بستن و بازگشت به نمای کلی", () => setRoomView("hero"));
+  const btnViews = tbtn("☰", "فهرست گوشه‌ها", () => viewMenu.classList.toggle("open"));
+  const btnPrevView = tbtn("⏮", "گوشه قبلی", () => jumpView(-1));
+  const btnPrev = tbtn("◀◀", "قبلی", () => step(-1));
+  const btnPlay = tbtn("⏸", "توقف / پخش", () => togglePlay());
+  const btnNext = tbtn("▶▶", "بعدی", () => step(1));
+  const btnNextView = tbtn("⏭", "گوشه بعدی", () => jumpView(1));
+  const btnShuffle = tbtn("🔀", "تصادفی کردن گوشه‌ها", () => toggleShuffle());
+  top.append(btnClose, btnViews, btnNextView, btnNext, btnPlay, btnPrev, btnPrevView, btnShuffle, count);
+
+  function renderViewMenu() {
+    viewMenu.innerHTML = "";
+    const cur = slideList[msSafe(slideIdx, slideList.length)].view;
+    slideViews.forEach((k) => {
+      const vh = document.createElement("div");
+      vh.className = "ms-menu-view" + (k === cur ? " ms-menu-on" : "");
+      vh.textContent = "◈ " + (VIEW_LABELS[k] || k);
+      vh.addEventListener("click", (e) => { e.stopPropagation(); viewMenu.classList.remove("open"); jumpTo(k); });
+      viewMenu.appendChild(vh);
+      // زیرفهرست: فهرست‌ها (categories) و آیتم‌هایشان — کلیک → پرش به همان اسلاید
+      for (let i = slideViewStart[k]; i < slideViewEnd[k]; i++) {
+        const s = slideList[i];
+        const it = document.createElement("button");
+        it.className = "ms-menu-item" + (s.item ? " ms-menu-sub" : " ms-menu-cat") + (i === msSafe(slideIdx, slideList.length) ? " ms-menu-on" : "");
+        it.textContent = (s.item ? "•  " : "▸  ") + (s.item ? s.item.title : s.cat);
+        it.addEventListener("click", (e) => { e.stopPropagation(); viewMenu.classList.remove("open"); slideIdx = i; show(); });
+        viewMenu.appendChild(it);
+      }
+    });
+  }
+
+  box.append(bg, top, body, viewMenu);
+  wrap.appendChild(box);
+
+  const TICONS = { pdf: "📄", video: "🎬", audio: "🔊", game: "🎮", activity: "🎯", story: "📖", song: "🎵", craft: "✂️" };
+  const TLABELS = { pdf: "کاربرگ", video: "ویدیو", audio: "صوت", game: "بازی", activity: "فعالیت", story: "قصه", song: "آهنگ", craft: "کاردستی" };
+
+  const show = () => {
+    const s = slideList[msSafe(slideIdx, slideList.length)];
+    bg.src = msImg(s.view);
+    const label = "◈ " + (VIEW_LABELS[s.view] || s.view);
+    if (!s.item) {
+      body.classList.add("ms-cat-slide");
+      body.innerHTML = "<div class=\"ms-cat-title\">" + escHtml(s.cat) + "</div>"
+        + "<div class=\"ms-cat-view\">" + label + "</div>";
+    } else {
+      body.classList.remove("ms-cat-slide");
+      const it = s.item;
+      const type = (it.type || "activity").toLowerCase();
+      let h = "<div class=\"ms-two-col\"><div class=\"ms-text\">";
+      h += "<div class=\"ms-meta\"><span class=\"ms-badge\">" + (TICONS[type] || "📎") + " " + (TLABELS[type] || type) + "</span>"
+        + "<span class=\"ms-viewtag\">" + label + " · " + escHtml(s.cat) + "</span></div>";
+      h += "<div class=\"ms-title\" onclick=\"openMediaModal(" + JSON.stringify(it).replace(/"/g, "&quot;") + ")\">" + escHtml(it.title) + "</div>";
+      if (it.desc) h += "<div class=\"ms-sec\"><div class=\"ms-sec-t\">📝 توضیحات</div><div class=\"ms-desc\">" + escHtml(it.desc) + "</div></div>";
+      if (it.materials) h += "<div class=\"ms-sec\"><div class=\"ms-sec-t\">🧰 وسایل مورد نیاز</div><div class=\"ms-desc\">" + escHtml(it.materials) + "</div></div>";
+      if (it.instructions) {
+        h += "<div class=\"ms-sec\"><div class=\"ms-sec-t\">📋 مراحل اجرا</div><ol class=\"ms-steps\">";
+        it.instructions.split(/[\n،؛.]+|\d+[.)-]|→/g).filter((x) => x.trim()).forEach((st) => { h += "<li>" + escHtml(st.trim()) + "</li>"; });
+        h += "</ol></div>";
+      }
+      if (it.safety) h += "<div class=\"ms-sec ms-safety\"><div class=\"ms-sec-t\">⚠️ نکات ایمنی</div><div class=\"ms-desc\">" + escHtml(it.safety) + "</div></div>";
+      if (it.url || it.page) {
+        h += "<div class=\"ms-actions\">";
+        if (it.url) h += "<a class=\"ms-act ms-act-primary\" href=\"" + escHtml(it.url) + "\" target=\"_blank\" rel=\"noopener\">📥 دانلود کاربرگ</a>";
+        if (it.page) h += "<a class=\"ms-act\" href=\"" + escHtml(it.page) + "\" target=\"_blank\" rel=\"noopener\">🌐 مشاهده در سایت</a>";
+        h += "</div>";
+      }
+      h += "</div><div class=\"ms-media\"><div class=\"ms-media-frame\" onclick=\"openMediaModal(" + JSON.stringify(it).replace(/"/g, "&quot;") + ")\">";
+      h += "<img src=\"" + escHtml(it.image || msImg(s.view)) + "\" alt=\"\" onerror=\"this.src='" + msImg(s.view) + "'\">";
+      h += "</div></div></div>";
+      body.innerHTML = h;
+    }
+    count.textContent = (msSafe(slideIdx, slideList.length) + 1) + " / " + slideList.length;
+    renderViewMenu();
+  };
+
+  const step = (d) => { slideIdx += d; show(); };
+  const viOf = () => slideViews.indexOf(slideList[msSafe(slideIdx, slideList.length)].view);
+  const jumpTo = (k) => { slideIdx = slideViewStart[k] || 0; show(); };
+  const jumpView = (d) => {
+    const vi = viOf();
+    if (vi < 0) return;
+    jumpTo(slideViews[msSafe(vi + d, slideViews.length)]);
+  };
+  const togglePlay = () => {
+    if (mslideTimer) { clearSlideTimer(); btnPlay.textContent = "▶"; }
+    else { mslideTimer = setInterval(() => { slideIdx++; show(); }, SLIDE_MS); btnPlay.textContent = "⏸"; }
+  };
+  const toggleShuffle = () => {
+    slideShuffle = !slideShuffle;
+    btnShuffle.textContent = slideShuffle ? "📋" : "🔀";
+    btnShuffle.title = slideShuffle ? "ترتیبی کردن گوشه‌ها" : "تصادفی کردن گوشه‌ها";
+    clearSlideTimer();
+    buildSlides();
+    slideIdx = 0;
+    mslideTimer = setInterval(() => { slideIdx++; show(); }, SLIDE_MS);
+    show();
+  };
+
+  show();
+  mslideTimer = setInterval(() => { slideIdx++; show(); }, SLIDE_MS);
+}
+
+/* ---------- ناوبری روی نمای کلی ----------
+   ذوزنقهٔ چپ/راست (بالا) + مثلث پشت (پایین) — هم‌شکل قبل؛ دایرهٔ نمای جلو وسط، روی ساختار اضافه شده */
 function renderHeroNavZones() {
   const wrap = document.getElementById("hero-nav-zones");
   if (!wrap) return;
   wrap.innerHTML = "";
   if (currentView !== "hero") return;
   const zones = [
-    { cls: "hero-zone-left", target: "herog_left", labelPos: { left: "25%", top: "25%" } },
-    { cls: "hero-zone-front", target: "herog", labelPos: { left: "50%", top: "80%" } },
-    { cls: "hero-zone-right", target: "herog_right", labelPos: { left: "75%", top: "25%" } },
+    { cls: "hero-zone-left", target: "herog_left", labelPos: { left: "22%", top: "12%" } },
+    { cls: "hero-zone-front", target: "herog", labelPos: { left: "50%", top: "82%" } },
+    { cls: "hero-zone-right", target: "herog_right", labelPos: { left: "78%", top: "12%" } },
+    { cls: "hero-zone-media", target: "media", labelPos: { left: "50%", top: "32%" } }, // دایرهٔ وسط
   ];
   zones.forEach(z => {
     const el = document.createElement("div");
     el.className = "hero-zone " + z.cls;
     const viewData = currentRoom.views ? currentRoom.views[z.target] : null;
-    const labelText = (viewData && viewData.label) || "";
+    const labelText = (viewData && viewData.label) || (z.target === "media" ? "چند‌رسانه‌ای" : "");
     if (labelText) {
       const label = document.createElement("div");
       label.className = "hero-zone-label";
@@ -395,8 +601,9 @@ function renderHeroNavZones() {
       label.style.transform = "translate(-50%, -50%) scale(0.92)";
       // Set initial color per zone
       if (z.cls === "hero-zone-left") label.style.background = "#5aa9e6";
-      else if (z.cls === "hero-zone-right") label.style.background = "#e6739f";
-      else label.style.background = "#f6a94a";
+            else if (z.cls === "hero-zone-right") label.style.background = "#e6739f";
+            else if (z.cls === "hero-zone-media") label.style.background = "#34c988";
+            else label.style.background = "#f6a94a";
       el.appendChild(label);
     }
     el.addEventListener("click", (e) => { e.stopPropagation(); setRoomView(z.target); });
@@ -405,15 +612,14 @@ function renderHeroNavZones() {
 }
 
 /* ---------- ناوبری چرخهای ----------
-   راست/چپ⇄وسط: اسلایدر کراندار. */
-const ORDER_LR = ["herog_left", "herog", "herog_right"];
+   چرخهٔ بستهٔ ۴ نما: جلو > راست > پشت > چپ > جلو (گردش به راست = +۱ در چرخه، به چپ = −۱)
+   نمای کلی و دکمههای جلو/پشت خارج از چرخه: کلی → چپ/راست؛ جلو/پشت همیشه نمای خودشان. */
+const CYCLE_ORDER = ["media", "herog_right", "herog", "herog_left"]; // +۱: جلو←راست←پشت←چپ
 function getNextView(current, direction) {
-  const idx = ORDER_LR.indexOf(current);
-  if (idx === -1) {
-    return direction === 1 ? ORDER_LR[2] : ORDER_LR[0];
-  }
-  const nextIdx = Math.max(0, Math.min(ORDER_LR.length - 1, idx + direction));
-  return ORDER_LR[nextIdx];
+  if (current === "hero") return direction === 1 ? "herog_right" : "herog_left";
+  const i = CYCLE_ORDER.indexOf(current);
+  if (i < 0) return current;
+  return CYCLE_ORDER[(i + direction + 4) % 4];
 }
 
 function renderViewNav() {
@@ -421,17 +627,22 @@ function renderViewNav() {
   nav.innerHTML = "";
   const rightBtn = document.createElement("button");
   rightBtn.textContent = "▶";
-  rightBtn.title = "نمای بعدی";
+  rightBtn.title = "گردش به راست";
   rightBtn.addEventListener("click", (e) => { e.stopPropagation(); setRoomView(getNextView(currentView, 1)); });
   const leftBtn = document.createElement("button");
   leftBtn.textContent = "◀";
-  leftBtn.title = "نمای قبلی";
+  leftBtn.title = "گردش به چپ";
   leftBtn.addEventListener("click", (e) => { e.stopPropagation(); setRoomView(getNextView(currentView, -1)); });
   const centerBtn = document.createElement("button");
   centerBtn.textContent = "⌂";
-  centerBtn.title = "نمای جلو";
+  centerBtn.title = "نمای پشت";
   centerBtn.className = "vn-center" + (currentView === "herog" ? " active" : "");
   centerBtn.addEventListener("click", (e) => { e.stopPropagation(); setRoomView("herog"); });
+  const mediaBtn = document.createElement("button");
+  mediaBtn.textContent = "🎬";
+  mediaBtn.title = "نمای جلو";
+  mediaBtn.className = "vn-media" + (currentView === "media" ? " active" : "");
+  mediaBtn.addEventListener("click", (e) => { e.stopPropagation(); setRoomView("media"); });
   const heroBtn = document.createElement("button");
   heroBtn.textContent = "🏠";
   heroBtn.title = "نمای کلی";
@@ -439,8 +650,9 @@ function renderViewNav() {
   heroBtn.addEventListener("click", (e) => { e.stopPropagation(); setRoomView("hero"); });
   const stack = document.createElement("div");
   stack.className = "vn-stack";
-  stack.appendChild(centerBtn);
+  stack.appendChild(mediaBtn);
   stack.appendChild(heroBtn);
+  stack.appendChild(centerBtn);
   nav.appendChild(rightBtn);
   nav.appendChild(stack);
   nav.appendChild(leftBtn);

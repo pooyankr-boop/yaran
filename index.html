@@ -201,7 +201,10 @@
   <!-- 3) لابی -->
   <section id="screen-lobby" class="screen">
     <div class="scene">
-      <img class="scene-bg kenburns" src="assets/images/lobby/hero.webp" alt="لابی مهدکودک یاران" />
+      <picture>
+              <source media="(orientation: portrait), (max-width: 640px)" srcset="assets/images/lobby/hero-v.webp" />
+        <img class="scene-bg kenburns" src="assets/images/lobby/hero.webp" alt="لابی مهدکودک یاران" />
+      </picture>
       <div class="scene-caption">به لابی یاران خوش آمدید</div>
       <div class="top-bar">
         <button class="pill-btn" id="lobby-back-plan" aria-label="بازگشت به نقشه پلان">↩ بازگشت به نقشه</button>
