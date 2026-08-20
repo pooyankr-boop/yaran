@@ -583,7 +583,7 @@ app.get('*', (_req, res) => {
   res.sendFile(path.join(__dirname, '..', 'index.html'));
 });
 
-// ── Start (auto free port) ──
+// ── Start (Render: bind 0.0.0.0 + exact PORT; local: auto-free-port) ──
 function findFreePort(start) {
   return new Promise((resolve) => {
     const s = net.createServer();
@@ -592,10 +592,17 @@ function findFreePort(start) {
   });
 }
 
-findFreePort(PORT).then(port => {
-  server.listen(port, () => {
-    console.log(`🍼 Yaran server running on http://localhost:${port}`);
-    console.log(`   Tasks API: http://localhost:${port}/api/tasks`);
-    console.log(`   WebSocket: ws://localhost:${port}/ws`);
-  });
-});
+server.keepAliveTimeout = 120000;
+server.headersTimeout = 120000;
+
+const PORT_RAW = process.env.PORT;
+const logStart = (port) => {
+  console.log(`🍼 Yaran server running on http://0.0.0.0:${port}`);
+  console.log(`   Tasks API: http://localhost:${port}/api/tasks`);
+  console.log(`   WebSocket: ws://localhost:${port}/ws`);
+};
+if (PORT_RAW) {
+  server.listen(Number(PORT_RAW), '0.0.0.0', () => logStart(PORT_RAW));
+} else {
+  findFreePort(4000).then((port) => server.listen(port, '0.0.0.0', () => logStart(port)));
+}
