@@ -144,8 +144,37 @@ window.showScreen = function(id) {
     startTipRotation();
     initSlideshow();
     startSlideshow();
+    if (typeof renderLobbyVideos === "function") renderLobbyVideos();
   } else {
     clearInterval(tipTimer);
     clearInterval(slideTimer);
   }
 };
+
+
+/* ── ویدیوهای آموزشی — لیست در لابی ── */
+function renderLobbyVideos() {
+  var el = document.getElementById("lobby-video-list");
+  if (!el || typeof VIDEO_LIBRARY === "undefined") return;
+  var vids = VIDEO_LIBRARY.slice(0, 12);
+  el.innerHTML = vids.map(function(v, i) {
+    var title = v.titleFa || v.title || "";
+    var lang = v.lang === "fa" ? "🇫🇦" : "🇬🇧";
+    var desc = v.descFa || v.desc || "";
+    return '<div class="lobby-video-item" data-vid="' + i + '" style="display:flex;gap:8px;padding:6px 0;border-bottom:1px solid rgba(0,0,0,.06);cursor:pointer;align-items:flex-start;">' +
+      '<span style="font-size:1.1rem;">' + lang + '</span>' +
+      '<div style="flex:1;min-width:0;">' +
+        '<div style="font-size:.82rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + title + '</div>' +
+        '<div style="font-size:.7rem;color:#8a7a6a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + v.channel + (v.duration ? ' · ' + v.duration : '') + '</div>' +
+      '</div></div>';
+  }).join("");
+  el.querySelectorAll(".lobby-video-item").forEach(function(item) {
+    item.addEventListener("click", function() {
+      var idx = parseInt(this.dataset.vid);
+      var v = vids[idx];
+      if (typeof openMediaModal === "function") {
+        openMediaModal({ type: "video", title: v.titleFa || v.title, url: v.url, desc: v.desc || v.descFa || "" });
+      }
+    });
+  });
+}

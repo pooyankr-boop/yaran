@@ -480,6 +480,26 @@ function getAllSearchItems() {
       });
     });
   });
+  // Add video library items to search
+  if (typeof VIDEO_LIBRARY !== "undefined") {
+    VIDEO_LIBRARY.forEach(function(v) {
+      var key = (v.titleFa || v.title || "") + "|video";
+      if (seen.has(key)) return;
+      seen.add(key);
+      out.push({
+        id: key,
+        title: v.titleFa || v.title || "",
+        titleFa: v.titleFa || "",
+        type: "video",
+        url: v.url,
+        category: v.category === "parenting" ? "فرزندپروری" : v.category === "health" ? "سلامت" : "آموزش",
+        audience: "مربی و والدین",
+        desc: v.descFa || v.desc || "",
+        source: v.channel || "یاران",
+        image: "",
+      });
+    });
+  }
   _allSearchItems = out;
   return out;
 }
