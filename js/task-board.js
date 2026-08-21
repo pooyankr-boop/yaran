@@ -102,23 +102,23 @@ var TaskBoard = (function () {
     function renderTasks(tasks) {
       if (!tasks) return '<div class="tb-empty"><div class="tb-empty-text">در حال بارگذاری…</div></div>';
       var pending = tasks.filter(function (t) { return t.status === 'pending' || t.status === 'in_progress' || t.status === 'open'; });
-      /* جدیدترین اول (created_at نزولی) — تسکهای بدون تاریخ آخر بمانند */
-      var byNew = function (a, b) {
-        var ta = a.created_at || '', tb = b.created_at || '';
-        if (ta === tb) return 0;
-        if (!ta) return 1;
-        if (!tb) return -1;
-        return ta < tb ? 1 : -1;
-      };
+      /* جدیدترین اول (created_at نزولی) — تسک‌های بدون تاریخ آخر بمانند */
+            var byNew = function (a, b) {
+              var ta = Date.parse(a.created_at || ''), tb = Date.parse(b.created_at || '');
+              if (!ta && !tb) return 0;
+              if (!ta) return 1;
+              if (!tb) return -1;
+              return tb - ta;
+            };
       pending.sort(byNew);
       var done = tasks.filter(function (t) { return t.status === 'done' || t.status === 'completed'; });
       done.sort(byNew);
       var h = '';
       if (pending.length) {
         h += '<div class="tb-section"><div class="tb-section-title">⏳ در حال انجام (' + pending.length + ')</div>';
-        pending.forEach(function (t) {
-          h += '<div class="tb-task"><div class="tb-task-top">';
-          h += '<span class="tb-task-id">#' + shortId(t.id) + '</span>';
+        pending.forEach(function (t, i) {
+                          h += '<div class="tb-task"><div class="tb-task-top">';
+                          h += '<span class="tb-task-id">#' + (i + 1) + ' · ' + shortId(t.id) + '</span>';
           h += '<span class="tb-task-title">' + esc(t.title) + '</span></div>';
           var detail = [];
           if (t.assigned_to) detail.push('👤 ' + esc(t.assigned_to));
@@ -135,8 +135,8 @@ var TaskBoard = (function () {
       if (done.length) {
         h += '<div class="tb-section"><div class="tb-section-title tb-done-toggle" data-tb="toggle-done">✅ تمام شده (' + done.length + ')</div>';
         h += '<div class="tb-done-list">';
-        done.forEach(function (t) {
-          h += '<div class="tb-task tb-task-done"><span class="tb-check">✓</span><span class="tb-task-title">' + esc(t.title) + '</span></div>';
+        done.forEach(function (t, i) {
+                  h += '<div class="tb-task tb-task-done"><span class="tb-check">✓</span><span class="tb-task-id">#' + (i + 1) + ' · ' + shortId(t.id) + '</span><span class="tb-task-title">' + esc(t.title) + '</span></div>';
         });
         h += '</div>';
         h += '<button class="tb-btn tb-btn-clear-done" data-tb="clear-done">🧹 پاک کردن انجامشدهها</button>';
@@ -187,9 +187,11 @@ var TaskBoard = (function () {
           else fetchPanel();
         });
       });
-    }
+            bindDrag();
+                  ensureResizeHandle();
+                }
 
-  function shortId(id) { return String(id || '').slice(-6); }
+        function shortId(id) { return String(id || '').slice(-6); }
 
   var pinHost = null;
     function syncBtnState() {
@@ -212,20 +214,108 @@ var TaskBoard = (function () {
       }
       syncBtnState();
     }
-    function toggleMax() {
-      if (container.classList.contains('tb-maximized')) {
-        container.classList.remove('tb-maximized');
-      } else {
-        if (!container.classList.contains('tb-pinned')) {
-          /* اگر پین نیست، خانهٔ فعلی برای بازگشت ثبت شود؛ اگر پین است در body می‌ماند */
-          pinHost = container.parentNode;
+    var M = null;
+        function clampMax(v, a, b) { return v < a ? a : (v > b ? b : v); }
+        function applyMax() {
+          var vw = window.innerWidth, vh = window.innerHeight;
+          M.w = clampMax(M.w, 260, vw);
+          M.h = clampMax(M.h, 180, vh);
+          M.x = clampMax(M.x, 0, vw - M.w);
+          M.y = clampMax(M.y, 0, vh - M.h);
+          var s = container.style;
+                s.setProperty('left', M.x + 'px', 'important');
+                s.setProperty('top', M.y + 'px', 'important');
+                s.setProperty('width', M.w + 'px', 'important');
+                s.setProperty('height', M.h + 'px', 'important');
+          s.maxWidth = 'none'; s.maxHeight = 'none';
         }
-        container.classList.add('tb-maximized');
-      }
-      syncBtnState();
-    }
+        function toggleMax() {
+          if (container.classList.contains('tb-maximized')) {
+            container.classList.remove('tb-maximized');
+                    var s = container.style;
+                    ['left', 'top', 'width', 'height', 'maxWidth', 'maxHeight'].forEach(function (p) { s.removeProperty(p); });
+            M = null;
+          } else {
+            if (!container.classList.contains('tb-pinned')) pinHost = container.parentNode;
+            var r = container.getBoundingClientRect();
+            var vw = window.innerWidth;
+            var third = Math.round(vw / 3);
+            M = { x: 0, y: Math.round(window.innerHeight * 0.06), w: third, h: Math.round(window.innerHeight * 0.9) };
+            if ((r.left + r.width / 2) >= vw / 2) M.x = vw - third;
+            container.classList.add('tb-maximized');
+            applyMax();
+            ensureResizeHandle();
+          }
+          syncBtnState();
+        }
 
-  function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  function ensureResizeHandle() {
+        if (container.querySelector('.tb-resize')) return;
+        var rz = document.createElement('div');
+        rz.className = 'tb-resize';
+        rz.title = 'تغییر اندازه';
+        container.appendChild(rz);
+        rz.addEventListener('pointerdown', function (e) {
+          e.preventDefault(); e.stopPropagation();
+          var sx = e.clientX, sy = e.clientY, ow = M.w, oh = M.h;
+          function mv(ev) { M.w = ow + (ev.clientX - sx); M.h = oh + (ev.clientY - sy); applyMax(); }
+          function up() { window.removeEventListener('pointermove', mv); window.removeEventListener('pointerup', up); }
+          window.addEventListener('pointermove', mv);
+          window.addEventListener('pointerup', up);
+        });
+      }
+      function bindDrag() {
+        var hd = container.querySelector('.tb-header');
+        if (!hd) return;
+        hd.addEventListener('pointerdown', function (e) {
+          if (e.target.closest('button')) return;
+          e.preventDefault();
+          var isMax = container.classList.contains('tb-maximized');
+          if (!isMax) container.style.position = 'fixed';
+          var r = container.getBoundingClientRect();
+          var sx = e.clientX, sy = e.clientY;
+          var ox = isMax ? M.x : r.left, oy = isMax ? M.y : r.top;
+          function mv(ev) {
+            var nx = ox + (ev.clientX - sx), ny = oy + (ev.clientY - sy);
+            if (isMax) { M.x = nx; M.y = ny; applyMax(); }
+            else { container.style.left = nx + 'px'; container.style.top = ny + 'px'; }
+          }
+          function up() {
+            window.removeEventListener('pointermove', mv);
+            window.removeEventListener('pointerup', up);
+          }
+          window.addEventListener('pointermove', mv);
+          window.addEventListener('pointerup', up);
+        });
+      }
+      function ensureResizeHandle() {
+        if (container.querySelector('.tb-resize')) return;
+        var rz = document.createElement('div');
+        rz.className = 'tb-resize';
+        rz.title = 'تغییر اندازه';
+        container.appendChild(rz);
+        rz.addEventListener('pointerdown', function (e) {
+          e.preventDefault(); e.stopPropagation();
+          var isMax = container.classList.contains('tb-maximized');
+          var r = container.getBoundingClientRect();
+          var sx = e.clientX, sy = e.clientY;
+          var ow = isMax ? M.w : r.width, oh = isMax ? M.h : r.height;
+          function mv(ev) {
+            /* راست = بزرگ‌تر، چپ = کوچک‌تر */
+            var nw = Math.max(260, ow + (ev.clientX - sx));
+            var nh = Math.max(160, oh + (ev.clientY - sy));
+            if (isMax) { M.w = nw; M.h = nh; applyMax(); }
+            else { container.style.width = nw + 'px'; container.style.height = nh + 'px'; }
+          }
+          function up() {
+            window.removeEventListener('pointermove', mv);
+            window.removeEventListener('pointerup', up);
+          }
+          window.addEventListener('pointermove', mv);
+          window.addEventListener('pointerup', up);
+        });
+      }
+      function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 
   /* ── تاریخ شمسی (تقویم ایران) ── */
   var JALALI_MONTHS = ['فروردین','اردیبهشت','خرداد','تیر','مرداد','شهریور','مهر','آبان','آذر','دی','بهمن','اسفند'];

@@ -435,11 +435,11 @@ var VirtualTour = (function () {
     /* next room */
     html += '<button class="vt-tb-btn" data-vt="next-room" title="اتاق بعدی">⏭</button>';
     /* next — in RTL the forward button sits right of play */
-    html += '<button class="vt-tb-btn" data-vt="next" title="بعدی">◀◀</button>';
+    html += '<button class="vt-tb-btn" data-vt="next" title="بعدی">▶▶</button>';
     /* play/pause */
     html += '<button class="vt-tb-btn vt-tb-play" data-vt="play">' + (state.playing ? '⏸' : '▶') + '</button>';
     /* prev — in RTL the back button sits left of play */
-    html += '<button class="vt-tb-btn" data-vt="prev" title="قبلی">▶▶</button>';
+    html += '<button class="vt-tb-btn" data-vt="prev" title="قبلی">◀◀</button>';
     /* prev room */
     html += '<button class="vt-tb-btn" data-vt="prev-room" title="اتاق قبلی">⏮</button>';
     /* shuffle */

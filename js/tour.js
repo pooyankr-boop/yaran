@@ -472,10 +472,10 @@ function renderMediaSlideshow() {
   const btnClose = tbtn("✕", "بستن و بازگشت به نمای کلی", () => setRoomView("hero"));
   const btnViews = tbtn("☰", "فهرست گوشه‌ها", () => viewMenu.classList.toggle("open"));
   const btnPrevView = tbtn("⏮", "گوشه قبلی", () => jumpView(-1));
-  const btnPrev = tbtn("◀◀", "قبلی", () => step(-1));
-  const btnPlay = tbtn("⏸", "توقف / پخش", () => togglePlay());
-  const btnNext = tbtn("▶▶", "بعدی", () => step(1));
-  const btnNextView = tbtn("⏭", "گوشه بعدی", () => jumpView(1));
+      const btnPrev = tbtn("◀◀", "قبلی", () => step(-1));
+      const btnPlay = tbtn("⏸", "توقف / پخش", () => togglePlay());
+      const btnNext = tbtn("▶▶", "بعدی", () => step(1));
+      const btnNextView = tbtn("⏭", "گوشه بعدی", () => jumpView(1));
   const btnShuffle = tbtn("🔀", "تصادفی کردن گوشه‌ها", () => toggleShuffle());
   top.append(btnClose, btnViews, btnNextView, btnNext, btnPlay, btnPrev, btnPrevView, btnShuffle, count);
 
@@ -580,9 +580,9 @@ function renderHeroNavZones() {
   wrap.innerHTML = "";
   if (currentView !== "hero") return;
   const zones = [
-    { cls: "hero-zone-left", target: "herog_left", labelPos: { left: "22%", top: "12%" } },
-    { cls: "hero-zone-front", target: "herog", labelPos: { left: "50%", top: "82%" } },
-    { cls: "hero-zone-right", target: "herog_right", labelPos: { left: "78%", top: "12%" } },
+    { cls: "hero-zone-left", target: "herog_left", labelPos: { left: "25%", top: "18%" } },
+        { cls: "hero-zone-front", target: "herog", labelPos: { left: "50%", top: "82%" } },
+        { cls: "hero-zone-right", target: "herog_right", labelPos: { left: "75%", top: "18%" } },
     { cls: "hero-zone-media", target: "media", labelPos: { left: "50%", top: "32%" } }, // دایرهٔ وسط
   ];
   zones.forEach(z => {

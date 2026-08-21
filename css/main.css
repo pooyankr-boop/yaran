@@ -704,7 +704,7 @@ html, body {
   display: flex; flex-direction: column;
   box-shadow: 0 20px 60px rgba(0,0,0,.3);
 }
-.modal-content.modal-game { max-width: 700px; }
+.modal-content.modal-game { max-width: 880px; max-height: 93vh; }
 .modal-close {
   position: absolute; top: 1rem; right: 1rem;
   background: rgba(0,0,0,.1);
@@ -1615,6 +1615,8 @@ body.theme-night .slideshow-caption { color: #b8a8d0 !important; }
 /* ---------- برچسبِ جامعِ هر گوشه — روی خودِ همان گوشه، هرکدام رنگی متفاوت ---------- */
 .hero-zone-label {
   position: fixed;
+  z-index: 50;
+  pointer-events: none;
   padding: .5rem 1.2rem;
   border-radius: 999px;
   font-weight: 700;
@@ -1629,8 +1631,7 @@ body.theme-night .slideshow-caption { color: #b8a8d0 !important; }
   max-width: 280px;
   overflow: hidden;
   text-overflow: ellipsis;
-  z-index: 20;
-}
+  }
 .hero-zone:hover .hero-zone-label {
   opacity: 1;
   transform: translate(-50%, -50%) scale(1);

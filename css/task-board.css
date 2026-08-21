@@ -97,8 +97,8 @@
   right: auto !important;
   width: 340px;
   min-height: 80px;
-  max-height: 220px;
-  z-index: 9999 !important;
+  max-height: 260px;
+    z-index: 9999 !important;
   background: rgba(255,255,255,.92);
   backdrop-filter: blur(12px);
   border: 1px solid rgba(139,115,85,.12);
@@ -110,19 +110,22 @@
 .task-board.tb-maximized,
 #screen-tour .task-board.tb-maximized {
   position: fixed !important;
-  top: 10px !important;
-  bottom: auto !important;
-  left: 50% !important;
-  right: auto !important;
-  width: min(560px, calc(100vw - 20px)) !important;
-  max-width: min(560px, calc(100vw - 20px)) !important;
-  max-height: calc(100vh - 20px);
-  transform: translateX(-50%);
   z-index: 9998 !important;
-  background: rgba(255,255,255,.92);
+  background: rgba(255,255,255,.95);
   box-shadow: 0 12px 48px rgba(0,0,0,.3);
+  overflow-y: auto;
 }
 .tb-maximized .tb-header { border-radius: 16px 16px 0 0; }
+.tb-header { cursor: move; touch-action: none; }
+.tb-resize {
+  position: absolute; bottom: 4px; left: 4px; width: 18px; height: 18px;
+  cursor: nwse-resize; opacity: .45; z-index: 2; touch-action: none;
+}
+.tb-resize::after {
+  content: ''; position: absolute; left: 2px; bottom: 2px;
+  width: 9px; height: 9px;
+  border-left: 2px solid #8b7355; border-bottom: 2px solid #8b7355;
+}
 
 /* ── Clear-done button ── */
 .tb-btn-clear-done {
@@ -145,8 +148,8 @@
   left: 15px;
   width: 340px;
   min-height: 80px;
-  max-height: 220px;
-  overflow-y: auto;
+  max-height: 260px;
+    overflow-y: auto;
   background: rgba(255,255,255,.85);
   backdrop-filter: blur(12px);
   border: 1px solid rgba(139,115,85,.12);
@@ -162,8 +165,8 @@
   left: 15px;
   width: 340px;
   min-height: 80px;
-  max-height: 200px;
-  overflow-y: auto;
+  max-height: 240px;
+    overflow-y: auto;
   background: rgba(255,255,255,.85);
   backdrop-filter: blur(12px);
   border: 1px solid rgba(139,115,85,.12);
@@ -186,15 +189,15 @@
     width: calc(100% - 30px);
     right: 15px;
     bottom: 50px;
-    max-height: 180px;
-  }
+            max-height: 200px;
+      }
   .tb-task { flex-wrap: wrap; gap: 4px; }
   .tb-task-title { flex: 1 1 auto; }
   .tb-task-detail { font-size: 11px; }
   .tb-tab { font-size: 11px; padding: 4px 2px; }
 }
 @media (max-width: 480px) {
-  .task-board-light { width: calc(100% - 20px); right: 10px; bottom: 44px; max-height: 160px; }
+  .task-board-light { width: calc(100% - 20px); right: 10px; bottom: 44px; max-height: 260px; }
   .tb-header { padding: 6px 8px; }
   .tb-title { font-size: 12px; }
 }

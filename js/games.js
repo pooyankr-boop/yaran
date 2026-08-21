@@ -3,10 +3,61 @@
 let gameScore = 0;
 let gameOnWin = null;
 
+/* قطع کامل بازی فعال: استریم‌ها (دوربین/میکروفون) + حلقه‌های بازی‌های قدیمی */
+function runGameCleanups() {
+  try { if (window.__gameCleanup) { window.__gameCleanup(); window.__gameCleanup = null; } } catch (e) {}
+  try { if (typeof window.__games2Clean === "function") window.__games2Clean(); } catch (e) {}
+}
+
+function siteToast(msg) {
+  let t = document.getElementById("site-toast");
+  if (!t) {
+    t = document.createElement("div");
+    t.id = "site-toast";
+    t.style.cssText = "position:fixed;top:14px;left:50%;transform:translateX(-50%);" +
+      "background:#2e7d32;color:#fff;padding:10px 18px;border-radius:24px;z-index:9999;" +
+      "font-size:15px;box-shadow:0 4px 14px rgba(0,0,0,.25);transition:opacity .4s;" +
+      "pointer-events:none;opacity:0;display:none;";
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.display = "block";
+  t.style.opacity = "1";
+  clearTimeout(t._h);
+  t._h = setTimeout(() => { t.style.opacity = "0"; setTimeout(() => { t.style.display = "none"; }, 400); }, 2600);
+}
+window.siteToast = siteToast;
+
+function closeGameModal() {
+  runGameCleanups();
+  const body = document.getElementById("game-body");
+  if (body) body.innerHTML = "";
+  const modal = document.getElementById("game-modal");
+  modal.classList.remove("active");
+  modal.classList.add("hidden");
+}
+
+/* پیام کوتاه روی صفحه (مثل توقف دوربین/میکروفون) */
+function siteToast(msg) {
+  let t = document.getElementById("site-toast");
+  if (!t) {
+    t = document.createElement("div");
+    t.id = "site-toast";
+    t.style.cssText = "position:fixed;top:56px;left:50%;transform:translateX(-50%);background:#2e7d32;color:#fff;padding:10px 20px;border-radius:999px;z-index:9999;font-size:15px;font-weight:700;box-shadow:0 6px 18px rgba(0,0,0,.28);transition:opacity .4s;pointer-events:none";
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.opacity = "1";
+  clearTimeout(t._h);
+  t._h = setTimeout(() => { t.style.opacity = "0"; }, 2400);
+}
+window.siteToast = siteToast;
+
 function openGameModal(item) {
   const modal = document.getElementById("game-modal");
   const header = document.getElementById("game-header");
   const body = document.getElementById("game-body");
+  runGameCleanups();
   header.innerHTML = "🎮 " + item.title;
   gameScore = 0;
   const gameId = item.game;
@@ -20,10 +71,7 @@ function openGameModal(item) {
   modal.classList.add("active");
 }
 
-document.getElementById("game-close").addEventListener("click", () => {
-  document.getElementById("game-modal").classList.remove("active");
-  document.getElementById("game-modal").classList.add("hidden");
-});
+document.getElementById("game-close").addEventListener("click", closeGameModal);
 
 function gameWinBanner(body, message, onReplay) {
   const banner = document.createElement("div");

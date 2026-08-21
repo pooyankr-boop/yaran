@@ -549,4 +549,8 @@ var Games2 = (function() {
   if (typeof GAME_LABELS !== "undefined") {
     for (var k in G2_LABELS) if (G2_LABELS.hasOwnProperty(k)) GAME_LABELS[k] = G2_LABELS[k];
   }
+  window.__games2Clean = function () {
+    if (active && active.destroy) { try { active.destroy(); } catch (e) {} }
+    active = null;
+  };
 })();
