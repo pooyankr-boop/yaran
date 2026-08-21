@@ -684,6 +684,8 @@ function _playEpisode(item) {
   if (a.src !== src) a.src = src;
   a.play().catch(function(err) { /* silent */ });
   _syncPlayButton();
+  /* پخش خودکار آهنگ بعدی */
+  a.onended = function () { _nextEpisode(); };
 }
 
 function _prevEpisode() {
