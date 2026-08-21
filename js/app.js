@@ -690,16 +690,22 @@ function _playEpisode(item) {
 
 function _prevEpisode() {
   if (_miniPlayerState.queue.length === 0) return;
-  _miniPlayerState.currentIndex = (_miniPlayerState.currentIndex - 1 + _miniPlayerState.queue.length) % _miniPlayerState.queue.length;
-  _updateMiniPlayerUI();
-  _playEpisode(_miniPlayerState.queue[_miniPlayerState.currentIndex]);
+  var tries = _miniPlayerState.queue.length;
+  while (tries-- > 0) {
+    _miniPlayerState.currentIndex = (_miniPlayerState.currentIndex - 1 + _miniPlayerState.queue.length) % _miniPlayerState.queue.length;
+    var prev = _miniPlayerState.queue[_miniPlayerState.currentIndex];
+    if (_resolveAudioSrc(prev)) { _updateMiniPlayerUI(); _playEpisode(prev); return; }
+  }
 }
 
 function _nextEpisode() {
   if (_miniPlayerState.queue.length === 0) return;
-  _miniPlayerState.currentIndex = (_miniPlayerState.currentIndex + 1) % _miniPlayerState.queue.length;
-  _updateMiniPlayerUI();
-  _playEpisode(_miniPlayerState.queue[_miniPlayerState.currentIndex]);
+  var tries = _miniPlayerState.queue.length;
+  while (tries-- > 0) {
+    _miniPlayerState.currentIndex = (_miniPlayerState.currentIndex + 1) % _miniPlayerState.queue.length;
+    var next = _miniPlayerState.queue[_miniPlayerState.currentIndex];
+    if (_resolveAudioSrc(next)) { _updateMiniPlayerUI(); _playEpisode(next); return; }
+  }
 }
 
 function toggleMiniPlayer() {

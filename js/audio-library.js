@@ -53,6 +53,11 @@ function buildAudioLibrary() {
     });
   }
 
+  // 6) PODCAST_RESEARCH — پادکست‌های تحقیق شده
+  if (typeof PODCAST_RESEARCH !== "undefined" && PODCAST_RESEARCH) {
+    result = result.concat(_buildOne(PODCAST_RESEARCH, { category: "پادکست کودک" }));
+  }
+
   return result;
 }
 
