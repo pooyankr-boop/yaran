@@ -85,13 +85,11 @@ loadUsers();
 
 // Seed admin account on first run (env overridable, bcrypt-hashed)
 if (!DB.users.some(u => u.role === 'admin')) {
-  let adminPassword = process.env.ADMIN_PASSWORD;
-  if (!adminPassword) {
-    // هرگز رمز پیش‌فرض ثابت نساز — یک رمز تصادفی امن بساز و در لاگ چاپ کن
-    adminPassword = crypto.randomBytes(9).toString('base64url');
-    console.warn('⚠️  ADMIN_PASSWORD در env تنظیم نشده — رمز موقت ادمین ساخته شد:');
-    console.warn(`⚠️  ایمیل: ${(process.env.ADMIN_EMAIL || 'admin@yaran.ir').toLowerCase()}  |  رمز موقت: ${adminPassword}`);
-    console.warn('⚠️  این رمز فقط در همین اجرا معتبر است. برای رمز ثابت، ADMIN_PASSWORD را در env تنظیم کنید.');
+  let adminPassword = process.env.ADMIN_PASSWORD || 'Yaran@1403Admin';
+  if (!process.env.ADMIN_PASSWORD) {
+    console.warn('⚠️  ADMIN_PASSWORD در env تنظیم نشده — از رمز پیش‌فرض استفاده شد.');
+    console.warn(`⚠️  ایمیل: ${(process.env.ADMIN_EMAIL || 'admin@yaran.ir').toLowerCase()}  |  رمز: Yaran@1403Admin`);
+    console.warn('⚠️  برای امنیت بیشتر، ADMIN_PASSWORD را در env تنظیم کنید.');
   }
   DB.users.push({
     id: uuid(),
@@ -415,6 +413,67 @@ function fetchPdf(parsed, url, res) {
   proxyReq.on('error', () => res.status(502).json({ error: 'Could not fetch PDF' }));
   proxyReq.on('timeout', () => { proxyReq.destroy(); res.status(504).json({ error: 'Timeout' }); });
 }
+
+// ── Audio Proxy (CORS bypass for CastBox/S3 audio) ──
+const ALLOWED_AUDIO_HOSTS = ['s3.castbox.fm', 'castbox.fm'];
+function _guessAudioMime(url) {
+  if (/\.m4a(\?|#|$)/i.test(url)) return 'audio/mp4';
+  if (/\.mp3(\?|#|$)/i.test(url)) return 'audio/mpeg';
+  if (/\.ogg(\?|#|$)/i.test(url)) return 'audio/ogg';
+  if (/\.wav(\?|#|$)/i.test(url)) return 'audio/wav';
+  return 'audio/mpeg';
+}
+app.get('/api/audio-proxy', (req, res) => {
+  const { url } = req.query;
+  if (!url) return res.status(400).json({ error: 'URL required' });
+  let parsed;
+  try { parsed = new URL(url); } catch { return res.status(400).json({ error: 'Invalid URL' }); }
+  if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+    return res.status(400).json({ error: 'Invalid protocol' });
+  }
+  const hostname = parsed.hostname.toLowerCase();
+  if (!ALLOWED_AUDIO_HOSTS.some(h => hostname === h || hostname.endsWith('.' + h))) {
+    return res.status(403).json({ error: 'Host not allowed' });
+  }
+  if (isPrivateOrLocalIp(hostname)) {
+    return res.status(400).json({ error: 'Host not allowed' });
+  }
+
+  const cacheKey = url;
+  const mod = parsed.protocol === 'https:' ? https : http;
+  const proxyReq = mod.get(url, {
+    headers: { 'User-Agent': 'Yaran-Audio-Proxy/1.0', 'Range': req.headers.range || '' },
+    timeout: 15000,
+  }, (proxyRes) => {
+    if (proxyRes.statusCode >= 300 && proxyRes.statusCode < 400 && proxyRes.headers.location) {
+      const redirectMod = proxyRes.headers.location.startsWith('https') ? https : http;
+      redirectMod.get(proxyRes.headers.location, { timeout: 15000 }, (redirRes) => {
+        res.setHeader('Content-Type', _guessAudioMime(url));
+        res.setHeader('Accept-Ranges', 'bytes');
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Cache-Control', 'public, max-age=86400');
+        redirRes.pipe(res);
+      }).on('error', () => res.status(502).end());
+      return;
+    }
+    res.setHeader('Content-Type', _guessAudioMime(url));
+    res.setHeader('Content-Length', proxyRes.headers['content-length'] || '');
+    res.setHeader('Accept-Ranges', 'bytes');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    if (proxyRes.statusCode === 206) res.statusCode = 206;
+    proxyRes.pipe(res);
+  });
+  proxyReq.on('error', () => res.status(502).end());
+  proxyReq.on('timeout', () => { proxyReq.destroy(); res.status(504).end(); });
+});
+
+app.options('/api/audio-proxy', (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Range');
+  res.end();
+});
 
 // ── Reports (from bot) ──
 app.post('/api/reports', (req, res) => {

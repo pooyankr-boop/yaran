@@ -120,6 +120,10 @@ async function renderAdminTab(body) {
       const doneTasks = allTasks.filter(t => t.status === 'completed' || t.status === 'done');
       const taskIcon = t => t.status === 'in_progress' ? '🔄' : '⬜';
       body.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+          <span style="font-size:1.1rem;font-weight:bold;">پنل مدیریت</span>
+          <button class="pill-btn" onclick="renderAdminTab(document.getElementById('panel-body'))">🔄 به‌روزرسانی</button>
+        </div>
         <h3 style="margin-bottom:.8rem;">👥 کاربران (${users.length})</h3>
       <div class="admin-user-list">
         ${users.map(u => `
@@ -138,6 +142,10 @@ async function renderAdminTab(body) {
       </div>
 
       <h3 style="margin:1.5rem 0 .8rem;">📋 وظایف (${allTasks.length})</h3>
+      <div style="margin-bottom:1rem;display:flex;gap:6px;">
+        <input id="admin-add-task" type="text" placeholder="وظیفه جدید..." style="flex:1;padding:6px 10px;border:1px solid #d4c8b8;border-radius:8px;font-size:.85rem;" />
+        <button class="pill-btn" id="admin-add-task-btn">+ افزودن</button>
+      </div>
       <div class="admin-mod-list">
         ${openTasks.map(t => `
           <div class="admin-mod-row" data-task-id="${escHtml(t.id)}">
@@ -156,6 +164,10 @@ async function renderAdminTab(body) {
       </div>
 
       <h3 style="margin:1.5rem 0 .8rem;">📝 یادداشت‌ها (${(panelRes.notes||[]).length})</h3>
+      <div style="margin-bottom:1rem;display:flex;gap:6px;">
+        <input id="admin-add-note" type="text" placeholder="یادداشت جدید..." style="flex:1;padding:6px 10px;border:1px solid #d4c8b8;border-radius:8px;font-size:.85rem;" />
+        <button class="pill-btn" id="admin-add-note-btn">+ افزودن</button>
+      </div>
       <div class="admin-mod-list">
         ${(panelRes.notes || []).map(n => `
           <div class="admin-mod-row" data-note-id="${escHtml(n.id)}">
@@ -165,6 +177,10 @@ async function renderAdminTab(body) {
       </div>
 
       <h3 style="margin:1.5rem 0 .8rem;">💬 پیام‌ها (${(panelRes.messages||[]).length})</h3>
+      <div style="margin-bottom:1rem;display:flex;gap:6px;">
+        <input id="admin-add-message" type="text" placeholder="پیام جدید..." style="flex:1;padding:6px 10px;border:1px solid #d4c8b8;border-radius:8px;font-size:.85rem;" />
+        <button class="pill-btn" id="admin-add-msg-btn">+ افزودن</button>
+      </div>
       <div class="admin-mod-list">
         ${(panelRes.messages || []).map(m => `
           <div class="admin-mod-row" data-message-id="${escHtml(m.id)}">
@@ -218,6 +234,40 @@ async function renderAdminTab(body) {
         catch (e) { alert(e.message); }
       });
     });
+    // ── Add task/note/message handlers ──
+    const addTaskBtn = document.getElementById("admin-add-task-btn");
+    const addTaskInput = document.getElementById("admin-add-task");
+    if (addTaskBtn && addTaskInput) {
+      addTaskBtn.addEventListener("click", async () => {
+        const title = addTaskInput.value.trim();
+        if (!title) return;
+        try { await Api.createTask({ title }); addTaskInput.value = ""; renderAdminTab(body); }
+        catch (e) { alert(e.message); }
+      });
+      addTaskInput.addEventListener("keydown", e => { if (e.key === "Enter") addTaskBtn.click(); });
+    }
+    const addNoteBtn = document.getElementById("admin-add-note-btn");
+    const addNoteInput = document.getElementById("admin-add-note");
+    if (addNoteBtn && addNoteInput) {
+      addNoteBtn.addEventListener("click", async () => {
+        const text = addNoteInput.value.trim();
+        if (!text) return;
+        try { await Api.createNote({ text, author: "مدیر" }); addNoteInput.value = ""; renderAdminTab(body); }
+        catch (e) { alert(e.message); }
+      });
+      addNoteInput.addEventListener("keydown", e => { if (e.key === "Enter") addNoteBtn.click(); });
+    }
+    const addMsgBtn = document.getElementById("admin-add-msg-btn");
+    const addMsgInput = document.getElementById("admin-add-message");
+    if (addMsgBtn && addMsgInput) {
+      addMsgBtn.addEventListener("click", async () => {
+        const text = addMsgInput.value.trim();
+        if (!text) return;
+        try { await Api.createMessage({ text, author: "مدیر" }); addMsgInput.value = ""; renderAdminTab(body); }
+        catch (e) { alert(e.message); }
+      });
+      addMsgInput.addEventListener("keydown", e => { if (e.key === "Enter") addMsgBtn.click(); });
+    }
   } catch (e) {
     body.innerHTML = `<div style="text-align:center;color:#c0392b;padding:2rem;">${escHtml(e.message)}</div>`;
   }
@@ -505,6 +555,9 @@ document.getElementById("search-input").addEventListener("input", debounce(async
   });
 });
 
+/* ── ZWNJ: fix Persian text after any DOM change ── */
+if (typeof fixZWNJAll==='function') fixZWNJAll();
+
 // پر کردن دسته‌ها در فیلتر جستجو از داده واقعی
 (function fillSearchCategories() {
   const sel = document.getElementById("search-category");
@@ -569,210 +622,8 @@ if (_btnTour) _btnTour.addEventListener("click", () => {
 });
 
 
-/* ---------- Mini Player: real <audio> playback ---------- */
-var _miniPlayerState = { queue: [], currentIndex: -1, open: false };
-var _miniAudio = null;
+/* ---------- Mini Player: moved to js/mini-player.js ---------- */
 
-function _getAudio() {
-  if (!_miniAudio) _miniAudio = document.getElementById('mini-audio');
-  return _miniAudio;
-}
-
-// source url priority: explicit audio/video file (audioUrl/mediaUrl) > item.url when it is a media file
-function _resolveAudioSrc(item) {
-  if (!item) return null;
-  if (item.audioUrl || item.audio_url || item.mediaUrl) return item.audioUrl || item.audio_url || item.mediaUrl;
-  var u = item.url || "";
-  if (/\.(m4a|mp3|ogg|wav|mp4|webm)(\?|#|$)/i.test(u)) return u;
-  return null;
-}
-
-function openMiniPlayer(item) {
-  if (!item) return;
-  var playable = /\.(m4a|mp3|ogg|wav|mp4|webm)(\?|#|$)/i.test((item.url || "") + " " + (item.mediaUrl || ""));
-  if (!playable && item.type !== 'audio' && item.type !== 'video') return;
-  var player = document.getElementById('mini-player');
-  if (!player) return;
-
-  var src = _resolveAudioSrc(item);
-    if (!src) {
-      // No direct audio file (castbox blocks direct mp3). Show the mini player
-      // with a fallback link — no auto popup (browsers block them anyway).
-      _miniPlayerState.queue.push(item);
-    _miniPlayerState.currentIndex = _miniPlayerState.queue.length - 1;
-    _updateMiniPlayerUI();
-    var player = document.getElementById('mini-player');
-    if (player) { player.classList.remove('hidden'); player.classList.add('open'); }
-    _miniPlayerState.open = true;
-    var pl = document.getElementById('mini-playlist');
-    if (pl) pl.innerHTML = '<div class="mini-playlist-fallback">فایل صوتی مستقیم در دسترس نیست. <a href="' + (item.url || '#') + '" target="_blank" style="color:#ff8c00">▶ پخش در کستباکس</a></div>';
-    return;
-  }
-
-  var existing = _miniPlayerState.queue.findIndex(function(e) { return e.id === item.id; });
-  if (existing >= 0) {
-    _miniPlayerState.currentIndex = existing;
-  } else {
-    _miniPlayerState.queue.push(item);
-    _miniPlayerState.currentIndex = _miniPlayerState.queue.length - 1;
-  }
-
-  _updateMiniPlayerUI();
-  player.classList.remove('hidden');
-  player.classList.add('open');
-  _miniPlayerState.open = true;
-  _playEpisode(_miniPlayerState.queue[_miniPlayerState.currentIndex]);
-}
-
-function closeMiniPlayer() {
-  var player = document.getElementById('mini-player');
-  var a = _getAudio();
-  if (a) a.pause();
-  if (player) {
-    player.classList.add('hidden');
-    player.classList.remove('open');
-    _miniPlayerState.open = false;
-  }
-}
-
-function _fmtTime(sec) {
-  if (!isFinite(sec) || sec < 0) sec = 0;
-  var m = Math.floor(sec / 60);
-  var s = Math.floor(sec % 60);
-  return m + ':' + (s < 10 ? '0' : '') + s;
-}
-
-function _updateMiniPlayerUI() {
-  var item = _miniPlayerState.queue[_miniPlayerState.currentIndex];
-  if (!item) return;
-  var titleEl = document.getElementById('mini-title');
-  var channelEl = document.getElementById('mini-channel');
-  var playlistEl = document.getElementById('mini-playlist');
-  if (titleEl) titleEl.textContent = item.title || '';
-  if (channelEl) channelEl.textContent = item.channel || item.source || '';
-
-  if (playlistEl && _miniPlayerState.queue.length > 0) {
-    playlistEl.innerHTML = _miniPlayerState.queue.map(function(ep, i) {
-      return '<div class="mini-playlist-item' + (i === _miniPlayerState.currentIndex ? ' active' : '') + '">' +
-        (i + 1) + '. ' + ep.title + '</div>';
-    }).join('');
-    playlistEl.querySelectorAll('.mini-playlist-item').forEach(function(el, idx) {
-      el.onclick = function() {
-        _miniPlayerState.currentIndex = idx;
-        _updateMiniPlayerUI();
-        _playEpisode(_miniPlayerState.queue[idx]);
-      };
-    });
-  }
-}
-
-function _syncPlayButton() {
-  var a = _getAudio();
-  var btn = document.getElementById('mini-play-pause');
-  var tgl = document.getElementById('mini-toggle-icon');
-  var playing = a && !a.paused && !a.ended;
-  if (btn) btn.textContent = playing ? '⏸' : '▶';
-  if (tgl) tgl.textContent = playing ? '⏸' : '▶';
-}
-
-function _playEpisode(item) {
-  if (!item) return;
-  var src = _resolveAudioSrc(item);
-  if (!src) return;
-  var a = _getAudio();
-  if (!a) return;
-  if (a.src !== src) a.src = src;
-  a.play().catch(function(err) { /* silent */ });
-  _syncPlayButton();
-  /* پخش خودکار آهنگ بعدی */
-  a.onended = function () { _nextEpisode(); };
-}
-
-function _prevEpisode() {
-  if (_miniPlayerState.queue.length === 0) return;
-  var tries = _miniPlayerState.queue.length;
-  while (tries-- > 0) {
-    _miniPlayerState.currentIndex = (_miniPlayerState.currentIndex - 1 + _miniPlayerState.queue.length) % _miniPlayerState.queue.length;
-    var prev = _miniPlayerState.queue[_miniPlayerState.currentIndex];
-    if (_resolveAudioSrc(prev)) { _updateMiniPlayerUI(); _playEpisode(prev); return; }
-  }
-}
-
-function _nextEpisode() {
-  if (_miniPlayerState.queue.length === 0) return;
-  var tries = _miniPlayerState.queue.length;
-  while (tries-- > 0) {
-    _miniPlayerState.currentIndex = (_miniPlayerState.currentIndex + 1) % _miniPlayerState.queue.length;
-    var next = _miniPlayerState.queue[_miniPlayerState.currentIndex];
-    if (_resolveAudioSrc(next)) { _updateMiniPlayerUI(); _playEpisode(next); return; }
-  }
-}
-
-function toggleMiniPlayer() {
-  var player = document.getElementById('mini-player');
-  if (!player) return;
-  if (player.classList.contains('hidden')) {
-    player.classList.remove('hidden');
-  }
-  // minimize: فقط پنل جمع میشود، پخش ادامه دارد، آیکون میماند
-  if (player.classList.contains('open')) {
-    player.classList.remove('open');
-    _miniPlayerState.open = false;
-  } else {
-    player.classList.add('open');
-    _miniPlayerState.open = true;
-  }
-}
-
-  /* ---------- Mini Player: wiring controls ---------- */
-  function _bindMiniControls() {
-    var toggleBtn = document.getElementById('mini-player-toggle');
-    var playPause = document.getElementById('mini-play-pause');
-    var prevBtn = document.getElementById('mini-prev');
-    var nextBtn = document.getElementById('mini-next');
-    var seek = document.getElementById('mini-seek');
-    var closeBtn = document.getElementById('mini-close');
-    var audio = _getAudio();
-
-    if (toggleBtn) toggleBtn.addEventListener('click', toggleMiniPlayer);
-    if (playPause) playPause.addEventListener('click', function () {
-      var a = _getAudio();
-      if (!a || !a.src) return;
-      if (a.paused) { a.play().catch(function (err) { /* silent */ }); }
-      else { a.pause(); }
-      _syncPlayButton();
-    });
-    if (prevBtn) prevBtn.addEventListener('click', _prevEpisode);
-    if (nextBtn) nextBtn.addEventListener('click', _nextEpisode);
-    if (closeBtn) closeBtn.addEventListener('click', closeMiniPlayer);
-
-    if (audio) {
-      audio.addEventListener('timeupdate', function () {
-        if (!isFinite(audio.duration) || audio.duration <= 0) return;
-        var pct = (audio.currentTime / audio.duration) * 100;
-        if (seek) seek.value = pct;
-        var cur = document.getElementById('mini-cur');
-        var dur = document.getElementById('mini-dur');
-        if (cur) cur.textContent = _fmtTime(audio.currentTime);
-        if (dur) dur.textContent = _fmtTime(audio.duration);
-      });
-      audio.addEventListener('ended', function () { _nextEpisode(); });
-      audio.addEventListener('play', _syncPlayButton);
-      audio.addEventListener('pause', _syncPlayButton);
-      audio.addEventListener('loadedmetadata', function () {
-        var dur = document.getElementById('mini-dur');
-        if (dur && isFinite(audio.duration)) dur.textContent = _fmtTime(audio.duration);
-      });
-    }
-    if (seek) {
-      seek.addEventListener('input', function () {
-        var a = _getAudio();
-        if (!a || !isFinite(a.duration) || a.duration <= 0) return;
-        a.currentTime = (seek.value / 100) * a.duration;
-      });
-    }
-  }
-  _bindMiniControls();
 
   // Outside-click-close handlers
   document.addEventListener('click', function(e) {

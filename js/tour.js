@@ -84,7 +84,7 @@ document.getElementById("lobby-search").addEventListener("click", () => { showSc
 
 /* ---------- نقشه اتاقها: دایرههای انیمیشنی ---------- */
 // عکس پایه هر دایره = نمای کلی اتاق (hero.webp)؛ اسلایدشو هاور فقط گوشه‌های راست/چپ
-const MAP_BASE = { key: "hero", label: "نمای کلی" };
+const MAP_BASE = { key: "media", label: "نمای کلی" };
 const MAP_CORNERS = [
   { key: "herog",       label: "گوشه وسط" },
   { key: "herog_left",  label: "گوشه چپ" },
@@ -270,7 +270,7 @@ function openRoom(id) {
   // ریست کامل هر دو لایه (باگ قبلی: کلاس off هیچوقت پاک نمیشد و لایهی a برای همیشه مخفی میماند)
   a.classList.remove("on", "off");
   b.classList.remove("on", "off");
-  a.src = "assets/images/" + currentRoom.folder + "/" + (isPortrait() ? "hero-v" : "hero") + ".webp";
+  a.src = "assets/images/" + currentRoom.folder + "/" + (isPortrait() ? "hero-v" : "media") + ".webp";
   a.classList.add("on");
   activeLayer = "a";
   updateRoomChrome();
@@ -285,9 +285,9 @@ function setRoomView(view) {
   const nextView = view;
   const a = document.getElementById("room-bg-a");
   const b = document.getElementById("room-bg-b");
-  // نمای جلو: همان عکس جدید اتاق (افقی = hero با زوم، عمودی = hero-v)
+  // نمای جلو: عکس media.webp اتاق
   const file = view === "media" ? (isPortrait() ? "hero-v" : "hero")
-    : (view === "hero" && isPortrait() ? "hero-v" : view);
+    : (view === "hero" ? (isPortrait() ? "hero-v" : "hero") : view);
   const src = "assets/images/" + currentRoom.folder + "/" + file + ".webp";
   const showEl = activeLayer === "a" ? b : a;
   const hideEl = activeLayer === "a" ? a : b;

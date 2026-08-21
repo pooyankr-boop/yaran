@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<meta http-equiv="Content-Security-Policy" content="default-src 'self' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; img-src 'self' https://somayehrouhi.ir data: blob:; connect-src 'self' https: http://localhost:* ws://localhost:*; font-src 'self' https://fonts.gstatic.com https://fonts.googleapis.com https://cdnjs.cloudflare.com; frame-src 'self' https://www.youtube.com https://somayehrouhi.ir;" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; media-src 'self' blob:; img-src 'self' https://somayehrouhi.ir data: blob:; connect-src 'self' https: http://localhost:* ws://localhost:*; font-src 'self' https://fonts.gstatic.com https://fonts.googleapis.com https://cdnjs.cloudflare.com; frame-src 'self' https://www.youtube.com https://somayehrouhi.ir;" />
 <title>مهدکودک و پیش‌دبستانی مجازی یاران</title>
 <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin />
 <link rel="stylesheet" href="css/main.css" />
@@ -20,152 +20,92 @@
 /* ===== Mini Player (real audio) ===== */
 .mini-player {
   position: fixed;
-  bottom: 20px;
-  left: 20px;
+  bottom: 16px;
+  left: 16px;
   z-index: 1001;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0;
-}
-.mini-player-toggle {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #ffb84d, #ff8c00);
-  box-shadow: 0 4px 16px rgba(255,184,77,0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: transform 0.2s;
-  font-size: 18px;
-  color: #fff;
-}
-.mini-player-toggle:hover { transform: scale(1.1); }
-.mini-player-panel {
-  position: absolute;
-  bottom: 60px;
-  left: 0;
-  width: 320px;
-  background: rgba(255,255,255,0.98);
-  backdrop-filter: blur(16px);
-  border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.2);
-  padding: 16px;
-  opacity: 0;
-  transform: translateY(14px) scale(0.96);
-  transform-origin: bottom left;
-  pointer-events: none;
-  transition: opacity .32s cubic-bezier(.22,1,.36,1), transform .32s cubic-bezier(.22,1,.36,1);
-  max-height: 60vh;
-  overflow-y: auto;
-}
-.mini-player.open .mini-player-panel { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
-@keyframes miniPanelSlideIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-.mini-player-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 8px;
-}
-.mini-player-title {
-  font-weight: bold;
-  font-size: 14px;
-  color: #333;
-  flex: 1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.mini-player-close {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 18px;
-  color: #999;
-  padding: 4px;
-  margin-left: 8px;
+  font-family: inherit;
 }
 .mini-player.hidden { display: none; }
-.mini-player-channel {
-  font-size: 12px;
-  color: #666;
-  margin-bottom: 12px;
+.mini-player-toggle {
+  width: 44px; height: 44px; border-radius: 50%;
+  background: linear-gradient(135deg, #ffb84d, #ff8c00);
+  box-shadow: 0 3px 12px rgba(255,140,0,.4);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 18px; color: #fff;
+  transition: transform .2s, box-shadow .2s;
 }
+.mini-player-toggle:hover { transform: scale(1.08); box-shadow: 0 4px 18px rgba(255,140,0,.55); }
+.mini-player-panel {
+  position: absolute; bottom: 54px; left: 0; width: 300px;
+  background: rgba(255,255,255,.97); backdrop-filter: blur(14px);
+  border-radius: 14px; box-shadow: 0 6px 28px rgba(0,0,0,.18);
+  padding: 14px; opacity: 0;
+  transform: translateY(10px) scale(.97);
+  transform-origin: bottom left; pointer-events: none;
+  transition: opacity .28s cubic-bezier(.22,1,.36,1), transform .28s cubic-bezier(.22,1,.36,1);
+}
+.mini-player.open .mini-player-panel { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+.mini-player-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+.mini-player-info { flex: 1; min-width: 0; }
+.mini-player-title { font-weight: 600; font-size: 13px; color: #2d2d2d; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mini-player-channel { font-size: 11px; color: #888; margin-top: 2px; }
+.mini-player-top-btns { display: flex; gap: 4px; flex-shrink: 0; }
+.mini-player-close { background: none; border: none; cursor: pointer; font-size: 16px; color: #aaa; padding: 4px; border-radius: 6px; }
+.mini-player-close:hover { background: #f0f0f0; color: #666; }
 .mini-player-controls {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  margin-bottom: 12px;
+  display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 8px;
 }
 .mini-player-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 20px;
-  color: #333;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.2s;
+  background: none; border: none; cursor: pointer; font-size: 18px; color: #555;
+  width: 34px; height: 34px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; transition: background .15s;
 }
-.mini-player-btn:hover { background: rgba(255,184,77,0.2); }
+.mini-player-btn:hover { background: rgba(255,140,0,.12); }
 .mini-play-btn {
-  background: #ffb84d;
-  color: #fff;
-  width: 44px;
-  height: 44px;
-  font-size: 22px;
+  background: #ffb84d; color: #fff; width: 40px; height: 40px; font-size: 20px;
 }
 .mini-play-btn:hover { background: #ff8c00; }
 .mini-player-progress {
-  height: 4px;
-  background: #e0e0e0;
-  border-radius: 2px;
-  margin-bottom: 12px;
-  cursor: pointer;
-  position: relative;
+  display: flex; align-items: center; gap: 8px; margin-top: 4px;
 }
-.mini-progress-bar {
-  height: 100%;
-  background: #ffb84d;
-  border-radius: 2px;
-  width: 0%;
-  transition: width 0.1s;
+.mini-seek {
+  flex: 1; height: 4px; -webkit-appearance: none; appearance: none;
+  background: #e0e0e0; border-radius: 2px; outline: none; cursor: pointer;
 }
+.mini-seek::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%;
+  background: #ff8c00; cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,.2);
+}
+.mini-time { font-size: 11px; color: #999; white-space: nowrap; min-width: 32px; text-align: center; }
+#mini-audio { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
 .mini-player-playlist {
-  max-height: 150px;
-  overflow-y: auto;
-  border-top: 1px solid #eee;
-  padding-top: 8px;
+  margin-top: 10px; border-top: 1px solid #f0f0f0; padding-top: 8px;
+  max-height: 200px; overflow-y: auto;
 }
-#mini-audio {
-  width: 100%;
-  max-height: 200px;
-  border-radius: 8px;
-  margin-bottom: 8px;
-  display: block;
+.mini-player-playlist.hidden { display: none; }
+.mini-pl-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.mini-pl-title { font-size: 12px; font-weight: 600; color: #666; }
+.mini-pl-btn {
+  background: none; border: 1px solid #ddd; border-radius: 8px;
+  font-size: 11px; padding: 3px 10px; cursor: pointer; color: #888;
 }
+.mini-pl-btn:hover { background: #f5f5f5; color: #555; }
+.mini-pl-list { }
 .mini-playlist-item {
-  padding: 8px;
-  cursor: pointer;
-  border-radius: 6px;
-  font-size: 13px;
-  transition: background 0.2s;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  display: flex; align-items: center; gap: 6px; padding: 6px 8px;
+  cursor: pointer; border-radius: 8px; font-size: 12px; color: #444;
+  transition: background .15s;
 }
-.mini-playlist-item:hover { background: rgba(255,184,77,0.15); }
-.mini-playlist-item.active { background: rgba(255,184,77,0.3); font-weight: bold; }
+.mini-playlist-item:hover { background: rgba(255,140,0,.08); }
+.mini-playlist-item.active { background: rgba(255,140,0,.18); font-weight: 600; }
+.mini-playlist-item .pl-num { color: #bbb; font-size: 11px; min-width: 18px; }
+.mini-playlist-item .pl-title { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mini-playlist-item .pl-rm { color: #ccc; font-size: 14px; cursor: pointer; padding: 0 4px; border: none; background: none; }
+.mini-playlist-item .pl-rm:hover { color: #e74c3c; }
+.mini-playlist-item .pl-handle { color: #ccc; cursor: grab; font-size: 12px; padding: 0 2px; }
+.mini-playlist-item .pl-handle:hover { color: #888; }
+.mini-playlist-item.dragging { opacity: 0.4; }
+.mini-pl-count { font-size: 11px; color: #aaa; }
 </style>
 
 </head>
@@ -443,6 +383,7 @@
     </div>
   </div>
 
+<script defer src="js/zwnj.js"></script>
 <script defer src="js/config.js"></script>
 <script defer src="js/api.js"></script>
 <script defer src="js/rooms.js"></script>
@@ -453,12 +394,8 @@
 <script defer src="js/archive-hotspot-fix.js"></script>
 <script defer src="js/khaneh-yadgiri-desc.js"></script>
 <script defer src="js/archive-somayehrouhi.js"></script>
-<script defer src="js/castbox_episodes_full.js"></script>
-<script defer src="data/podcasts/castbox-meditation-data.js"></script>
-<script defer src="data/podcasts/castbox-hekayat-data.js"></script>
-<script defer src="data/podcasts/playlist-data.js"></script>
-<script defer src="data/podcasts/regional-music-data.js"></script>
-<script defer src="data/podcasts/podcast-research.js"></script>
+<script defer src="data/podcasts/castbox-meditation-data.js?v=2"></script>
+<script defer src="data/podcasts/castbox-hekayat-data.js?v=2"></script>
 <script defer src="js/mahd-explorer-data.js"></script>
 <script defer src="js/audio-library.js"></script>
 <script defer src="js/music.js"></script>
@@ -473,6 +410,7 @@
 <script defer src="js/auth.js"></script>
 <script defer src="js/content.js"></script>
 <script defer src="js/task-board.js"></script>
+<script defer src="js/yr-player.js"></script>
 <script defer src="js/app.js"></script>
 <script defer src="js/virtual-tour.js"></script>
 
@@ -480,27 +418,39 @@
   <!-- 10) Mini Player for real audio playback -->
   <div class="mini-player hidden" id="mini-player">
     <div class="mini-player-toggle" id="mini-player-toggle" title="پخشکننده">
-      <span class="mini-play-icon" id="mini-toggle-icon">▶</span>
+      <span class="mini-play-icon" id="mini-toggle-icon">♪</span>
     </div>
     <div class="mini-player-panel" id="mini-player-panel">
-      <div class="mini-player-header">
-        <span class="mini-player-title" id="mini-title">—</span>
-        <button class="mini-player-close" id="mini-close">✕</button>
-      </div>
-      <div class="mini-player-channel" id="mini-channel">—</div>
-      <div class="mini-player-controls">
-        <button class="mini-player-btn" id="mini-next" title="بعدی">▶▶</button>
-        <button class="mini-player-btn mini-play-btn" id="mini-play-pause" title="پخش/توقف">▶</button>
-        <button class="mini-player-btn" id="mini-prev" title="قبلی">◀◀</button>
+      <div class="mini-player-top">
+        <div class="mini-player-info">
+          <div class="mini-player-title" id="mini-title">—</div>
+          <div class="mini-player-channel" id="mini-channel"></div>
+        </div>
+        <div class="mini-player-top-btns">
+          <button class="mini-player-btn" id="mini-pl-toggle" title="لیست پخش">☰</button>
+          <button class="mini-player-close" id="mini-close">✕</button>
+        </div>
       </div>
       <div class="mini-player-progress">
+        <span class="mini-time" id="mini-cur">۰:۰۰</span>
         <input type="range" id="mini-seek" class="mini-seek" min="0" max="100" value="0" step="0.1" />
-        <div class="mini-time"><span id="mini-cur">۰:۰۰</span> / <span id="mini-dur">۰:۰۰</span></div>
+        <span class="mini-time" id="mini-dur">۰:۰۰</span>
       </div>
-      <video id="mini-audio" preload="metadata"></video>
-      <div class="mini-player-playlist" id="mini-playlist"></div>
+      <div class="mini-player-controls">
+        <button class="mini-player-btn" id="mini-prev" title="قبلی">⏮</button>
+        <button class="mini-player-btn mini-play-btn" id="mini-play-pause" title="پخش/توقف">▶</button>
+        <button class="mini-player-btn" id="mini-next" title="بعدی">⏭</button>
+      </div>
+      <audio id="mini-audio" preload="metadata"></audio>
+      <div class="mini-player-playlist hidden" id="mini-playlist">
+        <div class="mini-pl-header">
+          <span class="mini-pl-title">لیست پخش</span>
+          <span class="mini-pl-count" id="mini-pl-count"></span>
+        </div>
+        <div class="mini-pl-list" id="mini-pl-list"></div>
+      </div>
     </div>
-    </div>
+  </div>
 
     <!-- گردش مجازی — Virtual Tour Screen -->
     <section id="screen-tour" class="screen">

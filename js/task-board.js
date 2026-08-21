@@ -144,7 +144,7 @@ var TaskBoard = (function () {
       }
       if (!tasks.length) {
         h += '<div class="tb-empty"><div class="tb-empty-icon">📝</div>';
-        h += '<div class="tb-empty-text">هنوز وظیفهای ثبت نشده</div></div>';
+        h += '<div class="tb-empty-text">هنوز وظیفه‌ای ثبت نشده</div></div>';
       }
       return h;
     }
@@ -390,3 +390,5 @@ var TaskBoard = (function () {
     destroy: function () { if (timer) { clearInterval(timer); timer = null; } container = null; }
   };
 })();
+
+if (typeof fixZWNJAll==='function') fixZWNJAll();

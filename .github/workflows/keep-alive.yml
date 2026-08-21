@@ -1,7 +1,7 @@
 name: Render Keep-Alive
 on:
   schedule:
-    - cron: '*/20 * * * *'
+    - cron: '*/5 * * * *'
   workflow_dispatch:
 jobs:
   ping:

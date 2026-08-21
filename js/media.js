@@ -39,10 +39,8 @@ function openMediaModal(item) {
             }
             // فایل‌های صوتی که pdf تگ شده‌اند (تزریق MAHD) → مینی‌پلیر
             if (/\.(m4a|mp3|ogg|wav)(\?|#|$)/i.test(item.url || "")) {
-        if (typeof openMiniPlayer === "function") {
-          openMiniPlayer(item);
-          modal.classList.add("hidden");
-          modal.classList.remove("active");
+        if (typeof yrPlay === "function") {
+          yrPlay(item);
           return;
         }
       }
@@ -62,23 +60,20 @@ function openMediaModal(item) {
   } else if (item.type === "video") {
       // ویدیوی محلی → مینیپلیر؛ ویدیوی خارجی (یوتیوب/امبد) → iframe
       if (/\.(mp4|webm)(\?|#|$)/i.test(item.url || "")) {
-        if (typeof openMiniPlayer === "function") {
-          openMiniPlayer(item);
-          modal.classList.add("hidden");
-          modal.classList.remove("active");
+        if (typeof yrPlay === "function") {
+          yrPlay(item);
           return;
         }
       }
       body.innerHTML = '<div class="media-iframe-wrap"><iframe src="' + item.url + '" class="media-iframe" allowfullscreen title="' + item.title + '"></iframe></div>';
       actions.innerHTML = '<a href="' + item.url + '" target="_blank" class="pill-btn">📥 دانلود</a>';
     } else if (item.type === "audio") {
-    // Route audio items to the real in-page mini player so the file actually plays.
-    if (typeof openMiniPlayer === "function") {
-      openMiniPlayer(item);
-      modal.classList.add("hidden");
-      modal.classList.remove("active");
+    if (typeof yrPlay === "function") {
+      yrPlay(item);
     } else {
-      body.innerHTML = '<div style="padding:2rem;text-align:center"><a href="' + item.url + '" target="_blank" class="pill-btn">▶ پخش در کستباکس</a></div>';
+      body.innerHTML = '<div style="padding:2rem;text-align:center"><a href="' + item.url + '" target="_blank" class="pill-btn">▶ پخش</a></div>';
+      modal.classList.remove("hidden");
+      modal.classList.add("active");
     }
     return;
   }

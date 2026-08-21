@@ -66,6 +66,12 @@ const Api = {
   adminSetRole: (id, role) =>
     apiFetch("/admin/users/" + id + "/role", { method: "PATCH", body: JSON.stringify({ role }) }),
   adminDeleteUser: (id) => apiFetch("/admin/users/" + id, { method: "DELETE" }),
+  createTask: (data) =>
+    apiFetch("/tasks", { method: "POST", body: JSON.stringify(data) }),
+  createNote: (data) =>
+    apiFetch("/notes", { method: "POST", body: JSON.stringify(data) }),
+  createMessage: (data) =>
+    apiFetch("/messages", { method: "POST", body: JSON.stringify(data) }),
 };
 
 // اگر سرور بک‌اند بالا نباشد (مثلاً پایلوت روی سیستمی که هنوز server/ اجرا نشده)، APP_API_ONLINE
