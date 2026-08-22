@@ -144,7 +144,6 @@ window.showScreen = function(id) {
     startTipRotation();
     initSlideshow();
     startSlideshow();
-    if (typeof renderLobbyVideos === "function") renderLobbyVideos();
   } else {
     clearInterval(tipTimer);
     clearInterval(slideTimer);

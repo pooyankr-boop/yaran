@@ -506,13 +506,11 @@ function getAllSearchItems() {
 function applySearchFilters(results, q) {
   const type = document.getElementById("search-type")?.value || "";
   const cat = document.getElementById("search-category")?.value || "";
-  const age = document.getElementById("search-age")?.value || "";
   const sort = document.getElementById("search-sort")?.value || "relevance";
 
   let r = results.slice();
   if (type) r = r.filter(a => (a.type || "") === type);
   if (cat) r = r.filter(a => (a.category || "") === cat);
-  if (age) r = r.filter(a => (a.age || "").includes(age.replace(/ سال/g, "")));
 
   if (sort === "title") {
     r.sort((a, b) => (a.title || "").localeCompare((b.title || ""), "fa"));
@@ -533,11 +531,9 @@ function renderSearchTags() {
   if (!el) return;
   const type = document.getElementById("search-type")?.value || "";
   const cat = document.getElementById("search-category")?.value || "";
-  const age = document.getElementById("search-age")?.value || "";
   const labels = [];
   if (type) labels.push({ k: "type", t: ({pdf:"کاربرگ",video:"ویدیو",audio:"صوت",game:"بازی",activity:"فعالیت"})[type] || type });
   if (cat) labels.push({ k: "category", t: cat });
-  if (age) labels.push({ k: "age", t: age });
   el.innerHTML = labels.map(l =>
     '<span class="search-tag" data-k="' + l.k + '">' + l.t + ' <button class="search-tag-x" onclick="clearSearchFilter(\'' + l.k + '\')">✕</button></span>'
   ).join("");
@@ -546,19 +542,24 @@ function renderSearchTags() {
 function clearSearchFilter(key) {
   if (key === "type") document.getElementById("search-type").value = "";
   if (key === "category") document.getElementById("search-category").value = "";
-  if (key === "age") document.getElementById("search-age").value = "";
   document.getElementById("search-input").dispatchEvent(new Event("input"));
 }
 
 function doSearch(q) {
   const el = document.getElementById("search-results");
-  if (!q) { el.innerHTML = ""; return; }
-  let results = getAllSearchItems().filter(a =>
-    (a.title || "").includes(q) ||
-    (a.category || "").includes(q) ||
-    (a.audience || "").includes(q) ||
-    (a.desc || "").includes(q)
-  );
+  const type = document.getElementById("search-type")?.value || "";
+  const cat = document.getElementById("search-category")?.value || "";
+  const hasFilter = type || cat;
+  if (!q && !hasFilter) { el.innerHTML = ""; return; }
+  let results = getAllSearchItems();
+  if (q) {
+    results = results.filter(a =>
+      (a.title || "").includes(q) ||
+      (a.category || "").includes(q) ||
+      (a.audience || "").includes(q) ||
+      (a.desc || "").includes(q)
+    );
+  }
   results = applySearchFilters(results, q);
   renderSearchTags();
   renderArchiveResults("search-results", results);
@@ -567,7 +568,7 @@ function doSearch(q) {
 document.getElementById("search-input").addEventListener("input", debounce(async (e) => {
   doSearch(e.target.value.trim());
 }, 250));
-["search-type", "search-category", "search-age", "search-sort"].forEach(id => {
+["search-type", "search-category", "search-sort"].forEach(id => {
   const el = document.getElementById(id);
   if (el) el.addEventListener("change", () => {
     const q = (document.getElementById("search-input")?.value || "").trim();

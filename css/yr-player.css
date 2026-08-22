@@ -1,0 +1,48 @@
+/* YR Player v6 CSS — non-blocking overlay, mute, resize */
+.yr-p-overlay{position:fixed;inset:0;z-index:1000;pointer-events:none;display:flex;align-items:flex-end;justify-content:flex-end;padding:16px}
+.yr-p-overlay.hidden{display:none}
+.yr-p-box{width:700px;max-width:92vw;max-height:80vh;background:#111;border-radius:14px;overflow:hidden;box-shadow:0 16px 48px rgba(0,0,0,.7);display:flex;flex-direction:column;position:relative;pointer-events:auto}
+.yr-p-drag{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;background:#1a1510;cursor:move;user-select:none;flex-shrink:0}
+.yr-p-drag-t{color:#ccc;font-weight:700;font-size:.85rem;flex:1;text-align:center}
+.yr-p-drag-btns{display:flex;gap:4px}
+.yr-p-drag-btns button{background:none;border:none;color:#aaa;font-size:1rem;cursor:pointer;padding:2px 8px}
+.yr-p-drag-btns button:hover{color:#fff}
+/* Video container: fixed 16:9, centered */
+.yr-p-vwrap{background:#000;flex-shrink:0;width:100%;aspect-ratio:16/9;position:relative;overflow:hidden}
+.yr-p-vwrap iframe,.yr-p-vwrap video{position:absolute;inset:0;width:100%;height:100%;border:none;display:block;object-fit:contain}
+.yr-p-bar{display:flex;align-items:center;gap:8px;padding:8px 14px;background:#1a1510;border-top:1px solid rgba(255,255,255,.08);flex-shrink:0}
+.yc{background:none;border:none;color:#eee;font-size:1.1rem;cursor:pointer;padding:4px 6px;border-radius:4px;line-height:1}
+.yc:hover{background:rgba(255,255,255,.12)}
+.yc.yplay{font-size:1.4rem}
+.yr-p-seek{flex:1;height:5px;background:rgba(255,255,255,.15);border-radius:3px;cursor:pointer;position:relative}
+.yr-p-seek-fill{height:100%;background:#ffb84d;border-radius:3px;width:0;transition:width .15s;pointer-events:none}
+.yr-p-tm{font-size:.7rem;color:#888;white-space:nowrap}
+/* Playlist */
+.yr-p-plist{max-height:180px;overflow-y:auto;background:#161210;border-top:1px solid rgba(255,255,255,.06)}
+.yr-p-plist-h{display:flex;justify-content:space-between;padding:6px 14px;position:sticky;top:0;background:#161210;border-bottom:1px solid rgba(255,255,255,.06)}
+.yr-p-plist-h span{color:#aaa;font-size:.78rem;font-weight:700}
+.yr-p-pli{display:flex;align-items:center;gap:8px;padding:5px 14px;cursor:pointer;color:#bbb;font-size:.78rem;border-bottom:1px solid rgba(255,255,255,.03);transition:background .12s}
+.yr-p-pli:hover{background:rgba(255,255,255,.05)}
+.yr-p-pli.active{background:rgba(255,184,77,.1);color:#ffb84d}
+.yr-p-pli-n{min-width:16px;text-align:center;color:#666;font-size:.7rem}
+.yr-p-pli-ic{font-size:.75rem}
+.yr-p-pli-t{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.yr-p-pli-del{background:none;border:none;color:#555;font-size:.75rem;cursor:pointer;padding:2px 4px}
+.yr-p-pli-del:hover{color:#e74c3c}
+/* Mini */
+.yr-p-mini{position:fixed;bottom:16px;left:16px;width:360px;background:rgba(30,20,10,.93);backdrop-filter:blur(10px);display:flex;align-items:center;gap:8px;padding:8px;border-radius:12px;border:1px solid rgba(255,255,255,.1);z-index:999;box-shadow:0 4px 20px rgba(0,0,0,.3);direction:rtl}
+.yr-p-mini.hidden{display:none}
+.yr-p-mivid{width:52px;height:52px;border-radius:8px;overflow:hidden;flex-shrink:0;background:#222}
+.yr-p-mivid iframe,.yr-p-mivid video{width:100%;height:100%;border:none;pointer-events:none}
+.yr-p-mitxt{flex:1;min-width:0}
+.yr-p-mit{font-size:.78rem;font-weight:700;color:#eee;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.yr-p-mich{font-size:.65rem;color:#999;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.yr-p-mic{display:flex;align-items:center;gap:2px;flex-shrink:0}
+.yr-p-cls{color:#e74c3c!important;font-size:.8rem!important}
+.yr-p-cls:hover{color:#ff6b6b!important}
+/* Pin button */
+.yr-p-pin{color:#888!important;font-size:.9rem!important}
+.yr-p-pin.active{color:#ffb84d!important}
+/* Resize handle */
+.yr-p-resize{position:absolute;bottom:0;right:0;width:18px;height:18px;cursor:nwse-resize;z-index:10;background:linear-gradient(135deg,transparent 40%,rgba(255,255,255,.2) 40%,rgba(255,255,255,.2) 50%,transparent 50%,transparent 60%,rgba(255,255,255,.2) 60%,rgba(255,255,255,.2) 70%,transparent 70%)}
+.yr-p-resize:hover{background:linear-gradient(135deg,transparent 40%,rgba(255,184,77,.4) 40%,rgba(255,184,77,.4) 50%,transparent 50%,transparent 60%,rgba(255,184,77,.4) 60%,rgba(255,184,77,.4) 70%,transparent 70%)}

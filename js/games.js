@@ -182,12 +182,43 @@ function gameShapeSorter(body) {
 
 /* ========== ۳) پازل کشویی — puzzle (اسلایدر ۳×۳ عددی) ========== */
 function gamePuzzle(body) {
-  const SIZE = 3;
-  let tiles = shuffle([...Array(SIZE * SIZE - 1).keys()].map(n => n + 1).concat([null]));
+  body.innerHTML = '';
+  var diffWrap = document.createElement('div');
+  diffWrap.style.cssText = 'text-align:center;margin-bottom:12px';
+  var diffLabel = document.createElement('div');
+  diffLabel.style.cssText = 'font-weight:700;color:#3d2f1f;margin-bottom:6px;font-size:.95rem';
+  diffLabel.textContent = '🎯 درجه سختی:';
+  diffWrap.appendChild(diffLabel);
+  var diffRow = document.createElement('div');
+  diffRow.style.cssDiff = 'display:flex;gap:8px;justify-content:center';
+  diffRow.style.cssText = 'display:flex;gap:8px;justify-content:center';
+  [['آسان 2×2',2],['متوسط 3×3',3],['سخت 4×4',4]].forEach(function(d){
+    var b = document.createElement('button');
+    b.textContent = d[0];
+    b.style.cssText = 'padding:6px 14px;border:none;border-radius:10px;background:#ffb84d;color:#3d2f1f;font-size:.9rem;cursor:pointer;font-family:inherit';
+    b.onclick = function(){ startPuzzle(body, d[1]); };
+    diffRow.appendChild(b);
+  });
+  diffWrap.appendChild(diffRow);
+  body.appendChild(diffWrap);
+
+  function startPuzzle(body, SIZE) {
+  for (let s = 0; s < 200; s++) {
+    const ei = tiles.indexOf(null);
+    const row = Math.floor(ei / SIZE), col = ei % SIZE;
+    const neighbors = [];
+    if (row > 0) neighbors.push(ei - SIZE);
+    if (row < SIZE - 1) neighbors.push(ei + SIZE);
+    if (col > 0) neighbors.push(ei - 1);
+    if (col < SIZE - 1) neighbors.push(ei + 1);
+    const pick = neighbors[Math.floor(Math.random() * neighbors.length)];
+    tiles[ei] = tiles[pick]; tiles[pick] = null;
+  }
 
   function isSolved() {
     return tiles.every((v, i) => (i === tiles.length - 1 ? v === null : v === i + 1));
   }
+  // Note: startPuzzle is opened above, closed at end of gamePuzzle
 
   function render() {
     body.innerHTML = "";
@@ -222,6 +253,7 @@ function gamePuzzle(body) {
     render();
   }
   render();
+  } // end startPuzzle
 }
 
 /* ========== ۴) الگویابی — pattern ========== */

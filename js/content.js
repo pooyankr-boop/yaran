@@ -69,6 +69,25 @@ function openContentForRoom(roomId) {
       '<div class="content-card-grid">' + sheetCards + '</div></div>';
   }
 
+  // Add videos for this room
+  var roomVideos = (typeof getVideosForRoom === 'function') ? getVideosForRoom(roomId) : [];
+  if (roomVideos.length) {
+    var vCards = roomVideos.map(function(v) {
+      var item = { type: 'video', title: v.titleFa || v.title, url: v.url, desc: v.desc || '', duration: v.duration || '', channel: v.channel || '' };
+      var thumb = '<div class="content-card-thumb content-card-thumb-empty">🎬</div>';
+      return '<div class="content-card" data-type="video" data-search="' + (v.titleFa || v.title || '') + ' ' + (v.category || '') + '" onclick="openMediaModal(' +
+        JSON.stringify(item).replace(/\"/g, '&quot;') + ')">' +
+        thumb +
+        '<div class="content-card-body">' +
+          '<div class="content-card-title">' + (v.titleFa || v.title || '') + '</div>' +
+          '<div class="content-card-meta">ویدیوی آموزشی' + (v.duration ? ' • ' + v.duration : '') + '</div>' +
+        '</div></div>';
+    }).join('');
+    out += '<div class="content-section">' +
+      '<h3 class="content-section-title">🎬 ویدیوهای آموزشی <span class="content-section-count">(' + roomVideos.length + ')</span></h3>' +
+      '<div class="content-card-grid">' + vCards + '</div></div>';
+  }
+
   if (!sections.length) {
     zonesEl.innerHTML = out || '<div style="text-align:center;color:#7a6b55;padding:3rem;">محتوایی برای این اتاق ثبت نشده است.</div>';
     bindContentFilters(zonesEl);

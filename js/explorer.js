@@ -18,6 +18,16 @@ async function loadExplorerSource() {
     }
   }
   explorerSourceItems = ARCHIVE_DATA.filter(it => it.image && it.image.length > 0);
+  // Add videos from VIDEO_LIBRARY
+  if (typeof VIDEO_LIBRARY !== 'undefined') {
+    VIDEO_LIBRARY.forEach(function(v) {
+      explorerSourceItems.push({
+        title: v.titleFa || v.title, category: 'ویدیو', type: 'video',
+        url: v.url, desc: v.desc || '', image: 'https://img.youtube.com/vi/' + (v.videoId || '') + '/mqdefault.jpg',
+        age: '', channel: v.channel || ''
+      });
+    });
+  }
   // Merge MAHD explorer data
   if (typeof MAHD_EXPLORER_DATA !== "undefined" && MAHD_EXPLORER_DATA) {
     explorerSourceItems = explorerSourceItems.concat(MAHD_EXPLORER_DATA);
@@ -35,13 +45,14 @@ async function initExplorer() {
 
   // Build filter chips from REAL categories present in the explorer source (image worksheets only)
   const typeCats = [...new Set(explorerSourceItems.map(it => it.category).filter(Boolean))].sort();
-  const ages = ["همه سنین", "۲-۳ سال", "۳-۴ سال", "۴-۵ سال", "۵-۶ سال"];
+
 
   filtersEl.innerHTML =
-    '<div style="width:100%;font-size:.75rem;color:#999;margin-bottom:2px;">سن:</div>' +
-    '<div class="filter-row">' + ages.map((a, i) => '<span class="filter-chip' + (i === 0 ? ' active' : '') + '" data-group="age" data-val="' + a + '">' + a + '</span>').join("") + '</div>' +
-    '<div style="width:100%;font-size:.75rem;color:#999;margin-bottom:2px;margin-top:4px;">دسته:</div>' +
-    '<div class="filter-row">' + typeCats.map((t, i) => '<span class="filter-chip' + (i === 0 ? ' active' : '') + '" data-group="type" data-val="' + t + '">' + t + '</span>').join("") + '</div>';
+    '<div style="width:100%;font-size:.75rem;color:#999;margin-bottom:2px;">دسته:</div>' +
+    '<div class="filter-row">' +
+    '<span class="filter-chip active" data-group="type" data-val="همه">همه</span>' +
+    '<span class="filter-chip" data-group="type" data-val="ویدیو">🎬 ویدیو</span>' +
+    typeCats.map((t, i) => '<span class="filter-chip" data-group="type" data-val="' + t + '">' + t + '</span>').join("") + '</div>';
 
   // Filter chip clicks
   filtersEl.querySelectorAll(".filter-chip").forEach(chip => {
@@ -90,19 +101,13 @@ function renderExplorerItems() {
     items = items.filter(it => it.title.includes(query) || (it.desc && it.desc.includes(query)));
   }
 
-  // Apply age filter
-  if (activeFilters.age && activeFilters.age !== "همه سنین") {
-    const ageMap = {"۲-۳ سال": [2,3], "۳-۴ سال": [3,4], "۴-۵ سال": [4,5], "۵-۶ سال": [5,6]};
-    const [min, max] = ageMap[activeFilters.age] || [0, 99];
-    items = items.filter(it => {
-      const age = it.age || "";
-      return age.includes(min) || age.includes(max) || age === "";
-    });
-  }
-
-  // Apply type filter (now matches real category)
-  if (activeFilters.type && activeFilters.type !== "همه انواع") {
-    items = items.filter(it => (it.category || "") === activeFilters.type);
+  // Apply type filter
+  if (activeFilters.type && activeFilters.type !== "همه") {
+    if (activeFilters.type === "ویدیو") {
+      items = items.filter(it => it.type === "video");
+    } else {
+      items = items.filter(it => (it.category || "") === activeFilters.type);
+    }
   }
 
   // Group by category
@@ -128,7 +133,9 @@ function renderExplorerItems() {
       html += '</div>';
       html += '<div class="explorer-items open">';
       catItems.forEach((it, i) => {
-        const thumbHtml = it.image ? '<img class="explorer-item-thumb" src="' + it.image + '" loading="lazy" />' : '<div class="explorer-item-thumb" style="display:flex;align-items:center;justify-content:center;font-size:1.5rem;background:rgba(255,184,77,0.15);">📄</div>';
+        const typeIcons = {pdf:'📄',video:'🎬',audio:'🔊',game:'🎮',activity:'🎯',story:'📖',song:'🎵',craft:'✂️',image:'🖼️',word:'📝'};
+        const defaultIcon = typeIcons[it.type] || '📄';
+        const thumbHtml = it.image ? '<img class="explorer-item-thumb" src="' + it.image + '" loading="lazy" />' : '<div class="explorer-item-thumb" style="display:flex;align-items:center;justify-content:center;font-size:1.8rem;background:rgba(255,184,77,0.15);">' + defaultIcon + '</div>';
         const meta = [it.age, it.category].filter(Boolean).join(' • ');
         html += '<div class="explorer-item" onclick="openExplorerItem(' + JSON.stringify(it).replace(/"/g, '&quot;').replace(/\n/g, ' ') + ')">';
         html += thumbHtml;
@@ -149,6 +156,11 @@ function openExplorerItem(item) {
     item._noDownload = true;
   }
   // Open in enhanced media reader
+  if (item.type === 'video' && item.url) {
+    if (typeof yrPlay === 'function') yrPlay(item);
+    else window.open(item.url, '_blank');
+    return;
+  }
   openMediaReader(item);
 }
 

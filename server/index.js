@@ -415,7 +415,7 @@ function fetchPdf(parsed, url, res) {
 }
 
 // ── Audio Proxy (CORS bypass for CastBox/S3 audio) ──
-const ALLOWED_AUDIO_HOSTS = ['s3.castbox.fm', 'castbox.fm'];
+const ALLOWED_AUDIO_HOSTS = ['s3.castbox.fm', 'castbox.fm', 'upload.wikimedia.org'];
 function _guessAudioMime(url) {
   if (/\.m4a(\?|#|$)/i.test(url)) return 'audio/mp4';
   if (/\.mp3(\?|#|$)/i.test(url)) return 'audio/mpeg';

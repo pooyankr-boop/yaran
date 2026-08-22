@@ -19,6 +19,24 @@ var Games2 = (function() {
     return b;
   }
 
+  // Difficulty selector: returns 'easy'|'medium'|'hard'
+  function diffSelector(c, onPick) {
+    var wrap = document.createElement('div');
+    wrap.style.cssText = 'text-align:center;margin-bottom:12px';
+    var label = document.createElement('div');
+    label.style.cssText = 'font-weight:700;color:#3d2f1f;margin-bottom:6px;font-size:.95rem';
+    label.textContent = '🎯 درجه سختی را انتخاب کنید:';
+    wrap.appendChild(label);
+    var row = document.createElement('div');
+    row.style.cssText = 'display:flex;gap:8px;justify-content:center';
+    [['آسان 🌱', 'easy', '#8fae7a'], ['متوسط 🔥', 'medium', '#ffb84d'], ['سخت 💪', 'hard', '#e74c3c']].forEach(function(d) {
+      var b = btn(d[0], function() { onPick(d[1]); }, 'background:' + d[2] + ';font-size:.9rem;padding:6px 14px');
+      row.appendChild(b);
+    });
+    wrap.appendChild(row);
+    c.appendChild(wrap);
+  }
+
   function scoreBoard(el, score) {
     el.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><span style="font-size:1.1rem;font-weight:700;color:#3d2f1f">🏆 امتیاز: ' + score + '</span></div>';
   }
@@ -115,7 +133,8 @@ var Games2 = (function() {
     c.appendChild(bucket);
 
     var bucketX = c.offsetWidth / 2 - 35;
-    document.addEventListener('mousemove', function(e) { if (!running) return; var r = c.getBoundingClientRect(); bucketX = Math.max(0, Math.min(r.width - 70, e.clientX - r.left - 35)); bucket.style.left = bucketX + 'px'; });
+    function fishMoveHandler(e) { if (!running) return; var r = c.getBoundingClientRect(); bucketX = Math.max(0, Math.min(r.width - 70, e.clientX - r.left - 35)); bucket.style.left = bucketX + 'px'; }
+    document.addEventListener('mousemove', fishMoveHandler);
 
     var fishEmojis = ['🐟','🐠','🐡','🦈','🐙','🦑','🦞','🦀'];
     function spawnFish() {
@@ -140,7 +159,7 @@ var Games2 = (function() {
     }
 
     var interval = setInterval(spawnFish, 1200);
-    active = { destroy: function() { running = false; clearInterval(interval); c.style.cssText = ''; } };
+    active = { destroy: function() { running = false; clearInterval(interval); c.style.cssText = ''; document.removeEventListener('mousemove', fishMoveHandler); } };
     var restart = btn('🔄 شروع', function() { clean(c); catchFish(c); });
     restart.style.cssText += 'position:absolute;top:8px;left:8px;z-index:5';
     c.appendChild(restart);
@@ -149,7 +168,11 @@ var Games2 = (function() {
   // 4. MAZE
   function maze(c) {
     clean(c); c.style.cssText += 'background:#f5f0e8;border-radius:16px;overflow:hidden;text-align:center';
-    var W = 10, H = 8, cell = 40;
+    diffSelector(c, function(diff) { startMaze(c, diff); });
+    function startMaze(c, diff) {
+    var sizes = {easy:[7,5,52], medium:[9,7,44], hard:[13,9,32]};
+    var s = sizes[diff] || sizes.medium;
+    var W = s[0], H = s[1], cell = s[2];
     var grid = [];
     for (var y = 0; y < H; y++) { grid[y] = []; for (var x = 0; x < W; x++) grid[y][x] = 1; }
 
@@ -210,13 +233,14 @@ var Games2 = (function() {
       if (px === gx && py === gy) { won = true; msg.textContent = '🎉 تبریک! برنده شدید!'; }
     }
 
-    document.addEventListener('keydown', function handler(e) {
+    function mazeKeyHandler(e) {
       if (e.key === 'ArrowRight') move(1, 0);
       else if (e.key === 'ArrowLeft') move(-1, 0);
       else if (e.key === 'ArrowDown') move(0, 1);
       else if (e.key === 'ArrowUp') move(0, -1);
-      active._handler = handler;
-    });
+    }
+    document.addEventListener('keydown', mazeKeyHandler);
+    active._handler = mazeKeyHandler;
 
     // Mobile buttons
     var controls = document.createElement('div');
@@ -227,8 +251,7 @@ var Games2 = (function() {
       controls.appendChild(b);
     });
     c.appendChild(controls);
-
-    active = { destroy: function() { c.style.cssText = ''; } };
+    } // end startMaze
   }
 
   // 5. QUIZ
@@ -276,9 +299,13 @@ var Games2 = (function() {
   // 6. SORTING
   function sorting(c) {
     clean(c); c.style.cssText += 'background:#f5f0e8;border-radius:16px;padding:16px;overflow:hidden';
-    var score = 0, round = 0, maxRounds = 5;
+    diffSelector(c, function(diff) { startSorting(c, diff); });
+    function startSorting(c, diff) {
+    var cfg = {easy:{colors:2,items:4,rounds:3},medium:{colors:3,items:5,rounds:5},hard:{colors:4,items:6,rounds:7}};
+    var cf = cfg[diff] || cfg.medium;
+    var score = 0, round = 0, maxRounds = cf.rounds;
     var shapes = ['🔴','🟡','🔵','🟢'];
-    var categories = ['قرمز','آبی'];
+    var categories = ['قرمز','آبی','سبز','زرد'].slice(0, cf.colors);
 
     function renderRound() {
       if (round >= maxRounds) {
@@ -288,8 +315,8 @@ var Games2 = (function() {
       }
       var cat = categories[round % categories.length];
       var items = [];
-      for (var i = 0; i < 6; i++) items.push(cat === 'قرمز' ? '🔴' : '🔵');
-      for (var i = 0; i < 3; i++) items.push(cat === 'قرمز' ? '🔵' : '🔴');
+      for (var i = 0; i < cf.items; i++) items.push(cat === categories[0] ? shapes[0] : shapes[1]);
+      for (var i = 0; i < Math.floor(cf.items / 2); i++) items.push(cat === categories[0] ? shapes[1] : shapes[0]);
       shuffle(items);
 
       c.innerHTML = '<div style="text-align:center"><h3>🎯 ' + items.length + ' شیء ' + cat + ' را پیدا کن و روی آن کلیک کن!</h3></div>';
@@ -301,7 +328,7 @@ var Games2 = (function() {
         b.textContent = shape;
         b.style.cssText = 'font-size:2.5rem;padding:12px;background:#fff;border:3px solid #ddd;border-radius:12px;cursor:pointer;transition:all .15s';
         b.addEventListener('click', function() {
-          if ((cat === 'قرمز' && shape === '🔴') || (cat === 'آبی' && shape === '🔵')) {
+          if (shape === shapes[categories.indexOf(cat)]) {
             score++; b.style.transform = 'scale(1.3)'; b.style.borderColor = '#00b894';
           } else {
             b.style.transform = 'scale(0.8)'; b.style.borderColor = '#ff7675';
@@ -316,6 +343,7 @@ var Games2 = (function() {
     }
     renderRound();
     active = { destroy: function() { c.style.cssText = ''; } };
+    } // end startSorting
   }
 
   // 7. MEMORY (extended)
@@ -470,7 +498,12 @@ var Games2 = (function() {
 
   function storyBuilder(c){
     clean(c);c.style.cssText += 'background:#f5f0e8;border-radius:16px;padding:16px;overflow:hidden';
-    var story=['🌅 صبح شد','🧒 کودک از خواب بیدار شد','🪥 مسواک زد','🥣 صبحانه خورد','📚 به مهدکودک رفت','👫 با دوستان بازی کرد','🎨 نقاشی کشید','🍽️ ناهار خورد','😴 چُرت زد','🏠 به خانه برگشت','📖 قصه شنید','🌙 خوابید'];
+    diffSelector(c, function(diff) { startStory(c, diff); });
+    function startStory(c, diff) {
+    var fullStory=['🌅 صبح شد','🧒 کودک از خواب بیدار شد','🪥 مسواک زد','🥣 صبحانه خورد','📚 به مهدکودک رفت','👫 با دوستان بازی کرد','🎨 نقاشی کشید','🍽️ ناهار خورد','😴 چُرت زد','🏠 به خانه برگشت','📖 قصه شنید','🌙 خوابید'];
+    var counts = {easy:6, medium:9, hard:12};
+    var n = counts[diff] || 9;
+    var story = fullStory.slice(0, n);
     var shuffled=shuffle(story.slice());
     var msg=document.createElement('div');msg.style.cssText='text-align:center;font-weight:700;font-size:1.1rem;color:#3d2f1f;margin-bottom:12px';msg.textContent='داستان را به ترتیب درست بچینید';c.appendChild(msg);
     var list=document.createElement('div');list.style.cssText='display:flex;flex-direction:column;gap:6px;max-height:320px;overflow-y:auto;padding:4px';
@@ -478,17 +511,24 @@ var Games2 = (function() {
     var num=document.createElement('span');num.textContent=i+1;num.style.cssText='min-width:24px;font-weight:700;color:#888';item.prepend(num);list.appendChild(item);});
     c.appendChild(list);
     var check=btn('✅ بررسی',function(){var items=list.children;var correct=true;
-    for(var i=0;i<items.length;i++){var userOrder=items[i].textContent.trim();if(story.indexOf(userOrder.substring(2))===-1)correct=false;}
-    if(correct)msg.textContent='🎉 آفرین! ترتیب درست است!';else msg.textContent='❌ دوباره تلاش کنید!';});
+    for(var i=0;i<items.length;i++){var userOrder=items[i].textContent.trim().substring(2);if(story[i]!==userOrder)correct=false;}
+    if(correct)msg.textContent='🎉 آفرین! ترتیب درست است!';else msg.textContent='❌ دوباره تلاش کنید! ترتیب را چک کنید.';});
     check.style.cssText+='display:block;margin:12px auto 0';c.appendChild(check);
     active={destroy:function(){c.style.cssText='';}};
+    } // end startStory
   }
 
   function magnetFish(c){
     clean(c);c.style.cssText += 'position:relative;overflow:hidden;background:linear-gradient(180deg,#006994,#00b4d8);border-radius:16px';
+    diffSelector(c, function(diff) { startFish(c, diff); });
+    function startFish(c, diff) {
+    c.style.cssText += 'position:relative;overflow:hidden;background:linear-gradient(180deg,#006994,#00b4d8);border-radius:16px';
     var score=0,sb=document.createElement('div');scoreBoard(sb,score);sb.style.cssText='padding:8px;text-align:center;color:#fff';c.appendChild(sb);
     var fishEmojis=['🐟','🐠','🐡','🦀','🦞','🐙','🦑'];
-    for(var i=0;i<8;i++){var f=document.createElement('div');f.textContent=fishEmojis[rand(0,fishEmojis.length-1)];
+    var counts={easy:5,medium:8,hard:12};
+    var speeds={easy:4,medium:2,hard:1};
+    var n=counts[diff]||8;
+    for(var i=0;i<n;i++){var f=document.createElement('div');f.textContent=fishEmojis[rand(0,fishEmojis.length-1)];
     f.style.cssText='position:absolute;font-size:2rem;cursor:pointer;transition:all .3s';f.style.left=rand(5,85)+'%';f.style.top=rand(10,80)+'%';
     f.style.animation='float '+(2+rand(0,3))+'s ease-in-out infinite alternate';
     f.addEventListener('click',function(){score+=10;sb.innerHTML='';scoreBoard(sb,score);this.style.transform='scale(0) rotate(360deg)';var self=this;setTimeout(function(){self.remove();},300);});
@@ -497,6 +537,7 @@ var Games2 = (function() {
     var restart = btn('🔄 ماهی جدید',function(){clean(c);magnetFish(c);});restart.style.cssText+='position:absolute;top:8px;left:8px;z-index:5;color:#fff;background:rgba(255,255,255,.3)';
     c.appendChild(restart);
     active={destroy:function(){c.style.cssText='';}};
+    } // end startFish
   }
 
   function domino(c){

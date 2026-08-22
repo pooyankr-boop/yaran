@@ -58,23 +58,18 @@ function openMediaModal(item) {
           '<a href="' + item.url + '" target="_blank" class="pill-btn">📥 دانلود</a>';
         if (canProxy) loadPdfIntoCanvas(item.url);
   } else if (item.type === "video") {
-      // ویدیوی محلی → مینیپلیر؛ یوتیوب → embed iframe؛ خارجی → iframe
-      if (/\.(mp4|webm)(\?|#|$)/i.test(item.url || "")) {
-        if (typeof yrPlay === "function") {
-          yrPlay(item);
-          return;
-        }
+      // همه ویدیوها → پلیر (یوتیوب، محلی، MP4)
+      if (typeof yrPlay === "function") {
+        yrPlay(item);
+        modal.classList.add("hidden");
+        modal.classList.remove("active");
+        return;
       }
-      // YouTube → embed URL
+      // Fallback: iframe
       var embedUrl = item.url || "";
       var ytMatch = embedUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)/);
-      if (ytMatch) {
-        embedUrl = "https://www.youtube.com/embed/" + ytMatch[1] + "?autoplay=1&rel=0";
-      }
-      var desc = item.desc || item.descFa || "";
-      body.innerHTML = '<div class="media-iframe-wrap"><iframe src="' + embedUrl + '" class="media-iframe" allow="autoplay; encrypted-media" allowfullscreen title="' + (item.title || item.titleFa || "") + '"></iframe></div>' +
-        (desc ? '<div style="padding:1rem;color:#5a4d3e;font-size:.9rem;line-height:1.7;border-top:1px solid #e8ddd0;margin-top:.5rem;">' + escHtml(desc) + '</div>' : '');
-      actions.innerHTML = '<a href="' + item.url + '" target="_blank" class="pill-btn">📥 لینک اصلی</a>';
+      if (ytMatch) embedUrl = "https://www.youtube.com/embed/" + ytMatch[1] + "?autoplay=1&rel=0";
+      body.innerHTML = '<div class="media-iframe-wrap"><iframe src="' + embedUrl + '" class="media-iframe" allow="autoplay; encrypted-media" allowfullscreen></iframe></div>';
     } else if (item.type === "audio") {
     if (typeof yrPlay === "function") {
       yrPlay(item);

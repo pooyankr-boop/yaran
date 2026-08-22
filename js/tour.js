@@ -351,8 +351,20 @@ function renderHotspots() {
   hotspots.forEach((hotspot) => {
     const el = document.createElement("div");
     el.className = "hotspot";
-    el.style.left = hotspot.x + "%";
-    el.style.top = hotspot.y + "%";
+    /* Correct for object-fit:cover crop */
+    const img = document.querySelector('.scene-bg.on') || document.querySelector('.scene-bg');
+    let hx = hotspot.x, hy = hotspot.y;
+    if (img && img.naturalWidth && img.naturalHeight) {
+      const cw = img.clientWidth, ch = img.clientHeight;
+      const nw = img.naturalWidth, nh = img.naturalHeight;
+      const scale = Math.max(cw / nw, ch / nh);
+      const rw = nw * scale, rh = nh * scale;
+      const ox = (cw - rw) / 2, oy = (ch - rh) / 2;
+      hx = (ox + rw * hotspot.x / 100) / cw * 100;
+      hy = (oy + rh * hotspot.y / 100) / ch * 100;
+    }
+    el.style.left = hx + "%";
+    el.style.top = hy + "%";
     const label = document.createElement("div");
     label.className = "hotspot-label";
     label.textContent = hotspot.title;
@@ -386,11 +398,20 @@ function buildMediaHotspots() {
   Object.values(currentRoom.views).forEach((v) => (v.hotspots || []).forEach((h) => (h.categories || []).forEach((c) => (c.items || []).forEach((it) => all.push(it)))));
   const audio = [], visual = [];
   all.forEach((it) => (it.type === "audio" ? audio : visual).push(it));
+  // Add videos from VIDEO_LIBRARY for this room
+  var roomVideos = (typeof getVideosForRoom === 'function') ? getVideosForRoom(currentRoom.id) : [];
+  roomVideos.forEach(function(v) {
+    visual.push({
+      type: 'video', title: v.titleFa || v.title, url: v.url,
+      category: 'ویدیوی آموزشی', desc: v.desc || '', duration: v.duration || '',
+      channel: v.channel || '', lang: v.lang || ''
+    });
+  });
   const byType = (items) => {
     const g = {};
     items.forEach((it) => { (g[it.type] = g[it.type] || []).push(it); });
     return Object.keys(g).map((t) => ({
-      title: t === "game" ? "بازی و سرگرمی" : t === "activity" ? "فعالیت و رنگآمیزی" : t === "pdf" ? "جزوه و کاربرگ" : t,
+      title: t === "game" ? "بازی و سرگرمی" : t === "activity" ? "فعالیت و رنگآمیزی" : t === "pdf" ? "جزوه و کاربرگ" : t === "video" ? "ویدیوی آموزشی" : t,
       items: g[t]
     }));
   };
@@ -477,7 +498,17 @@ function renderMediaSlideshow() {
       const btnNext = tbtn("▶▶", "بعدی", () => step(1));
       const btnNextView = tbtn("⏭", "گوشه بعدی", () => jumpView(1));
   const btnShuffle = tbtn("🔀", "تصادفی کردن گوشه‌ها", () => toggleShuffle());
-  top.append(btnClose, btnViews, btnNextView, btnNext, btnPlay, btnPrev, btnPrevView, btnShuffle, count);
+  var msMuted=false;
+  const btnMute=tbtn("🔇","بیصدا",function(){
+    msMuted=!msMuted;
+    this.textContent=msMuted?"🔊":"🔇";
+    // Mute any playing video in the slideshow
+    var vids=document.querySelectorAll('#media-slideshow video');
+    vids.forEach(function(v){v.muted=msMuted;});
+    // Also mute the player if open
+    if(typeof yrMute==='function')yrMute(msMuted);
+  });
+  top.append(btnClose, btnViews, btnNextView, btnNext, btnPlay, btnPrev, btnPrevView, btnShuffle, btnMute, count);
 
   function renderViewMenu() {
     viewMenu.innerHTML = "";

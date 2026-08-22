@@ -672,3 +672,40 @@ var VIDEO_LIBRARY = [
     "descFa": "راهنمای والدین جدید درباره مراقبت از نوزاد"
   }
 ];
+
+/* Room-video mapping */
+var ROOM_VIDEO_MAP = {
+  'jalase-owlia': 'all',
+  'amoozesh': ['education','parenting'],
+  'honar': ['education'],
+  'motaleh': ['education','parenting'],
+  'bazi': ['education'],
+  'khab': ['parenting'],
+  'moraabi': ['parenting'],
+  'salamat': ['health'],
+  'teria': ['education'],
+  'hayat': ['parenting'],
+  'esterahat-moraabian': ['parenting'],
+  'tavanbakhshi': ['health'],
+  'bayegani': ['education'],
+};
+
+/* ── Video-to-room mapping ── */
+var ROOM_VIDEO_MAP = {
+  'amoozesh': function(v){ return v.category === 'education'; },
+  'moraabi': function(v){ return true; },  // mentor: all videos
+  'honar': function(v){ return v.category === 'education' || (v.category||'').indexOf('art') >= 0; },
+  'motaleh': function(v){ return v.category === 'education'; },
+  'salamat': function(v){ return v.category === 'health'; },
+  'khab': function(v){ return v.category === 'parenting' || v.category === 'health'; },
+  'esterahat-moraabian': function(v){ return v.category === 'parenting'; },
+  'jalase-owlia': function(v){ return true; },  // parents meeting: all
+  'bayegani': function(v){ return true; },  // archive: all
+  'bazi': function(v){ return v.category === 'education'; },
+};
+
+function getVideosForRoom(roomId) {
+  var filter = ROOM_VIDEO_MAP[roomId];
+  if (!filter) return VIDEO_LIBRARY.slice(0, 6);
+  return VIDEO_LIBRARY.filter(filter);
+}
