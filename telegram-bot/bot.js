@@ -1,9 +1,7 @@
 "use strict";
-
 // ═══════════════════════════════════════════════════════
-//  Yaran Kindergarten — Telegram Bot v2
-//  منوی شیشهای: وظایف، گزارش روزانه، کودکان
-//  همگامسازی با سرور + تخته پیگیری وظایف سایت
+//  Yaran Bot v3 — Sync دوطرفه: وظایف، یادداشت، پیام
+//  DM + گروه | همگام‌سازی زنده با سرور
 // ═══════════════════════════════════════════════════════
 
 require('dotenv').config();
@@ -17,6 +15,7 @@ const WebSocket = require('ws');
 // ── Config ──
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const GROUP_ID = process.env.GROUP_ID || '-1003717678648';
+const ADMIN_IDS = (process.env.ADMIN_ID || '').split(',').map(s => parseInt(s.trim())).filter(Boolean);
 const PORT = Number(process.env.BOT_PORT) || 3000;
 const SERVER_URL = process.env.SERVER_URL || 'http://localhost:4000';
 const WS_URL = process.env.WS_URL || 'ws://localhost:4000/ws';
@@ -26,12 +25,9 @@ const bot = PROXY_URL
   ? new Telegraf(BOT_TOKEN, { telegram: { agent: new HttpsProxyAgent(PROXY_URL) } })
   : new Telegraf(BOT_TOKEN);
 
-if (!BOT_TOKEN) {
-  console.error('❌ BOT_TOKEN is required');
-  process.exit(1);
-}
+if (!BOT_TOKEN) { console.error('❌ BOT_TOKEN required'); process.exit(1); }
 
-// ── Session (report wizard state) — simple Map, no telegraf session dep ──
+// ── Session ──
 const chatSessions = new Map();
 bot.use((ctx, next) => {
   const key = String(ctx.chat?.id || ctx.from?.id || 'default');
@@ -40,132 +36,92 @@ bot.use((ctx, next) => {
   return next();
 });
 
-// ── Storage (single source: server API; local cache for offline) ──
+// ── Data ──
 const DATA_DIR = path.join(__dirname, 'data');
 const TASKS_PATH = path.join(DATA_DIR, 'tasks.json');
+const NOTES_PATH = path.join(DATA_DIR, 'notes.json');
+const MESSAGES_PATH = path.join(DATA_DIR, 'messages.json');
 
-const loadData = (file, defaultValue = []) => {
-  try {
-    if (fs.existsSync(file)) return JSON.parse(fs.readFileSync(file, 'utf8'));
-  } catch {}
-  return defaultValue;
-};
-const saveData = (file, data) => {
-  try {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
-    fs.writeFileSync(file, JSON.stringify(data, null, 2));
-  } catch (e) {
-    console.error(`❌ Failed to save ${file}:`, e.message);
-  }
-};
+const loadData = (file, def = []) => { try { if (fs.existsSync(file)) return JSON.parse(fs.readFileSync(file, 'utf8')); } catch {} return def; };
+const saveData = (file, data) => { try { fs.mkdirSync(DATA_DIR, { recursive: true }); fs.writeFileSync(file, JSON.stringify(data, null, 2)); } catch {} };
 
 let tasks = loadData(TASKS_PATH, []);
+let notes = loadData(NOTES_PATH, []);
+let messages = loadData(MESSAGES_PATH, []);
 
-// ── Server sync helpers ──
-async function serverGetTasks() {
+// ── Server API helpers ──
+async function api(method, path, body) {
   try {
-    const res = await fetch(`${SERVER_URL}/api/tasks`);
-    const data = await res.json();
-    if (data.tasks) return data.tasks;
-  } catch (e) {
-    console.error('❌ serverGetTasks:', e.message);
-  }
-  return null;
+    const opts = { method, headers: { 'Content-Type': 'application/json' } };
+    if (body) opts.body = JSON.stringify(body);
+    const res = await fetch(`${SERVER_URL}${path}`, opts);
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (e) { console.error(`❌ API ${method} ${path}:`, e.message); return null; }
 }
+async function serverGetTasks() { return (await api('GET', '/api/tasks'))?.tasks || null; }
+async function serverGetNotes() { return (await api('GET', '/api/notes'))?.notes || null; }
+async function serverGetMessages() { return (await api('GET', '/api/messages'))?.messages || null; }
 
-async function serverPostTask(task) {
-  try {
-    await fetch(`${SERVER_URL}/api/tasks`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(task),
-    });
-  } catch (e) {
-    console.error('❌ serverPostTask:', e.message);
-  }
-}
-
-// Generic POST to server API — returns true on ok
-async function serverPost(path, body) {
-  try {
-    const res = await fetch(`${SERVER_URL}${path}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-    return res.ok;
-  } catch (e) {
-    console.error(`❌ serverPost ${path}:`, e.message);
-    return false;
-  }
-}
-
-async function serverPatchTask(id, patch) {
-  try {
-    await fetch(`${SERVER_URL}/api/tasks/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(patch),
-    });
-  } catch (e) {
-    console.error('❌ serverPatchTask:', e.message);
-  }
-}
-
-async function serverDeleteTask(id) {
-  try {
-    await fetch(`${SERVER_URL}/api/tasks/${id}`, { method: 'DELETE' });
-  } catch (e) {
-    console.error('❌ serverDeleteTask:', e.message);
-  }
-}
-
-// ── WebSocket: live task updates from server ──
+// ── WebSocket: live sync ──
 function connectWS() {
   try {
     const ws = new WebSocket(WS_URL);
-    ws.on('open', () => console.log('✅ WebSocket connected (live sync)'));
-    ws.on('error', (e) => console.error('❌ WebSocket error:', e.message));
+    ws.on('open', () => console.log('✅ WS connected'));
+    ws.on('error', (e) => console.error('❌ WS error:', e.message));
     ws.on('message', (msg) => {
       try {
         const data = JSON.parse(msg);
         if (data.type === 'task_update') {
           const t = data.task;
-          if (t._deleted) {
-            tasks = tasks.filter(x => x.id !== t.id);
-          } else {
-            const idx = tasks.findIndex(x => x.id === t.id);
-            if (idx === -1) tasks.push(t);
-            else tasks[idx] = t;
-          }
+          if (t._deleted) tasks = tasks.filter(x => x.id !== t.id);
+          else { const idx = tasks.findIndex(x => x.id === t.id); if (idx === -1) tasks.push(t); else tasks[idx] = t; }
           saveData(TASKS_PATH, tasks);
+        }
+        if (data.type === 'note_update') {
+          const n = data.note;
+          if (n._deleted) notes = notes.filter(x => x.id !== n.id);
+          else { const idx = notes.findIndex(x => x.id === n.id); if (idx === -1) notes.push(n); else notes[idx] = n; }
+          saveData(NOTES_PATH, notes);
+        }
+        if (data.type === 'message_update') {
+          const m = data.message;
+          if (m._deleted) messages = messages.filter(x => x.id !== m.id);
+          else { const idx = messages.findIndex(x => x.id === m.id); if (idx === -1) messages.push(m); else messages[idx] = m; }
+          saveData(MESSAGES_PATH, messages);
         }
       } catch {}
     });
-  } catch (e) {
-    console.error('❌ WS init:', e.message);
-  }
+  } catch (e) { console.error('❌ WS init:', e.message); }
 }
 
-// ── RTL helper ──
-const rtl = (text) => `\u202B${text}\u202C`;
-
-// ── Admin check: ADMIN_ID set OR group member ──
+// ── Helpers ──
+const rtl = (t) => `\u202B${t}\u202C`;
 function isAdmin(ctx) {
-  if (process.env.ADMIN_ID && ctx.from.id === parseInt(process.env.ADMIN_ID)) return true;
-  // In the group: members are staff
-  return String(ctx.chat?.id) === GROUP_ID;
+  if (ADMIN_IDS.includes(ctx.from?.id)) return true;
+  if (String(ctx.chat?.id) === GROUP_ID) return true;
+  return false;
 }
+function isDM(ctx) { return ctx.chat?.type === 'private'; }
 
-// ════════════════ Menus (glass style) ════════════════
-
+// ── Menus ──
 const mainMenu = Markup.inlineKeyboard([
-  [Markup.button.callback('📋 لیست وظایف', 'task_list'), Markup.button.callback('➕ وظیفه جدید', 'task_add')],
-  [Markup.button.callback('✅ انجام شد', 'task_pick_done'), Markup.button.callback('🗑 حذف وظیفه', 'task_pick_del')],
-  [Markup.button.callback('🧹 پاک کردن انجامشدهها', 'clear_done')],
+  [Markup.button.callback('📋 وظایف', 'task_list'), Markup.button.callback('➕ وظیفه', 'task_add')],
+  [Markup.button.callback('✅ انجام', 'task_pick_done'), Markup.button.callback('🗑 حذف', 'task_pick_del')],
+  [Markup.button.callback('🧹 پاک کردن انجام‌شده‌ها', 'clear_done')],
   [Markup.button.callback('📊 گزارش روزانه', 'daily_report'), Markup.button.callback('📈 آمار', 'stats')],
-  [Markup.button.callback('👶 کودکان', 'children'), Markup.button.callback('📝 یادداشت', 'note_add')],
-  [Markup.button.callback('💬 پیام به پنل', 'msg_add'), Markup.button.callback('🔄 همگامسازی', 'sync_now')],
+  [Markup.button.callback('👶 کودکان', 'children'), Markup.button.callback('📝 یادداشت‌ها', 'note_list')],
+  [Markup.button.callback('💬 پیام‌ها', 'msg_list'), Markup.button.callback('🔄 همگامسازی', 'sync_now')],
+], { columns: 2 });
+
+const noteMenu = Markup.inlineKeyboard([
+  [Markup.button.callback('📝 افزودن یادداشت', 'note_add'), Markup.button.callback('📋 فهرست', 'note_list')],
+  [Markup.button.callback('🗑 حذف یادداشت', 'note_pick_del'), Markup.button.callback('↩️ بازگشت', 'cancel_flow')],
+], { columns: 2 });
+
+const msgMenu = Markup.inlineKeyboard([
+  [Markup.button.callback('💬 افزودن پیام', 'msg_add'), Markup.button.callback('📋 فهرست', 'msg_list')],
+  [Markup.button.callback('🗑 حذف پیام', 'msg_pick_del'), Markup.button.callback('↩️ بازگشت', 'cancel_flow')],
 ], { columns: 2 });
 
 const moodPicker = Markup.inlineKeyboard([
@@ -173,387 +129,329 @@ const moodPicker = Markup.inlineKeyboard([
   [Markup.button.callback('😢 ناراحت', 'mood_sad'), Markup.button.callback('🤒 مریض', 'mood_sick')],
   [Markup.button.callback('⏹️ انصراف', 'cancel_flow')],
 ]);
-
 const confirmCancel = Markup.inlineKeyboard([
-  [Markup.button.callback('✅ تأیید و ارسال', 'confirm_report'), Markup.button.callback('❌ لغو', 'cancel_flow')],
+  [Markup.button.callback('✅ تأیید', 'confirm_report'), Markup.button.callback('❌ لغو', 'cancel_flow')],
 ]);
 
-// ════════════════ Handlers ════════════════
-
+// ════════════════ Task handlers ════════════════
 bot.start(async (ctx) => {
-  await ctx.reply(
-    rtl(
-      `🌟 سلام! به ربات مدیریت مهدکودک یاران خوش آمدید.\n\n` +
-      `از منوی شیشهای زیر استفاده کنید:\n` +
-      `📋 وظایف — افزودن، انجام، حذف\n` +
-      `📊 گزارش روزانه — ثبت وضعیت کودک\n\n` +
-      `🔄 تخته پیگیری وظایف سایت به‌صورت زنده همگام می‌شود`
-    ),
-    mainMenu
-  );
+  await ctx.reply(rtl(
+    `🌟 سلام! ربات مدیریت یاران\n\n` +
+    `📋 وظایف — افزودن، انجام، حذف\n` +
+    `📝 یادداشت — فهرست، افزودن، حذف\n` +
+    `💬 پیام — فهرست، افزودن، حذف\n` +
+    `📊 گزارش روزانه — ثبت وضعیت کودک\n\n` +
+    `🔄 تخته وظایف سایت به‌صورت زنده همگام می‌شود`
+  ), mainMenu);
 });
-
 bot.command('menu', async (ctx) => ctx.reply(rtl('منوی اصلی:'), mainMenu));
 bot.command('tasks', async (ctx) => showTasks(ctx));
 bot.command('help', async (ctx) => ctx.reply(rtl(
-  `راهنمای ربات یاران:\n` +
+  `راهنما:\n` +
   `/tasks — لیست وظایف\n` +
-  `/add متن وظیفه — افزودن وظیفه\n` +
+  `/add متن — وظیفه جدید\n` +
+  `/notes — یادداشت‌ها\n` +
+  `/messages — پیام‌ها\n` +
   `/report — گزارش روزانه\n` +
   `/menu — منوی اصلی\n\n` +
-  `همه دستورات با دکمههای منو هم در دسترساند`
+  `همه دستورات از منوی دکمه‌ای هم در دسترس‌اند`
 ), mainMenu));
 
-// ── Task list ──
+// ── Tasks ──
 async function showTasks(ctx, edit = false) {
-  const groupTasks = tasks.filter(t => String(t.groupId) === GROUP_ID);
-  if (!groupTasks.length) {
-    const msg = rtl('📭 وظیفهای ثبت نشده.\nبرای افزودن: ➕ وظیفه جدید');
+  const gt = tasks.filter(t => String(t.groupId) === GROUP_ID);
+  if (!gt.length) {
+    const msg = rtl('📭 وظیفه‌ای ثبت نشده\n➕ وظیفه جدید');
     if (edit) return ctx.editMessageText(msg, Markup.inlineKeyboard([[Markup.button.callback('➕ وظیفه جدید', 'task_add')]]));
     return ctx.reply(msg, Markup.inlineKeyboard([[Markup.button.callback('➕ وظیفه جدید', 'task_add')]]));
   }
-  const lines = groupTasks.map(t => {
+  const lines = gt.map(t => {
     const icon = t.status === 'completed' ? '✅' : (t.status === 'in_progress' ? '🔄' : '⬜');
     const owner = t.assigned_to ? ` 👤${t.assigned_to}` : '';
     const prio = t.priority === 'high' ? ' 🔴' : (t.priority === 'low' ? ' 🟢' : '');
     return `${icon} ${t.title}${owner}${prio}`;
   }).join('\n');
-  const msg = rtl(`📋 وظایف مهدکودک:\n\n${lines}`);
+  const msg = rtl(`📋 وظایف:\n\n${lines}`);
   const kb = Markup.inlineKeyboard(
-    [...groupTasks.map(t => [Markup.button.callback(`✅ ${t.title.slice(0, 40)}`, `done_${t.id}`)]),
-    [Markup.button.callback('↩️ بازگشت به منو', 'cancel_flow')]],
-    { columns: 1 }
+    [...gt.map(t => [Markup.button.callback(`✅ ${t.title.slice(0, 40)}`, `done_${t.id}`)]),
+    [Markup.button.callback('↩️ منو', 'cancel_flow')]],
   );
   if (edit) return ctx.editMessageText(msg, kb);
   return ctx.reply(msg, kb);
 }
+bot.action('task_list', async (ctx) => { await ctx.answerCbQuery(); await showTasks(ctx, true); });
 
-bot.action('task_list', async (ctx) => {
-  await ctx.answerCbQuery();
-  await showTasks(ctx, true);
-});
-
-// ── Add task: ask for title ──
 bot.action('task_add', async (ctx) => {
-  if (!isAdmin(ctx)) return ctx.answerCbQuery(rtl('❌ فقط مدیران'));;
+  if (!isAdmin(ctx)) return ctx.answerCbQuery(rtl('❌ فقط مدیران'));
   ctx.session.waitingTask = true;
   await ctx.answerCbQuery();
-  await ctx.reply(rtl('✍️ متن وظیفه جدید را بنویسید:'),
-    Markup.inlineKeyboard([[Markup.button.callback('⏹️ انصراف', 'cancel_flow')]]));
+  await ctx.reply(rtl('✍️ متن وظیفه جدید:'), Markup.inlineKeyboard([[Markup.button.callback('⏹️ انصراف', 'cancel_flow')]]));
 });
 
-// ── Clear all completed tasks (with confirm) ──
 bot.action('clear_done', async (ctx) => {
   await ctx.answerCbQuery();
-  const doneCount = tasks.filter(t => String(t.groupId) === GROUP_ID && t.status === 'completed').length;
-  if (!doneCount) return ctx.reply(rtl('وظیفهٔ انجامشده‌ای وجود ندارد'), mainMenu);
-  await ctx.reply(rtl(`همه ${doneCount} وظیفهٔ انجام‌شده حذف شود؟`),
-    Markup.inlineKeyboard([
-      [Markup.button.callback('✅ بله، حذف کن', 'clear_done_yes'), Markup.button.callback('❌ نه', 'cancel_flow')],
-    ]));
+  const done = tasks.filter(t => String(t.groupId) === GROUP_ID && t.status === 'completed').length;
+  if (!done) return ctx.reply(rtl('انجام‌شده‌ای نیست'), mainMenu);
+  await ctx.reply(rtl(`${done} وظیفه انجام‌شده حذف شود؟`), Markup.inlineKeyboard([
+    [Markup.button.callback('✅ بله', 'clear_done_yes'), Markup.button.callback('❌ نه', 'cancel_flow')],
+  ]));
 });
-
 bot.action('clear_done_yes', async (ctx) => {
   await ctx.answerCbQuery();
   try {
     const r = await fetch(`${SERVER_URL}/api/tasks/done`, { method: 'DELETE' });
-    if (!r.ok) throw new Error('http ' + r.status);
     const removed = (await r.json()).removed || 0;
     const fresh = await serverGetTasks();
     if (fresh) { tasks = fresh; saveData(TASKS_PATH, tasks); }
-    await ctx.reply(rtl(`🧹 ${removed} وظیفهٔ انجام‌شده پاک شد`), mainMenu);
-  } catch (e) {
-    await ctx.reply(rtl('خطا: سرور در دسترس نیست'), mainMenu);
-  }
+    await ctx.reply(rtl(`🧹 ${removed} حذف شد`), mainMenu);
+  } catch { await ctx.reply(rtl('❌ خطا'), mainMenu); }
 });
 
-// ── Pick task to mark done ──
 bot.action('task_pick_done', async (ctx) => {
   await ctx.answerCbQuery();
-  const groupTasks = tasks.filter(t => String(t.groupId) === GROUP_ID && t.status !== 'completed');
-  if (!groupTasks.length) return ctx.reply(rtl('وظیفهٔ باز وجود ندارد'));
-  const kb = Markup.inlineKeyboard(
-    [...groupTasks.map(t => [Markup.button.callback(`✅ ${t.title.slice(0, 40)}`, `done_${t.id}`)]),
-    [Markup.button.callback('↩️ بازگشت به منو', 'cancel_flow')]]
-  );
-  await ctx.reply(rtl('کدام وظیفه انجام شد؟'), kb);
+  const gt = tasks.filter(t => String(t.groupId) === GROUP_ID && t.status !== 'completed');
+  if (!gt.length) return ctx.reply(rtl('باز نیست'));
+  const kb = Markup.inlineKeyboard([
+    ...gt.map(t => [Markup.button.callback(`✅ ${t.title.slice(0, 40)}`, `done_${t.id}`)]),
+    [Markup.button.callback('↩️ منو', 'cancel_flow')],
+  ]);
+  await ctx.reply(rtl('کدام انجام شد؟'), kb);
 });
 
-// ── Pick task to delete ──
 bot.action('task_pick_del', async (ctx) => {
   await ctx.answerCbQuery();
-  const groupTasks = tasks.filter(t => String(t.groupId) === GROUP_ID);
-  if (!groupTasks.length) return ctx.reply(rtl('وظیفهای وجود ندارد'));
-  const kb = Markup.inlineKeyboard(
-    [...groupTasks.map(t => [Markup.button.callback(`🗑 ${t.title.slice(0, 40)}`, `del_${t.id}`)]),
-    [Markup.button.callback('↩️ بازگشت به منو', 'cancel_flow')]]
-  );
-  await ctx.reply(rtl('کدام وظیفه حذف شود؟'), kb);
+  const gt = tasks.filter(t => String(t.groupId) === GROUP_ID);
+  if (!gt.length) return ctx.reply(rtl('ندارد'));
+  const kb = Markup.inlineKeyboard([
+    ...gt.map(t => [Markup.button.callback(`🗑 ${t.title.slice(0, 40)}`, `del_${t.id}`)]),
+    [Markup.button.callback('↩️ منو', 'cancel_flow')],
+  ]);
+  await ctx.reply(rtl('کدام حذف شود؟'), kb);
 });
 
-// ── Stats ──
 bot.action('stats', async (ctx) => {
   await ctx.answerCbQuery();
-  const groupTasks = tasks.filter(t => String(t.groupId) === GROUP_ID);
-  const open = groupTasks.filter(t => t.status !== 'completed').length;
-  const done = groupTasks.length - open;
+  const gt = tasks.filter(t => String(t.groupId) === GROUP_ID);
+  const open = gt.filter(t => t.status !== 'completed').length;
   const today = new Date().toISOString().slice(0, 10);
-  const doneToday = groupTasks.filter(t => t.status === 'completed' && (t.completed_at || '').startsWith(today)).length;
-  await ctx.reply(rtl(
-    `📈 آمار وظایف:\n\n` +
-    `📋 کل: ${groupTasks.length}\n` +
-    `⏳ باز: ${open}\n` +
-    `✅ انجامشده: ${done}\n` +
-    `🆕 امروز: ${doneToday}`
-  ), mainMenu);
+  const doneToday = gt.filter(t => t.status === 'completed' && (t.completed_at || '').startsWith(today)).length;
+  await ctx.reply(rtl(`📈 آمار:\n\n📋 کل: ${gt.length}\n⏳ باز: ${open}\n✅ انجام: ${gt.length - open}\n🆕 امروز: ${doneToday}\n📝 یادداشت: ${notes.length}\n💬 پیام: ${messages.length}`), mainMenu);
 });
 
 bot.action(/^done_(.+)/, async (ctx) => {
-  const taskId = ctx.match[1];
-  const task = tasks.find(t => String(t.id) === taskId);
-  if (!task) {
-    await ctx.answerCbQuery(rtl('وظیفه یافت نشد'));
-    // Pull fresh from server
-    const fresh = await serverGetTasks();
-    if (fresh) { tasks = fresh; saveData(TASKS_PATH, tasks); }
-    return showTasks(ctx, true);
-  }
-  task.status = 'completed';
-  task.completed_at = new Date().toISOString();
+  const id = ctx.match[1];
+  const task = tasks.find(t => String(t.id) === id);
+  if (!task) { await ctx.answerCbQuery(rtl('یافت نشد')); const f = await serverGetTasks(); if (f) { tasks = f; saveData(TASKS_PATH, tasks); } return showTasks(ctx, true); }
+  task.status = 'completed'; task.completed_at = new Date().toISOString();
   saveData(TASKS_PATH, tasks);
-  await serverPatchTask(task.id, { status: 'completed' });
-  await ctx.answerCbQuery(rtl(`✅ انجام شد: ${task.title}`));
+  await api('PATCH', `/api/tasks/${id}`, { status: 'completed' });
+  await ctx.answerCbQuery(rtl(`✅ ${task.title}`));
   await showTasks(ctx, true);
 });
 
-// ── Delete task (inline: long-press → منوی حذف) ──
 bot.action(/^del_(.+)/, async (ctx) => {
-  const taskId = ctx.match[1];
-  const task = tasks.find(t => String(t.id) === taskId);
-  tasks = tasks.filter(t => String(t.id) !== taskId);
+  const id = ctx.match[1];
+  const task = tasks.find(t => String(t.id) === id);
+  tasks = tasks.filter(t => String(t.id) !== id);
   saveData(TASKS_PATH, tasks);
-  await serverDeleteTask(taskId);
-  await ctx.answerCbQuery(rtl(`🗑 حذف شد: ${task?.title || ''}`));
+  await api('DELETE', `/api/tasks/${id}`);
+  await ctx.answerCbQuery(rtl(`🗑 ${task?.title || ''}`));
   await showTasks(ctx, true);
 });
 
-// ── Sync now ──
 bot.action('sync_now', async (ctx) => {
-  await ctx.answerCbQuery(rtl('🔄 در حال همگامسازی...'));
-  const fresh = await serverGetTasks();
-  if (fresh) {
-    tasks = fresh;
-    saveData(TASKS_PATH, tasks);
-    await ctx.reply(rtl(`✅ همگام شد — ${fresh.length} وظیفه از سرور`), mainMenu);
-  } else {
-    await ctx.reply(rtl('❌ سرور در دسترس نیست'), mainMenu);
-  }
+  await ctx.answerCbQuery(rtl('🔄 همگام‌سازی...'));
+  const [fTasks, fNotes, fMsgs] = await Promise.all([serverGetTasks(), serverGetNotes(), serverGetMessages()]);
+  if (fTasks) { tasks = fTasks; saveData(TASKS_PATH, tasks); }
+  if (fNotes) { notes = fNotes; saveData(NOTES_PATH, notes); }
+  if (fMsgs) { messages = fMsgs; saveData(MESSAGES_PATH, messages); }
+  await ctx.reply(rtl(`✅ همگام شد:\n📋 ${tasks.length} وظیفه\n📝 ${notes.length} یادداشت\n💬 ${messages.length} پیام`), mainMenu);
 });
 
-// ── Daily report wizard ──
-bot.action('daily_report', async (ctx) => {
-  ctx.session.report = {};
+// ════════════════ Notes handlers ════════════════
+bot.action('note_list', async (ctx) => {
   await ctx.answerCbQuery();
-  await ctx.reply(rtl('😊 حال کودک امروز چطور بود؟'), moodPicker);
+  if (!notes.length) return ctx.reply(rtl('📝 یادداشتی نیست'), noteMenu);
+  const lines = notes.slice(0, 15).map((n, i) => `${i + 1}. ${(n.text || '').slice(0, 60)}${(n.text || '').length > 60 ? '...' : ''}`).join('\n');
+  await ctx.reply(rtl(`📝 یادداشت‌ها (${notes.length}):\n\n${lines}`), noteMenu);
 });
 
-bot.action(/^mood_(.+)/, async (ctx) => {
-  ctx.session.report = ctx.session.report || {};
-  ctx.session.report.mood = ctx.match[1];
-  await ctx.answerCbQuery();
-  await ctx.reply(rtl('🍎 غذای کودک را بنویسید:'));
-});
-
-bot.action('cancel_flow', async (ctx) => {
-  ctx.session.report = {};
-  ctx.session.waitingTask = false;
-  ctx.session.addingChild = false;
-  ctx.session.waitingChildName = false;
-  ctx.session.waitingTaskOwner = false;
-  ctx.session.taskTitle = null;
-  ctx.session.waitingNote = false;
-  ctx.session.waitingMsg = false;
-  await ctx.answerCbQuery(rtl('انصراف'));
-  await ctx.reply(rtl('بازگشت به منو:'), mainMenu);
-});
-
-bot.action('confirm_report', async (ctx) => {
-  const r = ctx.session.report || {};
-  if (!r.mood || !r.food || !r.sleep) {
-    return ctx.reply(rtl('❌ گزارش ناقص است — دوباره شروع کنید:'), moodPicker);
-  }
-  try {
-    await fetch(`${SERVER_URL}/api/reports`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        childName: r.childName || 'ناشناس',
-        mood: r.mood,
-        food: r.food,
-        sleep: r.sleep,
-        note: r.note || '',
-        groupId: GROUP_ID,
-        date: new Date().toISOString(),
-        fromBot: true,
-      }),
-    });
-  } catch (e) {
-    console.error('❌ report:', e.message);
-  }
-  ctx.session.report = {};
-  await ctx.answerCbQuery(rtl('ثبت شد ✅'));
-  await ctx.reply(rtl('📊 گزارش ثبت شد! متشکریم 🌟'), mainMenu);
-});
-
-// ── Text flow: add task / report wizard / children name ──
-bot.on('text', async (ctx) => {
-  const text = ctx.message.text.trim();
-
-  // Add task flow
-  if (ctx.session.waitingTask) {
-    if (!isAdmin(ctx)) {
-      ctx.session.waitingTask = false;
-      return ctx.reply(rtl('❌ فقط مدیران میتوانند وظیفه اضافه کنند'));
-    }
-    ctx.session.waitingTask = false;
-    ctx.session.taskTitle = text;
-    ctx.session.waitingTaskOwner = true;
-    await ctx.reply(
-      rtl(`📋 وظیفه: «${text}»\n\n👤 مسئول پیگیری کیست؟ (اسم یا «ندارد»):`),
-      Markup.inlineKeyboard([[Markup.button.callback('⏹️ انصراف', 'cancel_flow')]])
-    );
-    return;
-  }
-
-  // Task owner → create task
-  if (ctx.session.waitingTaskOwner) {
-    const title = ctx.session.taskTitle;
-    const owner = text === 'ندارد' ? '' : text;
-    ctx.session.waitingTaskOwner = false;
-    ctx.session.taskTitle = null;
-    const task = {
-      id: Date.now().toString(),
-      title,
-      assigned_to: owner,
-      status: 'pending',
-      priority: 'medium',
-      created_at: new Date().toISOString(),
-      groupId: GROUP_ID,
-      created_by: ctx.from.username || ctx.from.first_name,
-    };
-    tasks.push(task);
-    saveData(TASKS_PATH, tasks);
-    await serverPostTask(task);
-    await ctx.reply(rtl(`✅ وظیفه اضافه شد:\n${title}${owner ? `\n👤 مسئول: ${owner}` : ''}`), mainMenu);
-    return;
-  }
-
-  // Note text → POST /api/notes
-  if (ctx.session.waitingNote) {
-    ctx.session.waitingNote = false;
-    const ok = await serverPost('/api/notes', { text, author: ctx.from.first_name || 'ربات' });
-    await ctx.reply(ok ? rtl('✅ یادداشت به پنل ارسال شد') : rtl('❌ خطا در ارسال'), mainMenu);
-    return;
-  }
-
-  // Message text → POST /api/messages
-  if (ctx.session.waitingMsg) {
-    ctx.session.waitingMsg = false;
-    const ok = await serverPost('/api/messages', { text, from: ctx.from.first_name || 'ربات' });
-    await ctx.reply(ok ? rtl('✅ پیام به پنل ارسال شد') : rtl('❌ خطا در ارسال'), mainMenu);
-    return;
-  }
-
-  // Child name → start report for that child
-  if (ctx.session.waitingChildName) {
-    ctx.session.waitingChildName = false;
-    ctx.session.report = { childName: text };
-    return ctx.reply(
-      rtl(`👶 کودک «${text}» ثبت شد.\n😊 حال کودک امروز چطور بود؟`),
-      moodPicker
-    );
-  }
-
-  // Report wizard steps
-  if (ctx.session.report) {
-    const r = ctx.session.report;
-    if (!r.mood) return ctx.reply(rtl('ابتدا حالت کودک را انتخاب کنید:'), moodPicker);
-    if (!r.food) { r.food = text; return ctx.reply(rtl('😴 خواب کودک را بنویسید:')); }
-    if (!r.sleep) { r.sleep = text; return ctx.reply(rtl('📝 توضیحات اضافی (اختیاری — یا «ندارد»):')); }
-    if (!r.note) {
-      r.note = text === 'ندارد' ? '' : text;
-      return ctx.reply(rtl(`گزارش شما:\n\n😊 حالت: ${r.mood}\n🍎 غذا: ${r.food}\n😴 خواب: ${r.sleep}\n📝 یادداشت: ${r.note || '-'}\n\nارسال شود؟`), confirmCancel);
-    }
-  }
-
-  // fallback
-  await ctx.reply(rtl('لطفاً از منوی اصلی استفاده کنید:'), mainMenu);
-});
-
-// ── Children: ask name first, then start daily report for that child ──
-bot.action('children', async (ctx) => {
-  ctx.session.waitingChildName = true;
-  await ctx.answerCbQuery();
-  await ctx.reply(
-    rtl('👶 اسم کودک را بنویسید (مثلاً: نیکان):'),
-    Markup.inlineKeyboard([[Markup.button.callback('↩️ بازگشت به منو', 'cancel_flow')]])
-  );
-});
-
-// ── Notes: plain text → POST /api/notes ──
 bot.action('note_add', async (ctx) => {
   if (!isAdmin(ctx)) return ctx.answerCbQuery(rtl('❌ فقط مدیران'));
   ctx.session.waitingNote = true;
   await ctx.answerCbQuery();
-  await ctx.reply(
-    rtl('📝 متن یادداشت را بنویسید (برای پنل سایت):'),
-    Markup.inlineKeyboard([[Markup.button.callback('⏹️ انصراف', 'cancel_flow')]])
-  );
+  await ctx.reply(rtl('📝 متن یادداشت:'), Markup.inlineKeyboard([[Markup.button.callback('⏹️ انصراف', 'cancel_flow')]]));
 });
 
-// ── Messages: plain text → POST /api/messages ──
+bot.action('note_pick_del', async (ctx) => {
+  if (!isAdmin(ctx)) return ctx.answerCbQuery(rtl('❌ فقط مدیران'));
+  await ctx.answerCbQuery();
+  if (!notes.length) return ctx.reply(rtl('ندارد'), noteMenu);
+  const kb = Markup.inlineKeyboard([
+    ...notes.slice(0, 10).map(n => [Markup.button.callback(`🗑 ${(n.text || '').slice(0, 40)}`, `ndel_${n.id}`)]),
+    [Markup.button.callback('↩️ بازگشت', 'cancel_flow')],
+  ]);
+  await ctx.reply(rtl('کدام حذف شود؟'), kb);
+});
+
+bot.action(/^ndel_(.+)/, async (ctx) => {
+  if (!isAdmin(ctx)) return ctx.answerCbQuery(rtl('❌ فقط مدیران'));
+  const id = ctx.match[1];
+  notes = notes.filter(n => n.id !== id);
+  saveData(NOTES_PATH, notes);
+  await api('DELETE', `/api/notes/${id}`);
+  await ctx.answerCbQuery(rtl('🗑 حذف شد'));
+  await ctx.reply(rtl(`📝 باقیمانده: ${notes.length}`), noteMenu);
+});
+
+// ════════════════ Messages handlers ════════════════
+bot.action('msg_list', async (ctx) => {
+  await ctx.answerCbQuery();
+  if (!messages.length) return ctx.reply(rtl('💬 پیامی نیست'), msgMenu);
+  const lines = messages.slice(0, 15).map((m, i) => `${i + 1}. ${(m.text || '').slice(0, 60)}${(m.text || '').length > 60 ? '...' : ''}`).join('\n');
+  await ctx.reply(rtl(`💬 پیام‌ها (${messages.length}):\n\n${lines}`), msgMenu);
+});
+
 bot.action('msg_add', async (ctx) => {
   if (!isAdmin(ctx)) return ctx.answerCbQuery(rtl('❌ فقط مدیران'));
   ctx.session.waitingMsg = true;
   await ctx.answerCbQuery();
-  await ctx.reply(
-    rtl('💬 متن پیام را بنویسید (برای پنل سایت):'),
-    Markup.inlineKeyboard([[Markup.button.callback('⏹️ انصراف', 'cancel_flow')]])
-  );
+  await ctx.reply(rtl('💬 متن پیام:'), Markup.inlineKeyboard([[Markup.button.callback('⏹️ انصراف', 'cancel_flow')]]));
 });
 
-// ── Initial sync from server ──
-setTimeout(async () => {
-  const fresh = await serverGetTasks();
-  if (fresh) {
-    tasks = fresh;
-    saveData(TASKS_PATH, tasks);
-    console.log(`🔄 Synced ${fresh.length} tasks from server`);
+bot.action('msg_pick_del', async (ctx) => {
+  if (!isAdmin(ctx)) return ctx.answerCbQuery(rtl('❌ فقط مدیران'));
+  await ctx.answerCbQuery();
+  if (!messages.length) return ctx.reply(rtl('ندارد'), msgMenu);
+  const kb = Markup.inlineKeyboard([
+    ...messages.slice(0, 10).map(m => [Markup.button.callback(`🗑 ${(m.text || '').slice(0, 40)}`, `mdel_${m.id}`)]),
+    [Markup.button.callback('↩️ بازگشت', 'cancel_flow')],
+  ]);
+  await ctx.reply(rtl('کدام حذف شود؟'), kb);
+});
+
+bot.action(/^mdel_(.+)/, async (ctx) => {
+  if (!isAdmin(ctx)) return ctx.answerCbQuery(rtl('❌ فقط مدیران'));
+  const id = ctx.match[1];
+  messages = messages.filter(m => m.id !== id);
+  saveData(MESSAGES_PATH, messages);
+  await api('DELETE', `/api/messages/${id}`);
+  await ctx.answerCbQuery(rtl('🗑 حذف شد'));
+  await ctx.reply(rtl(`💬 باقیمانده: ${messages.length}`), msgMenu);
+});
+
+// ════════════════ Report + Cancel ════════════════
+bot.action('daily_report', async (ctx) => {
+  ctx.session.report = {};
+  await ctx.answerCbQuery();
+  await ctx.reply(rtl('😊 حال کودک؟'), moodPicker);
+});
+bot.action(/^mood_(.+)/, async (ctx) => {
+  ctx.session.report = ctx.session.report || {};
+  ctx.session.report.mood = ctx.match[1];
+  await ctx.answerCbQuery();
+  await ctx.reply(rtl('🍎 غذا:'));
+});
+bot.action('cancel_flow', async (ctx) => {
+  Object.assign(ctx.session, { report: null, waitingTask: false, waitingNote: false, waitingMsg: false, taskTitle: null, waitingTaskOwner: false, waitingChildName: false });
+  await ctx.answerCbQuery(rtl('انصراف'));
+  await ctx.reply(rtl('بازگشت:'), mainMenu);
+});
+bot.action('confirm_report', async (ctx) => {
+  const r = ctx.session.report || {};
+  if (!r.mood || !r.food || !r.sleep) return ctx.reply(rtl('ناقص'), moodPicker);
+  await api('POST', '/api/reports', { childName: r.childName || 'ناشناس', mood: r.mood, food: r.food, sleep: r.sleep, note: r.note || '', groupId: GROUP_ID, date: new Date().toISOString(), fromBot: true });
+  ctx.session.report = null;
+  await ctx.answerCbQuery(rtl('ثبت شد ✅'));
+  await ctx.reply(rtl('📊 گزارش ثبت شد!'), mainMenu);
+});
+
+// ════════════════ Text flow ════════════════
+bot.on('text', async (ctx) => {
+  const text = ctx.message.text.trim();
+
+  if (ctx.session.waitingTask) {
+    if (!isAdmin(ctx)) { ctx.session.waitingTask = false; return ctx.reply(rtl('❌ فقط مدیران')); }
+    ctx.session.waitingTask = false;
+    ctx.session.taskTitle = text;
+    ctx.session.waitingTaskOwner = true;
+    return ctx.reply(rtl(`📋 «${text}»\n👤 مسئول: (اسم یا «ندارد»):`), Markup.inlineKeyboard([[Markup.button.callback('⏹️ انصراف', 'cancel_flow')]]));
   }
+
+  if (ctx.session.waitingTaskOwner) {
+    const title = ctx.session.taskTitle;
+    const owner = text === 'ندارد' ? '' : text;
+    ctx.session.waitingTaskOwner = false; ctx.session.taskTitle = null;
+    const task = { id: Date.now().toString(), title, assigned_to: owner, status: 'pending', priority: 'medium', created_at: new Date().toISOString(), groupId: GROUP_ID, created_by: ctx.from.username || ctx.from.first_name };
+    tasks.push(task); saveData(TASKS_PATH, tasks);
+    await api('POST', '/api/tasks', task);
+    return ctx.reply(rtl(`✅ اضافه شد:\n${title}${owner ? `\n👤 ${owner}` : ''}`), mainMenu);
+  }
+
+  if (ctx.session.waitingNote) {
+    ctx.session.waitingNote = false;
+    const note = { id: Date.now().toString(), text, author: ctx.from.first_name || 'ربات', date: new Date().toISOString(), groupId: GROUP_ID };
+    notes.push(note); saveData(NOTES_PATH, notes);
+    await api('POST', '/api/notes', note);
+    return ctx.reply(rtl('✅ یادداشت ارسال شد'), mainMenu);
+  }
+
+  if (ctx.session.waitingMsg) {
+    ctx.session.waitingMsg = false;
+    const msg = { id: Date.now().toString(), text, author: ctx.from.first_name || 'ربات', date: new Date().toISOString(), groupId: GROUP_ID };
+    messages.push(msg); saveData(MESSAGES_PATH, messages);
+    await api('POST', '/api/messages', msg);
+    return ctx.reply(rtl('✅ پیام ارسال شد'), mainMenu);
+  }
+
+  if (ctx.session.waitingChildName) {
+    ctx.session.waitingChildName = false;
+    ctx.session.report = { childName: text };
+    return ctx.reply(rtl(`👶 «${text}»\n😊 حال کودک؟`), moodPicker);
+  }
+
+  if (ctx.session.report) {
+    const r = ctx.session.report;
+    if (!r.mood) return ctx.reply(rtl('حالت را انتخاب کنید:'), moodPicker);
+    if (!r.food) { r.food = text; return ctx.reply(rtl('😴 خواب:')); }
+    if (!r.sleep) { r.sleep = text; return ctx.reply(rtl('📝 توضیح (یا «ندارد»):')); }
+    if (!r.note) { r.note = text === 'ندارد' ? '' : text; return ctx.reply(rtl(`گزارش:\n😊 ${r.mood}\n🍎 ${r.food}\n😴 ${r.sleep}\n📝 ${r.note || '-'}\n\nارسال؟`), confirmCancel); }
+  }
+
+  await ctx.reply(rtl('از منو استفاده کنید:'), mainMenu);
+});
+
+bot.action('children', async (ctx) => {
+  ctx.session.waitingChildName = true;
+  await ctx.answerCbQuery();
+  await ctx.reply(rtl('👶 اسم کودک:'), Markup.inlineKeyboard([[Markup.button.callback('↩️ منو', 'cancel_flow')]]));
+});
+
+// ── Error guard ──
+bot.catch((err) => { if (!/query is too old|Cannot set properties/.test(String(err?.message || err))) console.error('⚠️ bot:', err?.message); });
+
+// ── Init sync + WS ──
+setTimeout(async () => {
+  const [fTasks, fNotes, fMsgs] = await Promise.all([serverGetTasks(), serverGetNotes(), serverGetMessages()]);
+  if (fTasks) { tasks = fTasks; saveData(TASKS_PATH, tasks); }
+  if (fNotes) { notes = fNotes; saveData(NOTES_PATH, notes); }
+  if (fMsgs) { messages = fMsgs; saveData(MESSAGES_PATH, messages); }
+  console.log(`🔄 Synced: ${tasks.length} tasks, ${notes.length} notes, ${messages.length} messages`);
   connectWS();
 }, 3000);
 
 // ── Start ──
 const app = express();
 app.use(express.json());
-app.get('/health', (_req, res) => res.json({ ok: true, bot: 'YaranBot', tasks: tasks.length }));
+app.get('/health', (_req, res) => res.json({ ok: true, bot: 'YaranBot v3', tasks: tasks.length, notes: notes.length, messages: messages.length }));
 
-// ── Global error guard: stale callback queries (from offline period) are expected ──
-bot.catch((err) => {
-  if (!/query is too old|Cannot set properties/.test(String(err?.message || err))) {
-    console.error('⚠️ bot error:', err?.message || err);
-  }
-});
-
-bot.launch().then(() => console.log('✅ Telegram bot started')).catch((e) => {
-  if (e.message && e.message.includes('409')) {
-    console.log('⚠️ Bot conflict (another instance running) — retrying in 10s...');
+bot.launch().then(() => console.log('✅ Bot v3 started')).catch((e) => {
+  if (e.message?.includes('409')) {
+    console.log('⚠️ Conflict — retry in 10s...');
     setTimeout(() => { bot.launch().catch(() => {}); }, 10000);
-  } else {
-    console.error('❌ launch failed:', e.message);
-  }
+  } else console.error('❌ launch:', e.message);
 });
-app.listen(PORT, () => console.log(`🤖 Bot server on http://localhost:${PORT}`));
+app.listen(PORT, () => console.log(`🤖 Bot server: http://localhost:${PORT}`));
 
 process.once('SIGINT', () => bot.stop('SIGINT'));
 process.once('SIGTERM', () => bot.stop('SIGTERM'));

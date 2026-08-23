@@ -61,10 +61,13 @@ wss.on('connection', (ws) => {
   });
 });
 
-function broadcastTaskUpdate(task) {
-  const msg = JSON.stringify({ type: 'task_update', task });
+function broadcast(type, payload) {
+  const msg = JSON.stringify({ type, ...payload });
   wsClients.forEach(c => { if (c.readyState === 1) c.send(msg); });
 }
+function broadcastTaskUpdate(task) { broadcast('task_update', { task }); }
+function broadcastNoteUpdate(note) { broadcast('note_update', { note }); }
+function broadcastMessageUpdate(message) { broadcast('message_update', { message }); }
 
 // ── In-memory DB (users persisted to data/users.json) ──
 const DB = {
@@ -536,9 +539,25 @@ app.post('/api/notes', (req, res) => {
   };
   panel.notes.push(note);
   savePanel();
+  broadcastNoteUpdate(note);
   res.json(note);
 });
 app.get('/api/notes', (_req, res) => res.json({ notes: panel.notes.slice().reverse() }));
+app.patch('/api/notes/:id', (req, res) => {
+  const note = panel.notes.find(n => n.id === req.params.id);
+  if (!note) return res.status(404).json({ error: 'not found' });
+  if (req.body.text) note.text = String(req.body.text).substring(0, 1000);
+  savePanel();
+  broadcastNoteUpdate(note);
+  res.json(note);
+});
+app.delete('/api/notes/:id', (req, res) => {
+  const before = panel.notes.length;
+  panel.notes = panel.notes.filter(n => n.id !== req.params.id);
+  savePanel();
+  broadcastNoteUpdate({ _deleted: true, id: req.params.id });
+  res.json({ removed: before - panel.notes.length });
+});
 app.post('/api/messages', (req, res) => {
   if (!rateLimitCheck('messages:' + req.ip, 20)) {
     return res.status(429).json({ error: 'تعداد درخواستها بیش از حد مجاز' });
@@ -555,9 +574,25 @@ app.post('/api/messages', (req, res) => {
   };
   panel.messages.push(msg);
   savePanel();
+  broadcastMessageUpdate(msg);
   res.json(msg);
 });
 app.get('/api/messages', (_req, res) => res.json({ messages: panel.messages.slice().reverse() }));
+app.patch('/api/messages/:id', (req, res) => {
+  const msg = panel.messages.find(m => m.id === req.params.id);
+  if (!msg) return res.status(404).json({ error: 'not found' });
+  if (req.body.text) msg.text = String(req.body.text).substring(0, 1000);
+  savePanel();
+  broadcastMessageUpdate(msg);
+  res.json(msg);
+});
+app.delete('/api/messages/:id', (req, res) => {
+  const before = panel.messages.length;
+  panel.messages = panel.messages.filter(m => m.id !== req.params.id);
+  savePanel();
+  broadcastMessageUpdate({ _deleted: true, id: req.params.id });
+  res.json({ removed: before - panel.messages.length });
+});
 
 // ── Panel: everything the site board needs, one call ──
 app.get('/api/panel', (_req, res) => res.json({
