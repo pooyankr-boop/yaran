@@ -115,6 +115,7 @@ DB.children.push(
 // CORS: فقط دامنه‌های شناخته‌شده مجازند (GitHub Pages + لوکال) — با ALLOWED_ORIGINS در env قابل افزودن
 const defaultOrigins = [
   'https://pooyankr-boop.github.io',
+  'https://yaran.onrender.com',
   'http://localhost:4000',
   'http://127.0.0.1:4000',
 ];

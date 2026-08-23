@@ -545,7 +545,14 @@ bot.catch((err) => {
   }
 });
 
-bot.launch().then(() => console.log('✅ Telegram bot started')).catch((e) => console.error('❌ launch failed:', e.message));
+bot.launch().then(() => console.log('✅ Telegram bot started')).catch((e) => {
+  if (e.message && e.message.includes('409')) {
+    console.log('⚠️ Bot conflict (another instance running) — retrying in 10s...');
+    setTimeout(() => { bot.launch().catch(() => {}); }, 10000);
+  } else {
+    console.error('❌ launch failed:', e.message);
+  }
+});
 app.listen(PORT, () => console.log(`🤖 Bot server on http://localhost:${PORT}`));
 
 process.once('SIGINT', () => bot.stop('SIGINT'));
