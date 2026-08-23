@@ -1,17 +1,29 @@
-/* ZWNJ auto-fixer v2 — MutationObserver + comprehensive patterns */
+/* ZWNJ auto-fixer v3 — طبق رسم‌الخط درست فارسی:
+   - ها/های: به هر حرفی می‌چسبند (به‌جز چند کلمه‌ی استثنا که تصادفاً به این الگو ختم می‌شوند)
+   - ام/ای: فقط بعد از «ه» ساکن نیم‌فاصله می‌گیرند (خسته‌ام، نه نام/تمام/نمای/راهنمای)
+   - ات: هرگز نیم‌فاصله نمی‌گیرد (توضیحات، احساسات و مشابه همیشه یک‌جا نوشته می‌شوند) */
 (function(){
   var Z='\u200c';
-  var P=[
-    /* ها/های/ات after consonant */
-    [/([\u0600-\u065F\u0670-\u06EF])(های|ها|ات|ام|ای)(?=[\s,\.\!\?\)\]\u060C\u061B]|$)/g,'$1'+Z+'$2'],
-    /* می/نمی + space */
-    [/(می|نمی)(\s)/g,'$1'+Z+'$2'],
-  ];
+  // کلماتی که تصادفاً به «ها»/«های» ختم می‌شوند ولی جمع نیستند — نباید جدا شوند
+  var PLURAL_EXCEPTIONS = {
+    'تنها':1, 'رها':1, 'بها':1, 'گواها':1, 'شاها':1, 'ماها':0 // ماها واقعاً جمع «ما»ست، جدا بماند
+  };
+  delete PLURAL_EXCEPTIONS['ماها'];
+  var WORD_RE = /[\u0600-\u06FF]+/g;
+  function splitWord(word){
+    if (PLURAL_EXCEPTIONS[word]) return word;
+    var m;
+    if ((m = /^(.+?)(های)$/.exec(word)) && m[1].length >= 1) return m[1] + Z + 'های';
+    if ((m = /^(.+?)(ها)$/.exec(word)) && m[1].length >= 1) return m[1] + Z + 'ها';
+    // ام/ای فقط بعد از «ه» ساکن — طبق رسم‌الخط، نه بعد از هر حرفی
+    if ((m = /^(.*ه)(ام|ای)$/.exec(word))) return m[1] + Z + m[2];
+    return word;
+  }
   function fix(t){
     if(!t||typeof t!=='string')return t;
     if(t.indexOf(Z)>=0)return t;
-    var r=t;
-    P.forEach(function(p){r=r.replace(p[0],p[1]);});
+    var r = t.replace(WORD_RE, splitWord);
+    r = r.replace(/(می|نمی)(\s)/g,'$1'+Z+'$2');
     return r;
   }
   function walk(n){

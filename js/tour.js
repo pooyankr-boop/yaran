@@ -15,9 +15,12 @@ function showScreen(id) {
   document.getElementById(id).classList.add("active");
   closeGlassMenu();
   if (id === "screen-plan") requestAnimationFrame(positionPlanLayout);
-  /* موسیقی: تور مجازی اتاق = آرامش شبانه؛ بقیه صفحهها = قطع */
-  if (id === "screen-room") { if (window.YaranMusic) window.YaranMusic.start("room"); }
-  else if (window.YaranMusic) window.YaranMusic.stop();
+  // Explorer: only show from lobby onwards
+  var et = document.getElementById("explorer-toggle");
+  if (et) {
+    et.style.display = (id === "screen-intro" || id === "screen-plan" || id === "screen-role") ? "none" : "flex";
+  }
+  /* موسیقی: فقط با دکمه دستی پخش شود */
 }
 
 /* ---------- پلان: چیدمان دقیق عکس + درها ----------
@@ -275,6 +278,7 @@ function openRoom(id) {
   activeLayer = "a";
   updateRoomChrome();
   if (typeof updateExplorerVisibility === "function") updateExplorerVisibility(id);
+  injectAudioIntoHotspots();
 }
 
 function setRoomView(view) {
@@ -398,6 +402,35 @@ function buildMediaHotspots() {
   Object.values(currentRoom.views).forEach((v) => (v.hotspots || []).forEach((h) => (h.categories || []).forEach((c) => (c.items || []).forEach((it) => all.push(it)))));
   const audio = [], visual = [];
   all.forEach((it) => (it.type === "audio" ? audio : visual).push(it));
+  // Add audio from AUDIO_LIBRARY for this room
+  if (typeof AUDIO_LIBRARY !== "undefined" && AUDIO_LIBRARY && typeof ROOM_AUDIO_MAP !== "undefined") {
+    var rcats = ROOM_AUDIO_MAP[currentRoom.id];
+    if (rcats) {
+      var seen = {};
+      audio.forEach(function(a) { seen[(a.title||'').trim().toLowerCase()] = true; });
+      AUDIO_LIBRARY.forEach(function(a) {
+        if (rcats.indexOf(a.category) !== -1 && a.audioUrl) {
+          var key = a.title.trim().toLowerCase();
+          if (seen[key]) return;
+          seen[key] = true;
+          var cat = a.category || "";
+            var txt = (a.title || "") + " " + (a.info || "");
+            var group = "صوت";
+            if (/موسیقی|بی کلام|کافه خیال/.test(cat)) group = "موسیقی بی کلام";
+            else if (/ترانه|آهنگ|music|song|خواننده/.test(cat + " " + txt)) group = "ترانه و آهنگ";
+            else if (/شعر|شاعر|شعرخوانی/.test(txt)) group = "شعر";
+            else if (/لالایی|خواب|شب بخیر/.test(cat + " " + txt)) group = "لالایی";
+            else if (/مدیتیشن|مراقبه|آرامش/.test(cat + " " + txt)) group = "مدیتیشن";
+            else if (/روانشناسی|تربیت|والد|خانواده/.test(cat)) group = "روانشناسی و تربیت";
+            else if (/آموزش|یادگیری|زبان/.test(cat + " " + txt)) group = "آموزش";
+            else if (/قصه|داستان|حیوان/.test(cat)) group = "قصه";
+            audio.push({ title: a.title, type: "audio", audioUrl: a.audioUrl,
+            category: a.category, desc: (a.info || "").substring(0, 300),
+            duration: a.duration || "", _group: group });
+        }
+      });
+    }
+  }
   // Add videos from VIDEO_LIBRARY for this room
   var roomVideos = (typeof getVideosForRoom === 'function') ? getVideosForRoom(currentRoom.id) : [];
   roomVideos.forEach(function(v) {
@@ -410,10 +443,17 @@ function buildMediaHotspots() {
   const byType = (items) => {
     const g = {};
     items.forEach((it) => { (g[it.type] = g[it.type] || []).push(it); });
-    return Object.keys(g).map((t) => ({
-      title: t === "game" ? "بازی و سرگرمی" : t === "activity" ? "فعالیت و رنگآمیزی" : t === "pdf" ? "جزوه و کاربرگ" : t === "video" ? "ویدیوی آموزشی" : t,
-      items: g[t]
-    }));
+    return Object.keys(g).map((t) => {
+      if (t === "audio") {
+        const sg = {};
+        items.filter(it => it.type === "audio").forEach(it => {
+          const g2 = it._group || "صوت";
+          (sg[g2] = sg[g2] || []).push(it);
+        });
+        return Object.keys(sg).map(g2 => ({ title: g2, items: sg[g2] }));
+      }
+      return { title: t === "game" ? "بازی و سرگرمی" : t === "activity" ? "فعالیت و رنگآمیزی" : t === "pdf" ? "جزوه و کاربرگ" : t === "video" ? "ویدیوی آموزشی" : t, items: g[t] };
+    }).flat();
   };
   const p = isPortrait(); // موبایل: باکس تور پایین صفحه → منوها بروند بالا؛ دسکتاپ: کناره‌ها خارج از کادر
   return [
@@ -438,7 +478,7 @@ const msSafe = (i, n) => ((i % n) + n) % n;
 function buildSlides() {
   // ترتیب گوشه‌ها = چرخه راهبری تور اتاق (راست‌گرد): herog_right → herog → herog_left
   const cyc = (k) => { const i = CYCLE_ORDER.indexOf(k); return i < 0 ? 99 : i; };
-  const views = Object.keys(currentRoom.views).filter((k) => k !== "hero" && k !== "media"
+  const views = Object.keys(currentRoom.views).filter((k) => k !== "hero"
     && (currentRoom.views[k].hotspots || []).some((h) => (h.categories || []).some((c) => (c.items || []).length)))
     .sort((a, b) => cyc(a) - cyc(b));
   if (slideShuffle) {
@@ -453,7 +493,6 @@ function buildSlides() {
     const v = currentRoom.views[k];
     (v.hotspots || []).forEach((h) =>
       (h.categories || []).forEach((c) => {
-        slideList.push({ view: k, cat: c.title, item: null }); // باز شدن فهرست
         (c.items || []).forEach((it) => slideList.push({ view: k, cat: c.title, item: it }));
       })
     );
@@ -508,7 +547,7 @@ function renderMediaSlideshow() {
     // Also mute the player if open
     if(typeof yrMute==='function')yrMute(msMuted);
   });
-  top.append(btnClose, btnViews, btnNextView, btnNext, btnPlay, btnPrev, btnPrevView, btnShuffle, btnMute, count);
+  top.append(btnClose, btnViews, btnNextView, btnNext, btnPlay, btnPrev, btnPrevView, btnShuffle, count);
 
   function renderViewMenu() {
     viewMenu.innerHTML = "";
@@ -944,6 +983,8 @@ document.addEventListener("keydown", (e) => {
   else if (e.key === "Escape") { closeGlassMenu(); showScreen("screen-map"); }
 });
 
+
+/* inject function moved to js/inject-audio.js */
 /* ---------- راه‌اندازی ---------- */
 renderDoors();
 renderMapCircles();

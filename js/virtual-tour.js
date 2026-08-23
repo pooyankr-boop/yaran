@@ -808,8 +808,7 @@ var VirtualTour = (function () {
     /* bind events (delegation — safe to call multiple times) */
     bindEvents();
 
-    /* auto-play calm music */
-    startMusic();
+    /* auto-play music removed per user request */
 
     /* outside-click closes sidebar */
     document.addEventListener('click', function (e) {

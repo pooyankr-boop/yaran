@@ -72,6 +72,10 @@ const Api = {
     apiFetch("/notes", { method: "POST", body: JSON.stringify(data) }),
   createMessage: (data) =>
     apiFetch("/messages", { method: "POST", body: JSON.stringify(data) }),
+  cmsRooms: () => apiFetch("/cms/rooms"),
+  cmsSaveRooms: (rooms) => apiFetch("/cms/rooms", { method: "POST", body: JSON.stringify({ rooms }) }),
+  cmsFiles: () => apiFetch("/cms/files"),
+  botStatus: () => apiFetch("/bot/status"),
 };
 
 // اگر سرور بک‌اند بالا نباشد (مثلاً پایلوت روی سیستمی که هنوز server/ اجرا نشده)، APP_API_ONLINE

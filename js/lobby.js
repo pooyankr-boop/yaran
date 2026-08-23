@@ -83,10 +83,34 @@ var slideIndex = 0;
 var slideTimer = null;
 
 function initSlideshow() {
+  var items = [];
+  // PDFs with images
   var archives = typeof ARCHIVE_DATA !== 'undefined' ? ARCHIVE_DATA : [];
-  var withImages = archives.filter(function(a) { return a.image && a.type === 'pdf'; });
-  withImages.sort(function() { return Math.random() - 0.5; });
-  slideshowItems = withImages.slice(0, 20);
+  archives.filter(function(a) { return a.image; }).forEach(function(a) { items.push(a); });
+  // Videos with thumbnails
+  if (typeof VIDEO_LIBRARY !== 'undefined') {
+    VIDEO_LIBRARY.forEach(function(v) {
+      items.push({
+        title: v.titleFa || v.title, category: 'ویدیو', type: 'video',
+        image: 'https://img.youtube.com/vi/' + (v.videoId || '') + '/mqdefault.jpg',
+        desc: v.desc || '', url: v.url, channel: v.channel || '',
+        age: '', _source: 'video'
+      });
+    });
+  }
+  // Audio with thumbnails (from pageImg or channel info)
+  if (typeof AUDIO_LIBRARY !== 'undefined') {
+    AUDIO_LIBRARY.filter(function(a) { return a.pageImg || a.channel; }).slice(0, 100).forEach(function(a) {
+      items.push({
+        title: a.title, category: a.category || 'صوت', type: 'audio',
+        image: a.pageImg || '', desc: (a.info || '').substring(0, 200),
+        url: a.audioUrl || a.pageUrl || '', channel: a.channel || a.category || '',
+        age: '', _source: 'audio'
+      });
+    });
+  }
+  items.sort(function() { return Math.random() - 0.5; });
+  slideshowItems = items.slice(0, 40);
   if (slideshowItems.length === 0) return;
   renderSlide();
 }
@@ -97,8 +121,19 @@ function renderSlide() {
   var body = document.getElementById("slideshow-body");
   var caption = document.getElementById("slideshow-caption");
   if (!body) return;
-  body.innerHTML = '<img src="' + (item.image || '') + '" alt="' + (item.title || '') + '">';
-  if (caption) caption.textContent = item.title || '';
+  var html = '';
+  if (item.image) {
+    html = '<img src="' + item.image + '" alt="' + (item.title || '') + '" style="max-width:100%;max-height:100%;object-fit:contain;border-radius:8px;">';
+  } else {
+    var icon = item.type === 'video' ? '🎬' : item.type === 'audio' ? '🔊' : '📄';
+    html = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:#ffb84d;">' +
+      '<div style="font-size:4rem;">' + icon + '</div>' +
+      '<div style="font-size:1.2rem;margin-top:16px;max-width:80%;text-align:center;">' + (item.title || '') + '</div>' +
+      (item.channel ? '<div style="font-size:.9rem;color:#999;margin-top:8px;">' + item.channel + '</div>' : '') +
+      '</div>';
+  }
+  body.innerHTML = html;
+  if (caption) caption.textContent = (item.title || '') + (item.channel ? ' — ' + item.channel : '');
 }
 
 function nextSlide() { slideIndex = (slideIndex + 1) % slideshowItems.length; renderSlide(); }

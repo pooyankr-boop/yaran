@@ -13,8 +13,11 @@ function escHtml(s) {
 /* ---------- پنل کاربری ---------- */
 function updateAdminTabVisibility() {
   const user = typeof currentUser === "function" ? currentUser() : null;
+  const isAdmin = user && user.role === "admin";
   const adminBtn = document.getElementById("panel-admin-tab-btn");
-  if (adminBtn) adminBtn.classList.toggle("hidden", !(user && user.role === "admin"));
+  if (adminBtn) adminBtn.classList.toggle("hidden", !isAdmin);
+  const cmsBtn = document.getElementById("panel-cms-tab-btn");
+  if (cmsBtn) cmsBtn.classList.toggle("hidden", !isAdmin);
 }
 
 function initPanel() {
@@ -57,6 +60,9 @@ function renderPanelTab(tab) {
     renderReportsTab(body);
   } else if (tab === "admin") {
     renderAdminTab(body);
+  } else if (tab === "cms") {
+    if (typeof renderCmsTab === "function") renderCmsTab(body);
+    else body.innerHTML = '<div style="padding:2rem;text-align:center;color:#7a6b55;">مدیریت محتوا در حال بارگذاری...</div>';
   }
 }
 
@@ -415,9 +421,13 @@ function renderArchiveResults(elId, results) {
     const typeTag = '<span class="ai-tag ai-type">' + (item.type || 'سایر') + '</span>';
     // فقط دسته و سن — بدون رشته‌های طولانی
     const meta = [item.category, item.age].filter(Boolean).join(" • ");
+    const thumbHtml = (typeof getMediaThumbHtml === "function") ? getMediaThumbHtml(item) : null;
+    const iconHtml = thumbHtml
+      ? '<div class="ai-icon ai-icon-thumb">' + thumbHtml + '</div>'
+      : '<div class="ai-icon">' + typeIcon + '</div>';
     return `
       <div class="archive-item" onclick="openMediaModal(${JSON.stringify(item).replace(/"/g, '&quot;')})">
-        <div class="ai-icon">${typeIcon}</div>
+        ${iconHtml}
         <div class="ai-title">${item.title}</div>
         <div class="ai-meta">${meta}</div>
         <div class="ai-tags">${typeTag}${srcTag}</div>
@@ -658,7 +668,9 @@ if (_btnTour) _btnTour.addEventListener("click", () => {
     var explorerPanel = document.getElementById('explorer-panel');
     var explorerToggle = document.getElementById('explorer-toggle');
     if (explorerPanel && explorerToggle && explorerPanel.classList.contains('open') && 
-        !explorerPanel.contains(e.target) && !explorerToggle.contains(e.target)) {
+        !explorerPanel.contains(e.target) && !explorerToggle.contains(e.target) &&
+        !document.getElementById('yr-p-box')?.contains(e.target) &&
+        !document.getElementById('yr-p-mini')?.contains(e.target)) {
       explorerPanel.classList.remove('open');
       explorerToggle.classList.remove('shifted');
     }
