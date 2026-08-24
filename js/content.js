@@ -5,12 +5,18 @@ let _contentRoom = null;
 const CONTENT_TYPE_TAGS = [
   { v: "", l: "همه" },
   { v: "pdf", l: "📄 کاربرگ" },
-  { v: "audio", l: "🔊 صوت" },
   { v: "video", l: "🎬 ویدیو" },
   { v: "game", l: "🎮 بازی" },
   { v: "activity", l: "🎯 فعالیت" },
-  { v: "story", l: "📖 داستان" },
-  { v: "song", l: "🎵 آهنگ" },
+  { v: "audio-قصه و داستان", l: "📖 قصه" },
+  { v: "audio-لالایی", l: "🌙 لالایی" },
+  { v: "audio-ترانه و آهنگ", l: "🎶 آهنگ" },
+  { v: "audio-مدیتیشن", l: "🧘 مدیتیشن" },
+  { v: "audio-پادکست والدین", l: "📞 پادکست" },
+  { v: "audio-شعر", l: "✍️ شعر" },
+  { v: "audio-موسیقی آرامش", l: "🎵 آرامش" },
+  { v: "audio-آموزش", l: "📚 آموزش" },
+  { v: "audio", l: "🔊 سایر صوت" },
 ];
 
 function openContentForRoom(roomId) {
@@ -67,6 +73,43 @@ function openContentForRoom(roomId) {
     out += '<div class="content-section">' +
       '<h3 class="content-section-title">📄 کاربرگ‌های این اتاق <span class="content-section-count">(' + sheets.length + ')</span></h3>' +
       '<div class="content-card-grid">' + sheetCards + '</div></div>';
+  }
+
+  // Add audio from AUDIO_LIBRARY
+  if (typeof AUDIO_LIBRARY !== 'undefined' && AUDIO_LIBRARY && typeof ROOM_AUDIO_MAP !== 'undefined' && typeof _catAudio === 'function') {
+    var rcats = ROOM_AUDIO_MAP[roomId];
+    if (rcats) {
+      var aSeen = {};
+      var aItems = [];
+      AUDIO_LIBRARY.forEach(function(a) {
+        if (rcats.indexOf(a.category) !== -1 && a.audioUrl) {
+          var key = a.title.trim().toLowerCase();
+          if (aSeen[key]) return;
+          aSeen[key] = true;
+          aItems.push({ type: 'audio', title: a.title, audioUrl: a.audioUrl,
+            category: a.category, channel: a.channel || a.category || '',
+            desc: (a.info || '').substring(0, 300), duration: a.duration || '',
+            _group: _catAudio(a) });
+        }
+      });
+      if (aItems.length) {
+        var aCards = aItems.map(function(it) {
+          var thumb = '<div class="content-card-thumb content-card-thumb-empty">' +
+            ({'قصه و داستان':'📖','لالایی':'🌙','ترانه و آهنگ':'🎶','مدیتیشن':'🧘','پادکست والدین':'📞','شعر':'✍️','موسیقی آرامش':'🎵','آموزش':'📚'}[it._group]||'🔊') + '</div>';
+          return '<div class="content-card" data-type="audio" data-search="' +
+            (it.title||'') + ' ' + (it._group||'') + ' ' + (it.channel||'') + '" onclick="openMediaModal(' +
+            JSON.stringify(it).replace(/"/g, '&quot;') + ')">' +
+            thumb +
+            '<div class="content-card-body">' +
+              '<div class="content-card-title">' + (it.title||'') + '</div>' +
+              '<div class="content-card-meta">' + (it._group||'صوت') + (it.channel ? ' • ' + it.channel : '') + '</div>' +
+            '</div></div>';
+        }).join('');
+        out += '<div class="content-section">' +
+          '<h3 class="content-section-title">🔊 محتوای صوتی <span class="content-section-count">(' + aItems.length + ')</span></h3>' +
+          '<div class="content-card-grid">' + aCards + '</div></div>';
+      }
+    }
   }
 
   // Add videos for this room
@@ -141,7 +184,7 @@ function bindContentFilters(scope) {
     const cards = scope.querySelectorAll(".content-card");
     let visible = 0;
     cards.forEach(card => {
-      const typeOk = !activeType || card.dataset.type === activeType;
+      const typeOk = !activeType || card.dataset.type === activeType || (activeType.startsWith("audio-") && card.dataset.type === "audio" && (card.dataset.search || "").includes(activeType.substring(6)));
       const qOk = !q || (card.dataset.search || "").includes(q);
       const show = typeOk && qOk;
       card.style.display = show ? "" : "none";

@@ -805,6 +805,26 @@ var VirtualTour = (function () {
     var tourScreen = $('screen-tour');
     if (tourScreen) tourScreen.classList.add('active');
 
+
+    /* intro2 video before tour starts */
+    var introWrap = document.createElement('div');
+    introWrap.id = 'vt-intro2-wrap';
+    introWrap.style.cssText = 'position:absolute;inset:0;z-index:9999;background:#000;display:flex;align-items:center;justify-content:center;flex-direction:column;';
+    var introVid = document.createElement('video');
+    introVid.src = 'assets/video/intro2.dat';
+    introVid.autoplay = true;
+    introVid.muted = true;
+    introVid.playsInline = true;
+    introVid.style.cssText = 'max-width:100%;max-height:90vh;';
+    introWrap.appendChild(introVid);
+    var skipBtn = document.createElement('button');
+    skipBtn.textContent = '\u2190 \u0631\u062F \u0634\u062F\u0646';
+    skipBtn.style.cssText = 'position:absolute;top:1rem;left:1rem;background:rgba(0,0,0,.6);color:#fff;border:1px solid #ffb84d;border-radius:8px;padding:.5rem 1rem;cursor:pointer;font-size:.9rem;z-index:10000;';
+    skipBtn.onclick = function() { introWrap.remove(); };
+    introVid.onended = function() { introWrap.remove(); };
+    introWrap.appendChild(skipBtn);
+    tourScreen.appendChild(introWrap);
+
     /* bind events (delegation — safe to call multiple times) */
     bindEvents();
 

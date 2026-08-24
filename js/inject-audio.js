@@ -1,25 +1,49 @@
-/* injectAudioIntoHotspots — اضافه کردن محتوای صوتی به منوی گوشه چندرسانه‌ای (media) */
+/* injectAudioIntoHotspots — تزریق محتوای صوتی متناسب با موضوع اتاق */
+var ROOM_AUDIO_MAP = {
+  "honar": ["ترانه کودکانه", "قصه کودک", "قصه و مدیتیشن", "موسیقی کودک", "داستان شب کودک", "قصه حیوانات"],
+  "khab": ["قصه شب کودک", "داستان شب کودک", "شب بخیر کوچولو", "کانال همراه مادر و کودک", "قصه کودک", "قصه حیوانات"],
+  "bazi": ["قصه کودک", "قصه حیوانات", "آموزش کودک", "داستان شب کودک"],
+  "motaleh": ["قصه کلاسیک کودک", "قصه و خیال", "روانشناسی کودک", "تربیت کودک", "داستان شب کودک"],
+  "moraabi": ["کافه خیال - موسیقی بی کلام", "کانال همراه مادر و کودک", "موسیقی کودک", "ترانه کودکانه"],
+  "esterahat-moraabian": ["کافه خیال - موسیقی بی کلام", "قصه و مدیتیشن", "مدیتیشن بزرگسال"],
+  "amoozesh": ["قصه کلاسیک کودک", "قصه و خیال", "آموزش کودک", "داستان شب کودک"],
+  "salamat": ["کانال همراه مادر و کودک", "روانشناسی کودک", "تربیت کودک", "مدیتیشن بزرگسال"],
+  "jalase-owlia": ["کانال همراه مادر و کودک", "روانشناسی کودک", "تربیت کودک", "مادرانه"],
+  "bayegani": ["قصه کودک", "قصه شب کودک", "داستان شب کودک"],
+  "teria": ["قصه کودک", "داستان شب کودک", "قصه حیوانات"],
+  "hayat": ["قصه کودک", "قصه حیوانات", "داستان شب کودک"],
+  "maddakari": ["قصه کودک", "ترانه کودکانه", "داستان شب کودک"]
+};
+
+function _categorizeAudio(item) {
+  var cat = (item.category || '').toLowerCase();
+  var title = (item.title || '').toLowerCase();
+  var info = (item.info || '').toLowerCase();
+
+  // لالایی
+  if (/لالایی|lullaby/.test(title + ' ' + info)) return 'لالایی';
+  // آهنگ و ترانه کودک
+  if (/ترانه|آهنگ|music|song|خواننده|kooky|aed/.test(cat + ' ' + info)) return 'آهنگ و ترانه';
+  // مدیتیشن
+  if (/مدیتیشن|meditation|مراقبه|mindful/.test(cat + ' ' + title + ' ' + info)) return 'مدیتیشن';
+  // روانشناسی و پادکست
+  if (/روانشناسی|تربیت|والد|mادرانه|radif|parenting/.test(cat + ' ' + info)) return 'پادکست والدین';
+  // قصه و داستان
+  if (/قصه|dastan|story|شب کودک|حیوانات|کلاسیک|خیال/.test(cat)) return 'قصه';
+  // شعر
+  if (/شعر|شاعر|شعرخوانی/.test(info)) return 'شعر';
+  // موسیقی بی کلام
+  if (/بی کلام|instrumental|cafe kheyal/.test(cat + ' ' + info)) return 'موسیقی آرامش';
+  // آموزش
+  if (/آموزش|learn|edu/.test(cat + ' ' + info)) return 'آموزش';
+  // پیش‌فرض
+  return 'صوت';
+}
+
 function injectAudioIntoHotspots() {
-  if (typeof AUDIO_LIBRARY === "undefined" || !AUDIO_LIBRARY) {
- return; }
-  if (typeof ROOMS === "undefined" || !ROOMS) {
- return; }
-  console.log('[YARAN] injectAudio: AUDIO_LIBRARY', AUDIO_LIBRARY.length, 'items, ROOMS', ROOMS.length, 'rooms');
-  var ROOM_AUDIO_MAP = {
-    "honar": ["ترانه کودکانه", "قصه کودک", "قصه و مدیتیشن", "موسیقی کودک"],
-    "khab": ["قصه شب کودک", "داستان شب کودک", "شب بخیر کوچولو", "کانال همراه مادر و کودک", "قصه کودک", "قصه حیوانات"],
-    "bazi": ["قصه کودک", "قصه حیوانات", "آموزش کودک"],
-    "motaleh": ["قصه کلاسیک کودک", "قصه و خیال", "روانشناسی کودک", "تربیت کودک"],
-    "moraabi": ["کافه خیال - موسیقی بی کلام", "کانال همراه مادر و کودک", "موسیقی کودک"],
-    "esterahat-moraabian": ["کافه خیال - موسیقی بی کلام", "قصه و مدیتیشن", "مدیتیشن بزرگسال"],
-    "amoozesh": ["قصه کلاسیک کودک", "قصه و خیال"],
-    "salamat": ["کانال همراه مادر و کودک", "روانشناسی کودک", "تربیت کودک"],
-    "jalase-owlia": ["کانال همراه مادر و کودک", "روانشناسی کودک", "تربیت کودک"],
-    "bayegani": ["قصه کودک", "قصه شب کودک"],
-    "teria": ["قصه کودک"],
-    "hayat": ["قصه کودک", "قصه حیوانات"],
-    "maddakari": ["قصه کودک", "ترانه کودکانه"]
-  };
+  if (typeof AUDIO_LIBRARY === "undefined" || !AUDIO_LIBRARY) return;
+  if (typeof ROOMS === "undefined" || !ROOMS) return;
+
   ROOMS.forEach(function(room) {
     var cats = ROOM_AUDIO_MAP[room.id];
     if (!cats) return;
@@ -30,8 +54,6 @@ function injectAudioIntoHotspots() {
         var key = a.title.trim().toLowerCase();
         if (seen[key]) return;
         seen[key] = true;
-        var isSong = /ترانه|آهنگ|music|song|خواننده/.test(a.category + " " + (a.info || ""));
-        var isPoem = /شعر|شاعر|شعرخوانی/.test(a.category + " " + (a.info || ""));
         allItems.push({
           title: a.title,
           type: "audio",
@@ -39,7 +61,7 @@ function injectAudioIntoHotspots() {
           category: a.category,
           desc: (a.info || "").substring(0, 300),
           duration: a.duration || "",
-          _group: isSong ? "آهنگ و ترانه" : isPoem ? "شعر" : "صوت"
+          _group: _categorizeAudio(a)
         });
       }
     });
@@ -60,8 +82,6 @@ function injectAudioIntoHotspots() {
       if (views[vi] === "media") {
         var view = room.views[views[vi]];
         view.hotspots = view.hotspots || [];
-        // جلوگیری از تزریق تکراری: چون این تابع هر بار ورود به اتاق دوباره صدا زده می‌شود
-        // (از tour.js)، اگر هات‌اسپات صوتی از قبل اضافه شده، فقط محتوایش را به‌روز کن
         var existing = null;
         for (var hi = 0; hi < view.hotspots.length; hi++) {
           if (view.hotspots[hi].title === "🔊 محتوای صوتی") { existing = view.hotspots[hi]; break; }

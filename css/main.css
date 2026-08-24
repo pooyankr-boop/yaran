@@ -265,6 +265,7 @@ html, body {
   border-radius: 12px;
   padding: .5rem .7rem;
   font-size: .92rem;
+  color: #3d2f1f;
   cursor: pointer;
   transition: background .15s;
 }

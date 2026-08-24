@@ -397,12 +397,23 @@ function renderHotspots() {
 }
 
 /* ---------- محتوای رسانهای اتاق: صوتی (چپ) / تصویری (راست) ---------- */
+function _catAudio(a) {
+  var all = ((a.category||"")+" "+(a.channel||"")+" "+(a.title||"")+" "+(a.info||"")).toLowerCase();
+  if (/لالایی|lullaby|خواب بخیر|شب بخیر/.test(all)) return "لالایی";
+  if (/ترانه|آهنگ|music|song|خواننده/.test(all)) return "ترانه و آهنگ";
+  if (/مدیتیشن|meditation|مراقبه|mindful/.test(all)) return "مدیتیشن";
+  if (/روانشناسی|تربیت|والد|mادرانه|parenting/.test(all)) return "پادکست والدین";
+  if (/قصه|dastan|story|حیوان|کلاسیک|خیال|شبانه/.test(all)) return "قصه و داستان";
+  if (/شعر|شاعر|شعرخوانی/.test(all)) return "شعر";
+  if (/بی کلام|instrumental|موسیقی آرامش/.test(all)) return "موسیقی آرامش";
+  if (/آموزش|learn|edu/.test(all)) return "آموزش";
+  return "سایر صوت";
+}
 function buildMediaHotspots() {
   const all = [];
   Object.values(currentRoom.views).forEach((v) => (v.hotspots || []).forEach((h) => (h.categories || []).forEach((c) => (c.items || []).forEach((it) => all.push(it)))));
   const audio = [], visual = [];
   all.forEach((it) => (it.type === "audio" ? audio : visual).push(it));
-  // Add audio from AUDIO_LIBRARY for this room
   if (typeof AUDIO_LIBRARY !== "undefined" && AUDIO_LIBRARY && typeof ROOM_AUDIO_MAP !== "undefined") {
     var rcats = ROOM_AUDIO_MAP[currentRoom.id];
     if (rcats) {
@@ -413,20 +424,10 @@ function buildMediaHotspots() {
           var key = a.title.trim().toLowerCase();
           if (seen[key]) return;
           seen[key] = true;
-          var cat = a.category || "";
-            var txt = (a.title || "") + " " + (a.info || "");
-            var group = "صوت";
-            if (/موسیقی|بی کلام|کافه خیال/.test(cat)) group = "موسیقی بی کلام";
-            else if (/ترانه|آهنگ|music|song|خواننده/.test(cat + " " + txt)) group = "ترانه و آهنگ";
-            else if (/شعر|شاعر|شعرخوانی/.test(txt)) group = "شعر";
-            else if (/لالایی|خواب|شب بخیر/.test(cat + " " + txt)) group = "لالایی";
-            else if (/مدیتیشن|مراقبه|آرامش/.test(cat + " " + txt)) group = "مدیتیشن";
-            else if (/روانشناسی|تربیت|والد|خانواده/.test(cat)) group = "روانشناسی و تربیت";
-            else if (/آموزش|یادگیری|زبان/.test(cat + " " + txt)) group = "آموزش";
-            else if (/قصه|داستان|حیوان/.test(cat)) group = "قصه";
-            audio.push({ title: a.title, type: "audio", audioUrl: a.audioUrl,
-            category: a.category, desc: (a.info || "").substring(0, 300),
-            duration: a.duration || "", _group: group });
+          audio.push({ title: a.title, type: "audio", audioUrl: a.audioUrl,
+          category: a.category, channel: a.channel || a.category || "",
+          desc: (a.info || "").substring(0, 300),
+          duration: a.duration || "", _group: _catAudio(a) });
         }
       });
     }
@@ -756,22 +757,52 @@ function openGlassMenu(hotspot, hotspotEl) {
     });
   });
 
-  // Group by type
-  const TYPE_ICONS = { pdf: "\u{1F4C4}", video: "\u{1F3AC}", audio: "\u{1F50A}", game: "\u{1F3AE}", activity: "\u{1F3AF}", story: "\u{1F4D6}", song: "\u{1F3B5}", craft: "\u{2702}\u{FE0F}", image: "\u{1F5BC}\u{FE0F}" };
-  const TYPE_LABELS = { pdf: "\u06A9\u0627\u0631\u0628\u0631\u06AF", video: "\u0648\u06CC\u062F\u06CC\u0648", audio: "\u0635\u0648\u062A", game: "\u0628\u0627\u0632\u06CC", activity: "\u0641\u0639\u0627\u0644\u06CC\u062A", story: "\u0642\u0635\u0647", song: "\u0622\u0647\u0646\u06AF", craft: "\u06A9\u0627\u0631\u062F\u0633\u062A\u06CC", image: "\u0639\u06A9\u0633" };
-  const TYPE_ORDER = ["pdf", "game", "video", "audio", "story", "activity", "song", "craft", "image", "other"];
+  const TYPE_ICONS = { pdf: "\u{1F4C4}", video: "\u{1F3AC}", game: "\u{1F3AE}", activity: "\u{1F3AF}", craft: "\u{2702}\u{FE0F}", image: "\u{1F5BC}\u{FE0F}" };
+  const TYPE_LABELS = { pdf: "کاربرگ", video: "ویدیو", game: "بازی", activity: "فعالیت", craft: "کاردستی", image: "عکس" };
+  const TYPE_ORDER = ["pdf", "game", "video", "activity", "craft", "image", "other"];
+  const _G_ICONS = {"قصه و داستان":"\uD83D\uDCD6","لالایی":"\uD83C\uDF19","ترانه و آهنگ":"\uD83C\uDFB5","مدیتیشن":"\uD83E\uDDD8","پادکست والدین":"\uD83D\uDCDE","شعر":"\u270D\uFE0F","موسیقی آرامش":"\uD83C\uDFB6","آموزش":"\uD83D\uDCDA","سایر صوت":"\uD83D\uDD0A"};
+
   const typeGroups = {};
+  const audioByGroup = {};
   allItems.forEach(it => {
-    const tp = it.type || "other";
-    if (!typeGroups[tp]) typeGroups[tp] = [];
-    typeGroups[tp].push(it);
+    if (it.type === "audio") {
+      const g = it._group || "سایر صوت";
+      (audioByGroup[g] = audioByGroup[g] || []).push(it);
+    } else {
+      const tp = it.type || "other";
+      (typeGroups[tp] = typeGroups[tp] || []).push(it);
+    }
   });
 
-  // Build HTML
   let html = '<h3 style="margin:.3rem 0 .6rem;padding-right:.3rem;border-bottom:2px solid #ffb84d;font-size:.95rem;">' + hotspot.title + '</h3>';
-  // Search
   html += '<div class="glass-menu-search"><input type="text" placeholder="\uD83D\uDD0D \u062C\u0633\u062A\u062C\u0648..." /></div>';
-  // Type groups
+
+  // فهرست‌های صوتی مستقیم (هر گروه یک فهرست بازشو)
+  Object.keys(audioByGroup).sort().forEach(g => {
+    const gItems = audioByGroup[g];
+    const gIcon = _G_ICONS[g] || "\uD83D\uDD0A";
+    const channels = {};
+    gItems.forEach(it => { const ch = it.channel || it.category || "سایر"; (channels[ch] = channels[ch] || []).push(it); });
+    const chKeys = Object.keys(channels).sort((a,b) => channels[b].length - channels[a].length);
+    html += '<div class="menu-type-group" data-type="audio">';
+    html += '<div class="menu-type-header" style="color:#3d2f1f;font-weight:bold;">' + gIcon + ' ' + g + ' (' + gItems.length + ') <span class="menu-arrow">\u25C0</span></div>';
+    html += '<ul class="menu-type-items" style="display:none;">';
+    if (chKeys.length > 1) {
+      chKeys.forEach(ch => {
+        html += '<li class="menu-subgroup-header" style="color:#5a4a3a;font-size:.78rem;padding-right:.5rem;cursor:pointer;user-select:none;" data-toggle-sub="' + ch.replace(/"/g,'&quot;') + '" data-open="0">\u25B8 ' + ch + ' (' + channels[ch].length + ')</li>';
+        channels[ch].forEach(it => {
+          html += '<li class="menu-subgroup-item" data-ch="' + ch.replace(/"/g,'&quot;') + '" data-title="' + (it.title || '').replace(/"/g, '&quot;') + '" style="display:none;padding-right:1.5rem;font-size:.78rem;color:#5a4a3a;">' + it.title + '</li>';
+        });
+      });
+    } else {
+      gItems.forEach(it => {
+        html += '<li data-title="' + (it.title || '').replace(/"/g, '&quot;') + '">' + it.title + '</li>';
+      });
+    }
+    html += '</ul></div>';
+  });
+
+  // سایر انواع
   TYPE_ORDER.forEach(tp => {
     if (!typeGroups[tp] || !typeGroups[tp].length) return;
     const icon = TYPE_ICONS[tp] || "\uD83D\uDCC3";
@@ -784,6 +815,8 @@ function openGlassMenu(hotspot, hotspotEl) {
     });
     html += '</ul></div>';
   });
+
+
   if (allItems.length === 0) {
     html += '<div style="padding:.5rem;color:#888;font-size:.8rem;">محتوایی موجود نیست</div>';
   }
@@ -816,6 +849,22 @@ function openGlassMenu(hotspot, hotspotEl) {
       const isOpen = ul.style.display !== "none";
       ul.style.display = isOpen ? "none" : "block";
       arrow.textContent = isOpen ? "\u25C0" : "\u25BE";
+      repositionGlassMenu(menu, hotspotEl);
+    });
+  });
+
+  // Toggle channel subgroups
+  menu.querySelectorAll('.menu-subgroup-header').forEach(hdr => {
+    hdr.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const ch = hdr.dataset.toggleSub;
+      const isOpen = hdr.dataset.open === '1';
+      hdr.dataset.open = isOpen ? '0' : '1';
+      const arrow = isOpen ? '▸' : '▾';
+      const items = menu.querySelectorAll('.menu-subgroup-item[data-ch="' + ch + '"]');
+      const count = items.length;
+      hdr.textContent = arrow + ' ' + ch + ' (' + count + ')';
+      items.forEach(item => { item.style.display = isOpen ? 'none' : ''; });
       repositionGlassMenu(menu, hotspotEl);
     });
   });
