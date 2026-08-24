@@ -134,7 +134,9 @@ var Games2 = (function() {
 
     var bucketX = c.offsetWidth / 2 - 35;
     function fishMoveHandler(e) { if (!running) return; var r = c.getBoundingClientRect(); bucketX = Math.max(0, Math.min(r.width - 70, e.clientX - r.left - 35)); bucket.style.left = bucketX + 'px'; }
+    function fishTouchHandler(e) { if (!running || !e.touches[0]) return; e.preventDefault(); var r = c.getBoundingClientRect(); bucketX = Math.max(0, Math.min(r.width - 70, e.touches[0].clientX - r.left - 35)); bucket.style.left = bucketX + 'px'; }
     document.addEventListener('mousemove', fishMoveHandler);
+    c.addEventListener('touchmove', fishTouchHandler, { passive: false });
 
     var fishEmojis = ['🐟','🐠','🐡','🦈','🐙','🦑','🦞','🦀'];
     function spawnFish() {
@@ -240,7 +242,6 @@ var Games2 = (function() {
       else if (e.key === 'ArrowUp') move(0, -1);
     }
     document.addEventListener('keydown', mazeKeyHandler);
-    active._handler = mazeKeyHandler;
 
     // Mobile buttons
     var controls = document.createElement('div');
@@ -251,6 +252,7 @@ var Games2 = (function() {
       controls.appendChild(b);
     });
     c.appendChild(controls);
+    active = { destroy: function() { c.style.cssText = ''; document.removeEventListener('keydown', mazeKeyHandler); } };
     } // end startMaze
   }
 
@@ -504,15 +506,40 @@ var Games2 = (function() {
     var counts = {easy:6, medium:9, hard:12};
     var n = counts[diff] || 9;
     var story = fullStory.slice(0, n);
-    var shuffled=shuffle(story.slice());
-    var msg=document.createElement('div');msg.style.cssText='text-align:center;font-weight:700;font-size:1.1rem;color:#3d2f1f;margin-bottom:12px';msg.textContent='داستان را به ترتیب درست بچینید';c.appendChild(msg);
+    var order = shuffle(story.map(function (_, i) { return i; }));
+    var msg=document.createElement('div');msg.style.cssText='text-align:center;font-weight:700;font-size:1.1rem;color:#3d2f1f;margin-bottom:12px';msg.textContent='داستان را با دکمه‌های ⬆️⬇️ به ترتیب درست بچینید';c.appendChild(msg);
     var list=document.createElement('div');list.style.cssText='display:flex;flex-direction:column;gap:6px;max-height:320px;overflow-y:auto;padding:4px';
-    shuffled.forEach(function(s,i){var item=document.createElement('div');item.textContent=s;item.draggable=true;item.style.cssText='padding:10px 14px;background:#fff;border:2px solid #ddd;border-radius:10px;cursor:grab;font-size:1rem;display:flex;align-items:center;gap:8px';
-    var num=document.createElement('span');num.textContent=i+1;num.style.cssText='min-width:24px;font-weight:700;color:#888';item.prepend(num);list.appendChild(item);});
     c.appendChild(list);
-    var check=btn('✅ بررسی',function(){var items=list.children;var correct=true;
-    for(var i=0;i<items.length;i++){var userOrder=items[i].textContent.trim().substring(2);if(story[i]!==userOrder)correct=false;}
-    if(correct)msg.textContent='🎉 آفرین! ترتیب درست است!';else msg.textContent='❌ دوباره تلاش کنید! ترتیب را چک کنید.';});
+
+    function renderList() {
+      list.innerHTML = '';
+      order.forEach(function (storyIdx, pos) {
+        var item=document.createElement('div');
+        item.style.cssText='padding:10px 14px;background:#fff;border:2px solid #ddd;border-radius:10px;font-size:1rem;display:flex;align-items:center;gap:8px';
+        var num=document.createElement('span');num.textContent=pos+1;num.style.cssText='min-width:24px;font-weight:700;color:#888';
+        var text=document.createElement('span');text.textContent=story[storyIdx];text.style.cssText='flex:1';
+        var moveUp=btn('⬆️', function () {
+          if (pos === 0) return;
+          var tmp = order[pos]; order[pos] = order[pos - 1]; order[pos - 1] = tmp;
+          renderList();
+        });
+        moveUp.style.cssText += 'width:32px;height:32px;padding:0;font-size:.9rem';
+        var moveDown=btn('⬇️', function () {
+          if (pos === order.length - 1) return;
+          var tmp = order[pos]; order[pos] = order[pos + 1]; order[pos + 1] = tmp;
+          renderList();
+        });
+        moveDown.style.cssText += 'width:32px;height:32px;padding:0;font-size:.9rem';
+        item.appendChild(num); item.appendChild(text); item.appendChild(moveUp); item.appendChild(moveDown);
+        list.appendChild(item);
+      });
+    }
+    renderList();
+
+    var check=btn('✅ بررسی',function(){
+      var correct = order.every(function (storyIdx, pos) { return storyIdx === pos; });
+      msg.textContent = correct ? '🎉 آفرین! ترتیب درست است!' : '❌ هنوز درست نیست — دوباره تلاش کنید!';
+    });
     check.style.cssText+='display:block;margin:12px auto 0';c.appendChild(check);
     active={destroy:function(){c.style.cssText='';}};
     } // end startStory

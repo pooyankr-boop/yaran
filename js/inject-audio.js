@@ -1,23 +1,25 @@
 /* injectAudioIntoHotspots — اضافه کردن محتوای صوتی به منوی گوشه چندرسانه‌ای (media) */
-var ROOM_AUDIO_MAP = {
-  "honar": ["ترانه کودکانه", "قصه کودک", "قصه و مدیتیشن", "موسیقی کودک"],
-  "khab": ["قصه شب کودک", "داستان شب کودک", "شب بخیر کوچولو", "کانال همراه مادر و کودک", "قصه کودک", "قصه حیوانات"],
-  "bazi": ["قصه کودک", "قصه حیوانات", "آموزش کودک"],
-  "motaleh": ["قصه کلاسیک کودک", "قصه و خیال", "روانشناسی کودک", "تربیت کودک"],
-  "moraabi": ["کافه خیال - موسیقی بی کلام", "کانال همراه مادر و کودک", "موسیقی کودک"],
-  "esterahat-moraabian": ["کافه خیال - موسیقی بی کلام", "قصه و مدیتیشن"],
-  "amoozesh": ["قصه کلاسیک کودک", "قصه و خیال", "آموزش کودک"],
-  "salamat": ["کانال همراه مادر و کودک", "روانشناسی کودک", "تربیت کودک"],
-  "jalase-owlia": ["کانال همراه مادر و کودک", "روانشناسی کودک", "تربیت کودک"],
-  "bayegani": ["قصه کودک", "قصه شب کودک"],
-  "teria": ["قصه کودک"],
-  "hayat": ["قصه کودک", "قصه حیوانات"],
-  "maddakari": ["قصه کودک", "ترانه کودکانه"]
-};
-
 function injectAudioIntoHotspots() {
-  if (typeof AUDIO_LIBRARY === "undefined" || !AUDIO_LIBRARY) return;
-  if (typeof ROOMS === "undefined" || !ROOMS) return;
+  if (typeof AUDIO_LIBRARY === "undefined" || !AUDIO_LIBRARY) {
+ return; }
+  if (typeof ROOMS === "undefined" || !ROOMS) {
+ return; }
+  console.log('[YARAN] injectAudio: AUDIO_LIBRARY', AUDIO_LIBRARY.length, 'items, ROOMS', ROOMS.length, 'rooms');
+  var ROOM_AUDIO_MAP = {
+    "honar": ["ترانه کودکانه", "قصه کودک", "قصه و مدیتیشن", "موسیقی کودک"],
+    "khab": ["قصه شب کودک", "داستان شب کودک", "شب بخیر کوچولو", "کانال همراه مادر و کودک", "قصه کودک", "قصه حیوانات"],
+    "bazi": ["قصه کودک", "قصه حیوانات", "آموزش کودک"],
+    "motaleh": ["قصه کلاسیک کودک", "قصه و خیال", "روانشناسی کودک", "تربیت کودک"],
+    "moraabi": ["کافه خیال - موسیقی بی کلام", "کانال همراه مادر و کودک", "موسیقی کودک"],
+    "esterahat-moraabian": ["کافه خیال - موسیقی بی کلام", "قصه و مدیتیشن", "مدیتیشن بزرگسال"],
+    "amoozesh": ["قصه کلاسیک کودک", "قصه و خیال"],
+    "salamat": ["کانال همراه مادر و کودک", "روانشناسی کودک", "تربیت کودک"],
+    "jalase-owlia": ["کانال همراه مادر و کودک", "روانشناسی کودک", "تربیت کودک"],
+    "bayegani": ["قصه کودک", "قصه شب کودک"],
+    "teria": ["قصه کودک"],
+    "hayat": ["قصه کودک", "قصه حیوانات"],
+    "maddakari": ["قصه کودک", "ترانه کودکانه"]
+  };
   ROOMS.forEach(function(room) {
     var cats = ROOM_AUDIO_MAP[room.id];
     if (!cats) return;
@@ -28,17 +30,8 @@ function injectAudioIntoHotspots() {
         var key = a.title.trim().toLowerCase();
         if (seen[key]) return;
         seen[key] = true;
-        var cat = a.category || "";
-        var txt = (a.title || "") + " " + (a.info || "");
-        var group = "صوت";
-        if (/موسیقی|بی کلام|کافه خیال/.test(cat)) group = "موسیقی بی کلام";
-        else if (/ترانه|آهنگ|music|song|خواننده/.test(cat + " " + txt)) group = "ترانه و آهنگ";
-        else if (/شعر|شاعر|شعرخوانی/.test(txt)) group = "شعر";
-        else if (/لالایی|خواب|شب بخیر/.test(cat + " " + txt)) group = "لالایی";
-        else if (/مدیتیشن|مراقبه|آرامش/.test(cat + " " + txt)) group = "مدیتیشن";
-        else if (/روانشناسی|تربیت|والد|خانواده/.test(cat)) group = "روانشناسی و تربیت";
-        else if (/آموزش|یادگیری|زبان/.test(cat + " " + txt)) group = "آموزش";
-        else if (/قصه|داستان|حیوان/.test(cat)) group = "قصه";
+        var isSong = /ترانه|آهنگ|music|song|خواننده/.test(a.category + " " + (a.info || ""));
+        var isPoem = /شعر|شاعر|شعرخوانی/.test(a.category + " " + (a.info || ""));
         allItems.push({
           title: a.title,
           type: "audio",
@@ -46,7 +39,7 @@ function injectAudioIntoHotspots() {
           category: a.category,
           desc: (a.info || "").substring(0, 300),
           duration: a.duration || "",
-          _group: group
+          _group: isSong ? "آهنگ و ترانه" : isPoem ? "شعر" : "صوت"
         });
       }
     });
@@ -67,12 +60,22 @@ function injectAudioIntoHotspots() {
       if (views[vi] === "media") {
         var view = room.views[views[vi]];
         view.hotspots = view.hotspots || [];
-        view.hotspots.push({
-          title: "🔊 محتوای صوتی",
-          x: 8,
-          y: 50,
-          categories: mediaCat
-        });
+        // جلوگیری از تزریق تکراری: چون این تابع هر بار ورود به اتاق دوباره صدا زده می‌شود
+        // (از tour.js)، اگر هات‌اسپات صوتی از قبل اضافه شده، فقط محتوایش را به‌روز کن
+        var existing = null;
+        for (var hi = 0; hi < view.hotspots.length; hi++) {
+          if (view.hotspots[hi].title === "🔊 محتوای صوتی") { existing = view.hotspots[hi]; break; }
+        }
+        if (existing) {
+          existing.categories = mediaCat;
+        } else {
+          view.hotspots.push({
+            title: "🔊 محتوای صوتی",
+            x: 8,
+            y: 50,
+            categories: mediaCat
+          });
+        }
         return;
       }
     }

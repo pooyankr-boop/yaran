@@ -203,6 +203,8 @@ function gamePuzzle(body) {
   body.appendChild(diffWrap);
 
   function startPuzzle(body, SIZE) {
+  // مقداردهی اولیه‌ی کاشی‌ها (حالت حل‌شده) — قبلاً این خط جا افتاده بود و tiles تعریف‌نشده بود
+  let tiles = [...Array(SIZE * SIZE - 1).keys()].map(function (n) { return n + 1; }).concat([null]);
   for (let s = 0; s < 200; s++) {
     const ei = tiles.indexOf(null);
     const row = Math.floor(ei / SIZE), col = ei % SIZE;
@@ -239,7 +241,7 @@ function gamePuzzle(body) {
     if (isSolved()) {
       const wrap = document.createElement("div");
       body.appendChild(wrap);
-      gameWinBanner(wrap, "پازل رو حل کردی! آفرین 👏", () => { tiles = shuffle(tiles); render(); });
+      gameWinBanner(wrap, "پازل رو حل کردی! آفرین 👏", () => { startPuzzle(body, SIZE); });
     }
   }
 

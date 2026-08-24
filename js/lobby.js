@@ -75,7 +75,7 @@ function renderTip() {
 
 function nextTip() { tipIndex = (tipIndex + 1) % PARENTING_TIPS.length; renderTip(); }
 function prevTip() { tipIndex = (tipIndex - 1 + PARENTING_TIPS.length) % PARENTING_TIPS.length; renderTip(); }
-function startTipRotation() { clearInterval(tipTimer); tipTimer = setInterval(nextTip, 30000); }
+function startTipRotation() { clearInterval(tipTimer); tipTimer = setInterval(nextTip, 60000); }
 
 /* اسلایدشو محتوا */
 var slideshowItems = [];
@@ -98,12 +98,12 @@ function initSlideshow() {
       });
     });
   }
-  // Audio with thumbnails (from pageImg or channel info)
+  // Audio with actual thumbnails only
   if (typeof AUDIO_LIBRARY !== 'undefined') {
-    AUDIO_LIBRARY.filter(function(a) { return a.pageImg || a.channel; }).slice(0, 100).forEach(function(a) {
+    AUDIO_LIBRARY.filter(function(a) { return a.pageImg && a.pageImg.length > 5; }).slice(0, 60).forEach(function(a) {
       items.push({
         title: a.title, category: a.category || 'صوت', type: 'audio',
-        image: a.pageImg || '', desc: (a.info || '').substring(0, 200),
+        image: a.pageImg, desc: (a.info || '').substring(0, 200),
         url: a.audioUrl || a.pageUrl || '', channel: a.channel || a.category || '',
         age: '', _source: 'audio'
       });
@@ -133,12 +133,17 @@ function renderSlide() {
       '</div>';
   }
   body.innerHTML = html;
-  if (caption) caption.textContent = (item.title || '') + (item.channel ? ' — ' + item.channel : '');
+  if (caption) {
+    var capText = (item.title || '');
+    if (item.channel) capText += ' — ' + item.channel;
+    if (item.desc) capText += ' — ' + item.desc;
+    caption.textContent = capText;
+  }
 }
 
 function nextSlide() { slideIndex = (slideIndex + 1) % slideshowItems.length; renderSlide(); }
 function prevSlide() { slideIndex = (slideIndex - 1 + slideshowItems.length) % slideshowItems.length; renderSlide(); }
-function startSlideshow() { clearInterval(slideTimer); slideTimer = setInterval(nextSlide, 5000); }
+function startSlideshow() { clearInterval(slideTimer); slideTimer = setInterval(nextSlide, 10000); }
 
 /* آب‌المزرده */
 document.getElementById("tip-next").addEventListener("click", function() { nextTip(); startTipRotation(); });

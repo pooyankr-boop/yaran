@@ -186,10 +186,12 @@ function playAt(i){
   idx=i;var it=q[i];var src=rSrc(it);var vid=isVid(it);
   if(!src&&it&&it.url&&/castbox\.fm\/(episode|va|vc)/.test(it.url)){window.open(it.url,'_blank');return;}
   var ov=$('yr-p-overlay');
-  // Show player
+  // Show player: audio → mini player, video → full player
   var box=$('yr-p-box');
   if(!box._initPos){box.style.position='fixed';box.style.right='16px';box.style.bottom='16px';box.style.left='auto';box.style.top='auto';box._initPos=true;}
-  ov.style.display='';
+  var startMini = !vid;
+  if (startMini) { $('yr-p-mini').classList.remove('hidden'); ov.style.display='none'; }
+  else { ov.style.display=''; $('yr-p-mini').classList.add('hidden'); }
   $('yr-p-title').textContent=it.titleFa||it.title||'';
   // Description
   var di=$('yr-p-desc-inner');
