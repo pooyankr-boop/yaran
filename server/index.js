@@ -139,6 +139,9 @@ app.use(express.static(path.join(__dirname, '..'), {
       res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
       res.setHeader('Pragma', 'no-cache');
     }
+    if (/\.yar$/i.test(filePath)) {
+      res.setHeader('Content-Type', 'video/mp4');
+    }
   }
 }));
 
