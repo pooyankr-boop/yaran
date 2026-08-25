@@ -132,6 +132,9 @@ app.use(cors({
 }));
 app.use(express.json());
 
+// Health check (for Render + keep-alive)
+app.get('/health', (_req, res) => res.json({ ok: true }));
+
 // Serve static frontend
 app.use(express.static(path.join(__dirname, '..'), {
   setHeaders: (res, filePath) => {
@@ -792,3 +795,21 @@ if (PORT_RAW) {
 
 // Start Telegram bot (non-blocking, skips if no token)
 initBot();
+
+/* ══════════════════════════════════════════════════════════
+   Keep-Alive: self-ping every 10 min to prevent Render sleep
+   ══════════════════════════════════════════════════════════ */
+const KEEPALIVE_MS = 10 * 60 * 1000; // 10 minutes
+function selfPing() {
+  const port = process.env.PORT || 4000;
+  const url = `http://127.0.0.1:${port}/health`;
+  const http = require('http');
+  const req = http.get(url, (res) => {
+    res.resume(); // drain response
+    console.log(`[keepalive] ping OK — ${new Date().toISOString()}`);
+  });
+  req.on('error', (e) => console.log(`[keepalive] ping error: ${e.message}`));
+  req.setTimeout(10000, () => { req.destroy(); });
+}
+setInterval(selfPing, KEEPALIVE_MS);
+console.log(`[keepalive] started — pinging every ${KEEPALIVE_MS / 60000} min`);

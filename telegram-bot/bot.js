@@ -455,3 +455,20 @@ app.listen(PORT, () => console.log(`🤖 Bot server: http://localhost:${PORT}`))
 
 process.once('SIGINT', () => bot.stop('SIGINT'));
 process.once('SIGTERM', () => bot.stop('SIGTERM'));
+
+/* ══════════════════════════════════════════════════════════
+   Keep-Alive: self-ping every 10 min to prevent Render sleep
+   ══════════════════════════════════════════════════════════ */
+const KEEPALIVE_MS = 10 * 60 * 1000; // 10 minutes
+function selfPing() {
+  const url = `http://127.0.0.1:${PORT}/health`;
+  const http = require('http');
+  const req = http.get(url, (res) => {
+    res.resume();
+    console.log(`[keepalive] ping OK — ${new Date().toISOString()}`);
+  });
+  req.on('error', (e) => console.log(`[keepalive] ping error: ${e.message}`));
+  req.setTimeout(10000, () => { req.destroy(); });
+}
+setInterval(selfPing, KEEPALIVE_MS);
+console.log(`[keepalive] started — pinging every ${KEEPALIVE_MS / 60000} min`);

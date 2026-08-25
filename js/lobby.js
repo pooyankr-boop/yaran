@@ -83,6 +83,8 @@ var slideIndex = 0;
 var slideTimer = null;
 
 function initSlideshow() {
+  // کودک اسلایدشو نمی‌بیند
+  if (typeof currentUserRole !== 'undefined' && currentUserRole === 'child') return;
   var items = [];
   // PDFs with images
   var archives = typeof ARCHIVE_DATA !== 'undefined' ? ARCHIVE_DATA : [];

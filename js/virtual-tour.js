@@ -61,11 +61,12 @@ var VirtualTour = (function () {
   /* ── role filter ── */
   function isRoleMatch(item) {
     var r = state.role;
-    if (r === 'مربی') return true;
+    // English role values from ENTRY_DOORS: 'manager', 'teacher', 'parent', 'child'
+    if (r === 'teacher' || r === 'مربی') return true;
     var t = (item.type || '').toLowerCase();
-    if (r === 'والد') return true;
-    if (r === 'کودک') return true;
-    if (r === 'مدیر') return t === 'pdf';
+    if (r === 'parent' || r === 'والد') return true;
+    if (r === 'child' || r === 'کودک') return false; // کودک فقط تور مجازی
+    if (r === 'manager' || r === 'مدیر') return true;
     return true;
   }
 
@@ -888,5 +889,9 @@ var VirtualTour = (function () {
     if (btn) btn.textContent = (window.YaranMusic && window.YaranMusic.isPlaying()) ? '🔊' : '🔇';
   }
 
-  return { start: start, exit: exit, startWithRole: startWithRole };
+  function setRole(role) {
+    if (role) state.role = role;
+  }
+
+  return { start: start, exit: exit, startWithRole: startWithRole, setRole: setRole };
 })();

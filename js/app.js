@@ -2,7 +2,101 @@
   کنترلر اصلی — پنل، بایگانی، جستجو، بازی
 */
 
-let currentUserRole = "teacher";
+/* ---------- نقش کاربر ---------- */
+var _savedRole = localStorage.getItem('yaran_role') || 'teacher';
+let currentUserRole = _savedRole;
+
+function setRole(role) {
+  currentUserRole = role;
+  localStorage.setItem('yaran_role', role);
+  applyRoleVisibility();
+}
+
+/* ---------- کنترل دسترسی بر اساس نقش ---------- */
+function applyRoleVisibility() {
+  var r = currentUserRole;
+  var isAdmin = (r === 'manager' || r === 'admin');
+  var isTeacher = (r === 'teacher');
+  var isParent = (r === 'parent');
+  var isChild = (r === 'child');
+
+  // ── لابی ──
+  // باکس‌های لابی: مخفی برای کودک
+  var lobbyBoxes = document.querySelectorAll('.lobby-box, .lobby-section');
+  lobbyBoxes.forEach(function(el) { el.style.display = isChild ? 'none' : ''; });
+
+  // اسلایدشو محتوا و نکته روز: مخفی برای کودک
+  var slideshowBox = document.getElementById('lobby-slideshow-box');
+  if (slideshowBox) slideshowBox.style.display = isChild ? 'none' : '';
+  var tipBox = document.getElementById('lobby-tip-box');
+  if (tipBox) tipBox.style.display = isChild ? 'none' : '';
+
+  // تخته وظایف: مخفی برای والد و کودک
+  var taskBoard = document.getElementById('lobby-task-board');
+  if (taskBoard) taskBoard.style.display = (isParent || isChild) ? 'none' : '';
+  var vtTaskBoard = document.getElementById('vt-task-board');
+  if (vtTaskBoard) vtTaskBoard.style.display = (isParent || isChild) ? 'none' : '';
+
+  // دکمه‌های لابی: بازی و گردش مجازی مخفی برای کودک
+  var gamesBtn = document.getElementById('btn-goto-games');
+  if (gamesBtn) gamesBtn.style.display = isChild ? 'none' : '';
+  var vtBtn = document.getElementById('btn-virtual-tour');
+  if (vtBtn) vtBtn.style.display = isChild ? 'none' : '';
+
+  // دکمه‌های بالا: پنل، جستجو
+  var panelBtn = document.getElementById('lobby-panel');
+  var searchBtn = document.getElementById('lobby-search');
+  if (panelBtn) panelBtn.style.display = isChild ? 'none' : '';
+  if (searchBtn) searchBtn.style.display = isChild ? 'none' : '';
+
+  // اکسپلورر: مخفی برای کودک
+  var explorer = document.getElementById('explorer-toggle');
+  if (explorer) explorer.style.display = isChild ? 'none' : '';
+
+  // ── پنل ──
+  // تب CMS: فقط مدیر
+  var cmsBtn = document.getElementById('panel-cms-tab-btn');
+  if (cmsBtn) cmsBtn.style.display = isAdmin ? '' : 'none';
+  var adminBtn = document.getElementById('panel-admin-tab-btn');
+  if (adminBtn) adminBtn.style.display = isAdmin ? '' : 'none';
+
+  // تب وظایف: مخفی برای والد و کودک
+  var tasksTab = document.querySelector('[data-tab="tasks"]');
+  if (tasksTab) tasksTab.style.display = (isParent || isChild) ? 'none' : '';
+
+  // تب یادداشت: مخفی برای والد و کودک (اگر وجود داشته باشد)
+  var notesTab = document.querySelector('[data-tab="notes"]');
+  if (notesTab) notesTab.style.display = (isParent || isChild) ? 'none' : '';
+
+  // پنل کاربری: مخفی برای کودک
+  var panelScreen = document.getElementById('screen-panel');
+  if (panelScreen && isChild) panelScreen.style.display = 'none';
+
+  // ── اتاق‌ها ──
+  // دکمه محتوای اتاق: مخفی برای کودک
+  var roomContentBtn = document.getElementById('room-view-content');
+  if (roomContentBtn) roomContentBtn.style.display = isChild ? 'none' : '';
+
+  // بایگانی: منوی هات‌اسپات خالی برای والد
+  if (typeof ROOMS !== 'undefined') {
+    var archiveRoom = ROOMS.find(function(r) { return r.id === 'baghaghi'; });
+    if (archiveRoom && isParent) {
+      // پاک کردن منوهای صوتی از بایگانی
+      Object.keys(archiveRoom.views || {}).forEach(function(v) {
+        (archiveRoom.views[v].hotspots || []).forEach(function(h) {
+          h.categories = (h.categories || []).filter(function(c) {
+            return c.title !== 'محتوای صوتی';
+          });
+        });
+      });
+    }
+  }
+
+  // ── تور مجازی ──
+  if (typeof VirtualTour !== 'undefined' && VirtualTour.setRole) {
+    VirtualTour.setRole(r);
+  }
+}
 
 /* ---------- XSS escape ---------- */
 function escHtml(s) {

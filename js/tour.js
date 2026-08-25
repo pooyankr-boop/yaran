@@ -20,6 +20,10 @@ function showScreen(id) {
   if (et) {
     et.style.display = (id === "screen-intro" || id === "screen-plan" || id === "screen-role") ? "none" : "flex";
   }
+  // Apply role-based visibility when lobby is shown
+  if (id === "screen-lobby" && typeof applyRoleVisibility === "function") {
+    applyRoleVisibility();
+  }
   /* موسیقی: فقط با دکمه دستی پخش شود */
 }
 
@@ -70,7 +74,7 @@ function renderDoors() {
     el.style.left = door.x + "%";
     el.style.top = door.y + "%";
     el.innerHTML = '<div class="door-icon">🚪</div><div class="door-label">' + door.label + '</div>';
-    el.addEventListener("click", () => { currentUserRole = door.role; showScreen("screen-lobby"); });
+    el.addEventListener("click", () => { setRole(door.role); showScreen("screen-lobby"); });
     wrap.appendChild(el);
   });
   positionPlanLayout();
@@ -352,6 +356,14 @@ function renderHotspots() {
   let hotspots = (viewData && viewData.hotspots) || [];
   // منوی محتوای تصویری/صوتی فقط در نمای جلو؛ نمای کلی فقط زون‌های ناوبری دارد
   if (currentView === "media") hotspots = buildMediaHotspots();
+  // کودک فقط هات‌اسپات "محتوای صوتی" در نمای جلو می‌بیند
+  if (typeof currentUserRole !== 'undefined' && currentUserRole === 'child') {
+    if (currentView === "media") {
+      hotspots = hotspots.filter(function(h) { return h.title === "محتوای صوتی"; });
+    } else {
+      hotspots = [];
+    }
+  }
   hotspots.forEach((hotspot) => {
     const el = document.createElement("div");
     el.className = "hotspot";
@@ -414,7 +426,16 @@ function buildMediaHotspots() {
   Object.values(currentRoom.views).forEach((v) => (v.hotspots || []).forEach((h) => (h.categories || []).forEach((c) => (c.items || []).forEach((it) => all.push(it)))));
   const audio = [], visual = [];
   all.forEach((it) => (it.type === "audio" ? audio : visual).push(it));
+
+  // ── بایگانی: والد فقط محتوای غیرصوتی ──
+  if (currentRoom && currentRoom.id === 'baghaghi' && currentUserRole === 'parent') {
+    audio.length = 0;
+  }
   if (typeof AUDIO_LIBRARY !== "undefined" && AUDIO_LIBRARY && typeof ROOM_AUDIO_MAP !== "undefined") {
+    // ── بایگانی: والد صوت نمی‌بیند ──
+    if (currentRoom && currentRoom.id === 'baghaghi' && currentUserRole === 'parent') {
+      // skip audio library for archive/parent
+    } else {
     var rcats = ROOM_AUDIO_MAP[currentRoom.id];
     if (rcats) {
       var seen = {};
@@ -431,6 +452,7 @@ function buildMediaHotspots() {
         }
       });
     }
+    } // end else (not archive/parent)
   }
   // Add videos from VIDEO_LIBRARY for this room
   var roomVideos = (typeof getVideosForRoom === 'function') ? getVideosForRoom(currentRoom.id) : [];
@@ -843,6 +865,17 @@ function openGlassMenu(hotspot, hotspotEl) {
       allItems.push({ ...it, _ci: ci, _ii: ii });
     });
   });
+  // کودک فقط محتوای صوتی در منو ببیند
+  if (typeof currentUserRole !== 'undefined' && currentUserRole === 'child') {
+    allItems.length = 0;
+    (hotspot.categories || []).forEach((cat, ci) => {
+      if (cat.title === "محتوای صوتی") {
+        cat.items.forEach((it, ii) => {
+          allItems.push({ ...it, _ci: ci, _ii: ii });
+        });
+      }
+    });
+  }
 
   const TYPE_ICONS = { pdf: "\u{1F4C4}", video: "\u{1F3AC}", game: "\u{1F3AE}", activity: "\u{1F3AF}", craft: "\u{2702}\u{FE0F}", image: "\u{1F5BC}\u{FE0F}" };
   const TYPE_LABELS = { pdf: "کاربرگ", video: "ویدیو", game: "بازی", activity: "فعالیت", craft: "کاردستی", image: "عکس" };
@@ -856,13 +889,18 @@ function openGlassMenu(hotspot, hotspotEl) {
       const g = it._group || "سایر صوت";
       (audioByGroup[g] = audioByGroup[g] || []).push(it);
     } else {
+      // کودک فقط صوت ببیند
+      if (typeof currentUserRole !== 'undefined' && currentUserRole === 'child') return;
       const tp = it.type || "other";
       (typeGroups[tp] = typeGroups[tp] || []).push(it);
     }
   });
 
   let html = '<h3 style="margin:.3rem 0 .6rem;padding-right:.3rem;border-bottom:2px solid #ffb84d;font-size:.95rem;">' + hotspot.title + '</h3>';
-  html += '<div class="glass-menu-search"><input type="text" placeholder="\uD83D\uDD0D \u062C\u0633\u062A\u062C\u0648..." /></div>';
+  // کودک جستجو نیاز ندارد
+  if (typeof currentUserRole === 'undefined' || currentUserRole !== 'child') {
+    html += '<div class="glass-menu-search"><input type="text" placeholder="🔍 جستجو..." /></div>';
+  }
 
   // فهرست‌های صوتی مستقیم (هر گروه یک فهرست بازشو)
   Object.keys(audioByGroup).sort().forEach(g => {
