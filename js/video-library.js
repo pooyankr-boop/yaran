@@ -1,7 +1,7 @@
 var VIDEO_LIBRARY = [
   {
     "title": "InBrief: The Science of Early Childhood Development",
-    "titleFa": "",
+    "titleFa": "درآمدی بر علم رشد کودک",
     "url": "https://www.youtube.com/watch?v=WO-CB2nsqTA",
     "videoId": "WO-CB2nsqTA",
     "channel": "Center on the Developing Child at Harvard University",
@@ -9,11 +9,11 @@ var VIDEO_LIBRARY = [
     "lang": "en",
     "category": "education",
     "desc": "Comprehensive overview of early childhood development science from Harvard, covering brain development, serve-and-return interactions, and the importance of early experiences.",
-    "descFa": ""
+    "descFa": "مروری جامع بر علم رشد کودک از هاروارد، شامل رشد مغز و تعاملات."
   },
   {
     "title": "Experiences Build Brain Architecture",
-    "titleFa": "",
+    "titleFa": "تجربه‌ها ساختار مغز را می‌سازند",
     "url": "https://www.youtube.com/watch?v=VNNsN9IJkws",
     "videoId": "VNNsN9IJkws",
     "channel": "Center on the Developing Child at Harvard University",
@@ -21,11 +21,11 @@ var VIDEO_LIBRARY = [
     "lang": "en",
     "category": "education",
     "desc": "How experiences in early childhood literally build the architecture of the developing brain, from Harvard's Center on the Developing Child.",
-    "descFa": ""
+    "descFa": "نحوه شکل‌گیری تجربه‌های اولیه در ساختار مغز کودک."
   },
   {
     "title": "5 Steps for Brain-Building Serve and Return",
-    "titleFa": "",
+    "titleFa": "۵ گام برای ساخت مغز",
     "url": "https://www.youtube.com/watch?v=KNrnZag17Ek",
     "videoId": "KNrnZag17Ek",
     "channel": "Center on the Developing Child at Harvard University",
@@ -33,11 +33,11 @@ var VIDEO_LIBRARY = [
     "lang": "en",
     "category": "education",
     "desc": "A step-by-step guide to brain-building serve and return interactions between caregivers and children, from Harvard.",
-    "descFa": ""
+    "descFa": "پنج مرحله عملی برای تقویت رشد مغز از طریق تعامل."
   },
   {
     "title": "Serve & Return Interaction Shapes Brain Circuitry",
-    "titleFa": "",
+    "titleFa": "بازگشت-خدمت مدارهای مغز را شکل می‌دهد",
     "url": "https://www.youtube.com/watch?v=m_5u8-QSh6A",
     "videoId": "m_5u8-QSh6A",
     "channel": "Center on the Developing Child at Harvard University",
@@ -45,11 +45,11 @@ var VIDEO_LIBRARY = [
     "lang": "en",
     "category": "education",
     "desc": "How serve and return interactions between children and caregivers shape brain circuitry during early development.",
-    "descFa": ""
+    "descFa": "تأثیر تعامل مراقب-کودک بر شکل‌گیری مدارهای عصبی."
   },
   {
     "title": "How Early Childhood Experiences Affect Lifelong Health and Learning",
-    "titleFa": "",
+    "titleFa": "تأثیر کودکی بر سلامت مادام‌العمر",
     "url": "https://www.youtube.com/watch?v=IipVaPKnjRk",
     "videoId": "IipVaPKnjRk",
     "channel": "Center on the Developing Child at Harvard University",
@@ -57,11 +57,11 @@ var VIDEO_LIBRARY = [
     "lang": "en",
     "category": "education",
     "desc": "How early childhood experiences affect lifelong health and learning, based on research from Harvard.",
-    "descFa": ""
+    "descFa": "ارتباط تجربه‌های اولیه کودکی با سلامت بزرگسالی."
   },
   {
     "title": "Toxic Stress Derails Healthy Development",
-    "titleFa": "",
+    "titleFa": "استرس سمی رشد سالم را مختل می‌کند",
     "url": "https://www.youtube.com/watch?v=rVwFkcOZHJw",
     "videoId": "rVwFkcOZHJw",
     "channel": "Center on the Developing Child at Harvard University",
@@ -69,11 +69,11 @@ var VIDEO_LIBRARY = [
     "lang": "en",
     "category": "education",
     "desc": "How toxic stress can derail healthy development in children and what can be done about it.",
-    "descFa": ""
+    "descFa": "تأثیر استرس مزمن بر رشد مغز و رفتار کودک."
   },
   {
     "title": "How Children and Adults Can Build Core Capabilities for Life",
-    "titleFa": "",
+    "titleFa": "ساخت مهارت‌های اساسی زندگی",
     "url": "https://www.youtube.com/watch?v=6NehuwDA45Q",
     "videoId": "6NehuwDA45Q",
     "channel": "Center on the Developing Child at Harvard University",
@@ -81,11 +81,11 @@ var VIDEO_LIBRARY = [
     "lang": "en",
     "category": "education",
     "desc": "How children and adults can build core capabilities for lifelong learning and resilience.",
-    "descFa": ""
+    "descFa": "چگونه کودکان و بزرگسالان توانمندی‌های اساسی را پرورش می‌دهند."
   },
   {
     "title": "InBrief: Early Childhood Program Effectiveness",
-    "titleFa": "",
+    "titleFa": "اثربخشی برنامه‌های کودکی",
     "url": "https://www.youtube.com/watch?v=_BgtFYEC1Yk",
     "videoId": "_BgtFYEC1Yk",
     "channel": "Center on the Developing Child at Harvard University",
@@ -93,11 +93,11 @@ var VIDEO_LIBRARY = [
     "lang": "en",
     "category": "education",
     "desc": "What makes early childhood programs effective, based on research from Harvard's Center on the Developing Child.",
-    "descFa": ""
+    "descFa": "بررسی مؤثر بودن برنامه‌های آموزشی دوران کودکی."
   },
   {
     "title": "InBrief: Executive Function: Skills for Life and Learning",
-    "titleFa": "",
+    "titleFa": "عملکرد اجرایی: مهارت‌های زندگی",
     "url": "https://www.youtube.com/watch?v=efCq_vHUMqs",
     "videoId": "efCq_vHUMqs",
     "channel": "Center on the Developing Child at Harvard University",
@@ -105,11 +105,11 @@ var VIDEO_LIBRARY = [
     "lang": "en",
     "category": "education",
     "desc": "Executive function skills explained — the mental processes that enable children to plan, focus, remember, and juggle multiple tasks.",
-    "descFa": ""
+    "descFa": "مهارت‌های عملکرد اجرایی و تأثیر آن بر یادگیری."
   },
   {
     "title": "InBrief: The Science of Resilience",
-    "titleFa": "",
+    "titleFa": "علم تاب‌آوری",
     "url": "https://www.youtube.com/watch?v=1r8hj72bfGo",
     "videoId": "1r8hj72bfGo",
     "channel": "Center on the Developing Child at Harvard University",
@@ -117,11 +117,11 @@ var VIDEO_LIBRARY = [
     "lang": "en",
     "category": "education",
     "desc": "The science of resilience — how children can overcome adversity with the right support.",
-    "descFa": ""
+    "descFa": "شواهد علمی درباره تاب‌آوری کودکان."
   },
   {
     "title": "InBrief: The Science of Neglect",
-    "titleFa": "",
+    "titleFa": "علم بی‌توجهی",
     "url": "https://www.youtube.com/watch?v=bF3j5UVCSCA",
     "videoId": "bF3j5UVCSCA",
     "channel": "Center on the Developing Child at Harvard University",
@@ -129,11 +129,11 @@ var VIDEO_LIBRARY = [
     "lang": "en",
     "category": "education",
     "desc": "The science of neglect — how the absence of interaction affects child development.",
-    "descFa": ""
+    "descFa": "تأثیر بی‌توجهی بر رشد مغز کودکان."
   },
   {
     "title": "How Every Child Can Thrive by Five | Molly Wright | TED",
-    "titleFa": "",
+    "titleFa": "شکوفایی هر کودک تا ۵ سالگی",
     "url": "https://www.youtube.com/watch?v=aISXCw0Pi94",
     "videoId": "aISXCw0Pi94",
     "channel": "TED",
@@ -141,11 +141,11 @@ var VIDEO_LIBRARY = [
     "lang": "en",
     "category": "education",
     "desc": "Molly Wright shows how every child can thrive by five through simple, evidence-based interactions with caregivers.",
-    "descFa": ""
+    "descFa": "راهکارهایی برای موفقیت هر کودک تا پنج سالگی."
   },
   {
     "title": "The Single Most Important Parenting Strategy | Becky Kennedy | TED",
-    "titleFa": "",
+    "titleFa": "مهم‌ترین راهبرد فرزندپروری",
     "url": "https://www.youtube.com/watch?v=PHpPtdk9rco",
     "videoId": "PHpPtdk9rco",
     "channel": "TED",
@@ -153,11 +153,11 @@ var VIDEO_LIBRARY = [
     "lang": "en",
     "category": "education",
     "desc": "Becky Kennedy presents the single most important parenting strategy — how repair strengthens relationships with children.",
-    "descFa": ""
+    "descFa": "یک استراتژی کلیدی برای ارتباط مؤثر با فرزند."
   },
   {
     "title": "How play helps a kid’s brain grow - Jesse Ilhardt",
-    "titleFa": "",
+    "titleFa": "بازی رشد مغز را تقویت می‌کند",
     "url": "https://www.youtube.com/watch?v=12O3pZpTvGs",
     "videoId": "12O3pZpTvGs",
     "channel": "TED-Ed Educator Talks",
@@ -165,11 +165,11 @@ var VIDEO_LIBRARY = [
     "lang": "en",
     "category": "education",
     "desc": "How play helps a kid's brain grow — Jesse Ilhardt explains the neuroscience behind children's play.",
-    "descFa": ""
+    "descFa": "نقش بازی در رشد مغزی کودکان."
   },
   {
-    "title": "What’s the smartest age? - Shannon Odell",
-    "titleFa": "",
+    "title": "What's the smartest age? - Shannon Odell",
+    "titleFa": "باهوش‌ترین سن کدام است؟",
     "url": "https://www.youtube.com/watch?v=sbCvQbBi2G8",
     "videoId": "sbCvQbBi2G8",
     "channel": "TED-Ed",
@@ -177,11 +177,11 @@ var VIDEO_LIBRARY = [
     "lang": "en",
     "category": "education",
     "desc": "What's the smartest age? Shannon Odell explores cognitive development across different childhood stages.",
-    "descFa": ""
+    "descFa": "کدام مرحله سنی هوشیارترین دوره مغز است."
   },
   {
     "title": "Why kids need to take more risks",
-    "titleFa": "",
+    "titleFa": "چرا کودکان به ریسک بیشتر نیاز دارند",
     "url": "https://www.youtube.com/watch?v=kRAl4Xgs_NU",
     "videoId": "kRAl4Xgs_NU",
     "channel": "TED-Ed",
@@ -189,11 +189,11 @@ var VIDEO_LIBRARY = [
     "lang": "en",
     "category": "education",
     "desc": "Why kids need to take more risks — the importance of risk-taking in childhood development.",
-    "descFa": ""
+    "descFa": "اهمیت بازی پرخطر برای رشد کودک."
   },
   {
     "title": "What is the most important influence on child development | Tom Weisner | TEDxUCLA",
-    "titleFa": "",
+    "titleFa": "مهم‌ترین عامل در رشد و تکامل کودک",
     "url": "https://www.youtube.com/watch?v=gIZ8PkLMMUo",
     "videoId": "gIZ8PkLMMUo",
     "channel": "TEDx Talks",
@@ -201,11 +201,11 @@ var VIDEO_LIBRARY = [
     "lang": "en",
     "category": "education",
     "desc": "What is the most important influence on child development — Tom Weisner examines environmental and familial factors.",
-    "descFa": ""
+    "descFa": "تأثیرگذارترین عامل در رشد و تکامل کودک."
   },
   {
     "title": "How to Raise Kids Who Can Handle Hard Things | Kathryn Hecht | TED",
-    "titleFa": "",
+    "titleFa": "تربیت کودکان مقاوم",
     "url": "https://www.youtube.com/watch?v=lRXkSn4pUyU",
     "videoId": "lRXkSn4pUyU",
     "channel": "TED",
@@ -213,11 +213,11 @@ var VIDEO_LIBRARY = [
     "lang": "en",
     "category": "education",
     "desc": "How to raise kids who can handle hard things — building resilience and emotional toughness in children.",
-    "descFa": ""
+    "descFa": "آموزش مدیریت چالش‌ها به کودکان."
   },
   {
     "title": "Yuko Munakata: The science behind how parents affect child development | TED",
-    "titleFa": "",
+    "titleFa": "تأثیر والدین بر رشد کودک",
     "url": "https://www.youtube.com/watch?v=evw0h1kg-j4",
     "videoId": "evw0h1kg-j4",
     "channel": "TED",
@@ -225,11 +225,11 @@ var VIDEO_LIBRARY = [
     "lang": "en",
     "category": "education",
     "desc": "The science behind how parents affect child development — Yuko Munakata presents research on parenting.",
-    "descFa": ""
+    "descFa": "علم پشت تأثیر والدین بر تکامل کودک."
   },
   {
     "title": "Webinar: Culturally Appropriate Positive Guidance for Young Children in Our Care",
-    "titleFa": "",
+    "titleFa": "راهنمایی مثبت فرهنگی",
     "url": "https://www.youtube.com/watch?v=JndJpUtSgQQ",
     "videoId": "JndJpUtSgQQ",
     "channel": "NAEYC",
@@ -237,11 +237,11 @@ var VIDEO_LIBRARY = [
     "lang": "en",
     "category": "education",
     "desc": "NAEYC webinar on culturally appropriate positive guidance strategies for young children in diverse classrooms.",
-    "descFa": ""
+    "descFa": "وبینار درباره راهنمایی مثبت کودکان."
   },
   {
     "title": "Learn about the National Association for the Education of Young Children (NAEYC)",
-    "titleFa": "",
+    "titleFa": "انجمن ملی آموزش کودکان",
     "url": "https://www.youtube.com/watch?v=MxZz2OqRVeo",
     "videoId": "MxZz2OqRVeo",
     "channel": "NAEYC",
@@ -249,11 +249,11 @@ var VIDEO_LIBRARY = [
     "lang": "en",
     "category": "education",
     "desc": "An introduction to the National Association for the Education of Young Children (NAEYC) and its mission.",
-    "descFa": ""
+    "descFa": "آشنایی با استانداردهای آموزشی کودکان."
   },
   {
     "title": "Introduction to NAEYC Accreditation Standards",
-    "titleFa": "",
+    "titleFa": "استانداردهای اعتبار NAEYC",
     "url": "https://www.youtube.com/watch?v=rgJf1LikBJ0",
     "videoId": "rgJf1LikBJ0",
     "channel": "NAEYC",
@@ -261,11 +261,11 @@ var VIDEO_LIBRARY = [
     "lang": "en",
     "category": "education",
     "desc": "Overview of NAEYC accreditation standards for high-quality early childhood education programs.",
-    "descFa": ""
+    "descFa": "معرفی استانداردهای اعتبار آموزش کودکان."
   },
   {
     "title": "Early Childhood Education Teaching Strategies",
-    "titleFa": "",
+    "titleFa": "راهبردهای آموزشی کودکی",
     "url": "https://www.youtube.com/watch?v=9152_f1FyAQ",
     "videoId": "9152_f1FyAQ",
     "channel": "Teachings in Education",
@@ -273,11 +273,11 @@ var VIDEO_LIBRARY = [
     "lang": "en",
     "category": "education",
     "desc": "Comprehensive overview of effective teaching strategies for early childhood education settings.",
-    "descFa": ""
+    "descFa": "روش‌های مؤثر تدریس در آموزش اولیه."
   },
   {
     "title": "6 Practical Tips for New Preschool Teachers",
-    "titleFa": "",
+    "titleFa": "۶ نکته برای معلم‌های جدید",
     "url": "https://www.youtube.com/watch?v=wO-veIY05fQ",
     "videoId": "wO-veIY05fQ",
     "channel": "Edutopia",
@@ -285,11 +285,11 @@ var VIDEO_LIBRARY = [
     "lang": "en",
     "category": "education",
     "desc": "Six practical tips for new preschool teachers from Edutopia — classroom setup, routines, and engagement.",
-    "descFa": ""
+    "descFa": "نکات عملی برای معلم‌های تازه‌کار پیش‌دبستانی."
   },
   {
     "title": "Early Childhood Education: The Power of Interactions",
-    "titleFa": "",
+    "titleFa": "قدرت تعاملات",
     "url": "https://www.youtube.com/watch?v=ePkuGdX_np8",
     "videoId": "ePkuGdX_np8",
     "channel": "ESC Region 13",
@@ -297,11 +297,11 @@ var VIDEO_LIBRARY = [
     "lang": "en",
     "category": "education",
     "desc": "How meaningful interactions between teachers and young children create powerful learning moments.",
-    "descFa": ""
+    "descFa": "تأثیر تعاملات مؤثر بر آموزش اولیه."
   },
   {
     "title": "How to Discipline Toddlers | Child Mind Institute",
-    "titleFa": "",
+    "titleFa": "انضباط کودکان نوپا",
     "url": "https://www.youtube.com/watch?v=mAKEEG6KrAE",
     "videoId": "mAKEEG6KrAE",
     "channel": "Child Mind Institute",
@@ -309,11 +309,11 @@ var VIDEO_LIBRARY = [
     "lang": "en",
     "category": "education",
     "desc": "Child Mind Institute shares evidence-based strategies for disciplining toddlers with empathy and effectiveness.",
-    "descFa": ""
+    "descFa": "روش‌های صحیح انضباط و هدایت کودکان نوپا."
   },
   {
     "title": "Improving early child development with words: Dr. Brenda Fitzgerald at TEDxAtlanta",
-    "titleFa": "",
+    "titleFa": "بهبود رشد کودک با کلمات",
     "url": "https://www.youtube.com/watch?v=y8qc8Aa3weE",
     "videoId": "y8qc8Aa3weE",
     "channel": "TEDx Talks",
@@ -321,11 +321,11 @@ var VIDEO_LIBRARY = [
     "lang": "en",
     "category": "education",
     "desc": "Dr. Brenda Fitzgerald discusses improving early childhood development through words and language at TEDx.",
-    "descFa": ""
+    "descFa": "نقش گفتگو در بهبود رشد اولیه کودک."
   },
   {
     "title": "The fascinating reason you loved peek-a-boo",
-    "titleFa": "",
+    "titleFa": "دلیل شگفت‌انگیز بازی قایم‌موشک",
     "url": "https://www.youtube.com/watch?v=qKM4JzToM-A",
     "videoId": "qKM4JzToM-A",
     "channel": "TED-Ed",
@@ -333,11 +333,11 @@ var VIDEO_LIBRARY = [
     "lang": "en",
     "category": "education",
     "desc": "The fascinating science behind why babies love peek-a-boo and what it teaches about cognitive development.",
-    "descFa": ""
+    "descFa": "چرا نوزادان عاشق بازی قایم‌موشک هستند."
   },
   {
     "title": "Developmental Milestones Made Easy (With Memory Tool!)",
-    "titleFa": "",
+    "titleFa": "مراحل رشد آسان",
     "url": "https://www.youtube.com/watch?v=eNHA9VNbuhk",
     "videoId": "eNHA9VNbuhk",
     "channel": "Rhesus Medicine",
@@ -345,11 +345,11 @@ var VIDEO_LIBRARY = [
     "lang": "en",
     "category": "education",
     "desc": "Developmental milestones made easy with a memory tool — helpful guide for parents and educators.",
-    "descFa": ""
+    "descFa": "ابزار حافظه برای یادگیری مراحل رشد کودک."
   },
   {
     "title": "How does your baby compare? (What every parent needs to hear about milestones)",
-    "titleFa": "",
+    "titleFa": "مقایسه نوزاد شما",
     "url": "https://www.youtube.com/watch?v=ytyXAZJ0V4Q",
     "videoId": "ytyXAZJ0V4Q",
     "channel": "Emma Hubbard",
@@ -357,11 +357,11 @@ var VIDEO_LIBRARY = [
     "lang": "en",
     "category": "education",
     "desc": "Emma Hubbard explains how to compare your baby's milestones to what's typical at each age.",
-    "descFa": ""
+    "descFa": "آنچه هر والدینی باید درباره رشد نوزاد بداند."
   },
   {
     "title": "ASHA’s Developmental Milestones: Communication (Hearing, Speech, and Language)",
-    "titleFa": "",
+    "titleFa": "مراحل رشد ارتباطی",
     "url": "https://www.youtube.com/watch?v=1JpCAB-4iCw",
     "videoId": "1JpCAB-4iCw",
     "channel": "American Speech-Language-Hearing Association",
@@ -369,11 +369,11 @@ var VIDEO_LIBRARY = [
     "lang": "en",
     "category": "education",
     "desc": "ASHA's guide to developmental milestones in communication — hearing, speech, and language.",
-    "descFa": ""
+    "descFa": "مراحل رشد شنوایی، گفتار و زبان."
   },
   {
     "title": "10 Tips for Parenting Anxious Kids | Child Mind Institute",
-    "titleFa": "",
+    "titleFa": "۱۰ نکته فرزندپروری کودکان مضطرب",
     "url": "https://www.youtube.com/watch?v=c5ASysmOH_I",
     "videoId": "c5ASysmOH_I",
     "channel": "Child Mind Institute",
@@ -381,7 +381,7 @@ var VIDEO_LIBRARY = [
     "lang": "en",
     "category": "education",
     "desc": "10 practical tips for parenting anxious kids from the Child Mind Institute.",
-    "descFa": ""
+    "descFa": "راهکارهای عملی برای مدیریت اضطراب کودکان."
   },
   {
     "title": "",

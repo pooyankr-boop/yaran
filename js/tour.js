@@ -367,8 +367,8 @@ function renderHotspots() {
       hx = (ox + rw * hotspot.x / 100) / cw * 100;
       hy = (oy + rh * hotspot.y / 100) / ch * 100;
     }
-    el.style.left = hx + "%";
-    el.style.top = hy + "%";
+    el.style.left = Math.max(2, Math.min(98, hx)) + "%";
+    el.style.top = Math.max(2, Math.min(98, hy)) + "%";
     const label = document.createElement("div");
     label.className = "hotspot-label";
     label.textContent = hotspot.title;
@@ -471,13 +471,13 @@ let slideViews = [];
 let slideViewStart = {};
 let slideViewEnd = {};
 let slideShuffle = false;
+let _fullSlideList = [];
 function clearSlideTimer() { if (mslideTimer) { clearInterval(mslideTimer); mslideTimer = null; } }
 const SLIDE_MS = 15000; // مدت نمایش هر اسلاید (سه برابر حالت قبلی)
 const msImg = (view) => "assets/images/" + currentRoom.folder + "/" + view + ".webp";
 const msSafe = (i, n) => ((i % n) + n) % n;
 
 function buildSlides() {
-  // ترتیب گوشه‌ها = چرخه راهبری تور اتاق (راست‌گرد): herog_right → herog → herog_left
   const cyc = (k) => { const i = CYCLE_ORDER.indexOf(k); return i < 0 ? 99 : i; };
   const views = Object.keys(currentRoom.views).filter((k) => k !== "hero"
     && (currentRoom.views[k].hotspots || []).some((h) => (h.categories || []).some((c) => (c.items || []).length)))
@@ -489,17 +489,72 @@ function buildSlides() {
   slideList = [];
   slideViewStart = {};
   slideViewEnd = {};
+
+  function isEmptyItem(it) {
+    if (!it) return true;
+    if (it.audioUrl) return false;
+    if (it.image) return false;
+    if (it.desc && it.desc.trim()) return false;
+    if (it.url) return false;
+    if (it.page) return false;
+    if (it.instructions && it.instructions.trim()) return false;
+    if (it.materials && it.materials.trim()) return false;
+    return true;
+  }
+
+  // جمع‌آوری همه آیتم‌ها (شامل صوتی و تصویری و کاربرگ) برای هر ویو
   views.forEach((k) => {
-    slideViewStart[k] = slideList.length; // اولین اسلایدِ این گوشه
+    slideViewStart[k] = slideList.length;
     const v = currentRoom.views[k];
+
+    // ۱. آیتم‌های هات‌اسپات این ویو (فیلتر خالی‌ها)
     (v.hotspots || []).forEach((h) =>
       (h.categories || []).forEach((c) => {
-        (c.items || []).forEach((it) => slideList.push({ view: k, cat: c.title, item: it }));
+        (c.items || []).forEach((it) => {
+          if (isEmptyItem(it)) return;
+          slideList.push({ view: k, cat: c.title, item: it });
+        });
       })
     );
-    slideViewEnd[k] = slideList.length; // آخرین اسلایدِ این گوشه
+
+    // ۲. محتوای صوتی از AUDIO_LIBRARY (فقط در ویوی اول)
+    if (k === views[0] && typeof AUDIO_LIBRARY !== "undefined" && AUDIO_LIBRARY && typeof ROOM_AUDIO_MAP !== "undefined") {
+      var rcats = ROOM_AUDIO_MAP[currentRoom.id];
+      if (rcats) {
+        var aSeen = {};
+        AUDIO_LIBRARY.forEach(function(a) {
+          if (rcats.indexOf(a.category) === -1 || !a.audioUrl) return;
+          var key = a.title.trim().toLowerCase();
+          if (aSeen[key]) return;
+          aSeen[key] = true;
+          var desc = (a.info || "").substring(0, 300);
+          if (!desc) return;
+          views.forEach(function(vk) {
+            slideList.push({ view: vk, cat: "صوت", item: { title: a.title, type: "audio", audioUrl: a.audioUrl, category: a.category, channel: a.channel || a.category || "", desc: desc, duration: a.duration || "", _group: typeof _catAudio === "function" ? _catAudio(a) : "audio" } });
+          });
+        });
+      }
+    }
+
+    // ۳. کاربرگ‌های آرشیو با عکس (فقط در ویوی اول)
+    if (k === views[0] && typeof ARCHIVE_DATA !== "undefined" && ARCHIVE_DATA) {
+      var shSeen = {};
+      ARCHIVE_DATA.forEach(function(sh) {
+        if (sh.room !== currentRoom.id) return;
+        if (shSeen[sh.title]) return;
+        shSeen[sh.title] = true;
+        if (!sh.image && !sh.category) return;
+        views.forEach(function(vk) {
+          slideList.push({ view: vk, cat: "کاربرگ", item: { title: sh.title, type: sh.type || "pdf", image: sh.image || "", desc: sh.category || "", url: sh.url || "", page: sh.page || "" } });
+        });
+      });
+    }
+
+    slideViewEnd[k] = slideList.length;
   });
+  console.log("[buildSlides] room:", currentRoom && currentRoom.id, "slides:", slideList.length, "views:", views.length);
 }
+
 
 function renderMediaSlideshow() {
   clearSlideTimer();
@@ -507,7 +562,7 @@ function renderMediaSlideshow() {
   if (old) old.remove();
   const wrap = document.getElementById("room-hotspots");
   buildSlides();
-  if (!slideList.length) return;
+  if (!slideList.length) { console.log("[slideshow] slideList empty, views:", slideViews, "room:", currentRoom && currentRoom.id); return; }
   slideIdx = 0;
 
   const box = document.createElement("div");
@@ -571,7 +626,35 @@ function renderMediaSlideshow() {
     });
   }
 
-  box.append(bg, top, body, viewMenu);
+  // نوار فیلتر تگ‌ها
+  var tagBar = document.createElement('div');
+  tagBar.className = 'ms-tagbar';
+  var slideFilter = '';
+  var TAG_DEFS = [{v:'',l:'همه'},{v:'pdf',l:'📄 کاربرگ'},{v:'audio',l:'🔊 صوت'},{v:'video',l:'🎬 ویدیو'},{v:'game',l:'🎮 بازی'},{v:'activity',l:'🎯 فعالیت'},{v:'story',l:'📖 داستان'}];
+  function renderTags() {
+    tagBar.innerHTML = '';
+    TAG_DEFS.forEach(function(t) {
+      var b = document.createElement('button');
+      b.className = 'ms-tagbtn' + (slideFilter === t.v ? ' ms-tag-on' : '');
+      b.textContent = t.l;
+      b.addEventListener('click', function(e) {
+        e.stopPropagation();
+        slideFilter = t.v;
+        renderTags();
+        applySlideFilter();
+      });
+      tagBar.appendChild(b);
+    });
+  }
+  function applySlideFilter() {
+    if (!_fullSlideList.length) _fullSlideList = slideList.slice();
+    slideList = slideFilter ? _fullSlideList.filter(function(s) { return s.item && s.item.type === slideFilter; }) : _fullSlideList.slice();
+    slideIdx = 0;
+    if (slideList.length) show();
+    else body.innerHTML = '<div style="padding:2rem;text-align:center;color:#aaa;">محتوایی با این فیلتر موجود نیست</div>';
+  }
+  renderTags();
+  box.append(bg, top, tagBar, body, viewMenu);
   wrap.appendChild(box);
 
   const TICONS = { pdf: "📄", video: "🎬", audio: "🔊", game: "🎮", activity: "🎯", story: "📖", song: "🎵", craft: "✂️" };
@@ -596,9 +679,13 @@ function renderMediaSlideshow() {
       if (it.desc) h += "<div class=\"ms-sec\"><div class=\"ms-sec-t\">📝 توضیحات</div><div class=\"ms-desc\">" + escHtml(it.desc) + "</div></div>";
       if (it.materials) h += "<div class=\"ms-sec\"><div class=\"ms-sec-t\">🧰 وسایل مورد نیاز</div><div class=\"ms-desc\">" + escHtml(it.materials) + "</div></div>";
       if (it.instructions) {
-        h += "<div class=\"ms-sec\"><div class=\"ms-sec-t\">📋 مراحل اجرا</div><ol class=\"ms-steps\">";
-        it.instructions.split(/[\n،؛.]+|\d+[.)-]|→/g).filter((x) => x.trim()).forEach((st) => { h += "<li>" + escHtml(st.trim()) + "</li>"; });
-        h += "</ol></div>";
+        h += '<div class="ms-sec"><div class="ms-sec-t">📋 مراحل اجرا</div><div class="ms-steps">';
+        var _nums = ['1️⃣','2️⃣','3️⃣','4️⃣','5️⃣','6️⃣','7️⃣','8️⃣','9️⃣'];
+        var _steps = it.instructions.split(/[\n،؛.]+|\d+[.)-]|→/g).filter(function(x) { return x.trim(); });
+        _steps.forEach(function(st, si) {
+          h += '<div class="ms-step-item">' + (si < _nums.length ? _nums[si] + ' ' : (si+1) + '. ') + escHtml(st.trim()) + '</div>';
+        });
+        h += '</div></div>';
       }
       if (it.safety) h += "<div class=\"ms-sec ms-safety\"><div class=\"ms-sec-t\">⚠️ نکات ایمنی</div><div class=\"ms-desc\">" + escHtml(it.safety) + "</div></div>";
       if (it.url || it.page) {

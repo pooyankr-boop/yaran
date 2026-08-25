@@ -44,7 +44,7 @@ var VirtualTour = (function () {
     roomIds: [], ri: 0,
     phase: 'overview', vi: 0, hi: 0, ci: 0,
     items: [], playing: true, shuffleMode: 'all',
-    filters: { pdf: true, video: true, audio: true, game: true, activity: true, story: true, song: true },
+    filters: { pdf: true, video: true, game: true, activity: true },
     timer: null, role: 'مربی', kbIndex: 0, tipUsed: {}, sidebarOpen: false, tipClosed: false
   };
 
@@ -63,8 +63,8 @@ var VirtualTour = (function () {
     var r = state.role;
     if (r === 'مربی') return true;
     var t = (item.type || '').toLowerCase();
-    if (r === 'والد') return t === 'activity' || t === 'story' || t === 'song' || t === 'game';
-    if (r === 'کودک') return t === 'game' || t === 'story' || t === 'song' || t === 'activity';
+    if (r === 'والد') return true;
+    if (r === 'کودک') return true;
     if (r === 'مدیر') return t === 'pdf';
     return true;
   }
@@ -86,6 +86,8 @@ var VirtualTour = (function () {
             if (!isRoleMatch(it)) return;
             var tt = (it.type || 'activity').toLowerCase();
             if (!state.filters[tt]) return;
+            // filter empty items — no image, desc, url, page, audioUrl, instructions, materials
+            if (!it.image && !it.desc && !it.url && !it.page && !it.audioUrl && !it.instructions && !it.materials) return;
             out.push({ item: it, hs: h.title, cat: c.title, view: v });
           });
         });
@@ -102,6 +104,19 @@ var VirtualTour = (function () {
         var tt = (it.type || 'pdf').toLowerCase();
         if (!state.filters[tt]) return;
         out.push({ item: it, hs: 'کاربرگ‌ها', cat: it.category || 'کاربرگ', view: 'herog' });
+      });
+    }
+
+    /* video items from VIDEO_LIBRARY */
+    if (typeof VIDEO_LIBRARY !== 'undefined') {
+      VIDEO_LIBRARY.forEach(function(v) {
+        if (seen[v.title]) return;
+        seen[v.title] = 1;
+        if (!isRoleMatch({ type: 'video' })) return;
+        if (!state.filters['video']) return;
+        var title = v.titleFa || v.title || '';
+        var desc = v.descFa || v.desc || '';
+        out.push({ item: { title: title, type: 'video', url: v.url, image: 'https://img.youtube.com/vi/' + (v.videoId || '') + '/mqdefault.jpg', desc: desc, channel: v.channel || '', duration: v.duration || '' }, hs: 'محتوای تصویری', cat: v.category || 'video', view: 'herog' });
       });
     }
 
@@ -459,10 +474,9 @@ var VirtualTour = (function () {
 
     html += '</div>';
 
-    /* tags row */
+    /* tags row — type tags + audio subcategory tags */
     html += '<div class="vt-tags">';
-    var tagKeys = ['activity', 'pdf', 'game', 'video', 'audio', 'story', 'song'];
-    tagKeys.forEach(function (t) {
+    ['activity','pdf','game','video'].forEach(function (t) {
       var on = state.filters[t];
       html += '<button class="vt-tag ' + (on ? 'vt-tag-on' : 'vt-tag-off') + '" data-vt="tag" data-tag="' + t + '">' +
         (ICONS[t] || '📎') + ' ' + (TYPE_LABELS[t] || t) + '</button>';
@@ -583,9 +597,11 @@ var VirtualTour = (function () {
       html += '<div class="vt-cd-section">';
       html += '<div class="vt-cd-section-title">📋 مراحل اجرا</div>';
       html += '<div class="vt-cd-steps">';
-      var steps = it.instructions.split(/\n|،|؛|\.|\d+\)/g).filter(function (s) { return s.trim(); });
+      var _sn = ['1️⃣','2️⃣','3️⃣','4️⃣','5️⃣','6️⃣','7️⃣','8️⃣','9️⃣'];
+      var steps = it.instructions.split(/\n|،|؛|\.|\d+\)|→/g).filter(function (s) { return s.trim(); });
       steps.forEach(function (step, i) {
-        html += '<li class="vt-fadein" style="animation-delay:' + (i * 0.2) + 's">' + esc(step.trim()) + '</li>';
+        var num = i < _sn.length ? _sn[i] + ' ' : (i+1) + '. ';
+        html += '<div class="vt-step-item vt-fadein" style="animation-delay:' + (i * 0.2) + 's">' + num + esc(step.trim()) + '</div>';
       });
       html += '</div></div>';
     }
@@ -600,7 +616,12 @@ var VirtualTour = (function () {
 
     /* action buttons */
     html += '<div class="vt-cd-actions">';
-    if (it.url) {
+    if (it.type === 'audio' || it.type === 'song' || it.audioUrl) {
+      var _au = it.audioUrl || it.url || '';
+      html += '<button class="vt-action-btn vt-action-primary" onclick="window.yrPlay && yrPlay({title:\'' + (it.title||'').replace(/'/g,"\\'") + '\',audioUrl:\'' + _au + '\',category:\'' + (it.category||'').replace(/'/g,"\\'") + '\',channel:\'' + (it.channel||'').replace(/'/g,"\\'") + '\'})" style="cursor:pointer;">▶ پخش</button>';
+    } else if (it.type === 'video' && it.url) {
+      html += '<button class="vt-action-btn vt-action-primary" onclick="window.open(\'' + esc(it.url) + '\',\'_blank\')" style="cursor:pointer;">▶ پخش ویدیو</button>';
+    } else if (it.url) {
       html += '<a class="vt-action-btn vt-action-primary" href="' + esc(it.url) + '" target="_blank" rel="noopener">📥 دانلود</a>';
     }
     if (it.page) {
@@ -610,11 +631,14 @@ var VirtualTour = (function () {
 
     html += '</div>'; /* end vt-two-col-text */
 
-    /* LEFT COLUMN: media (image/portrait) */
-    var imgSrc = it.image || '';
+    /* LEFT COLUMN: media */
     html += '<div class="vt-two-col-media">';
-    if (imgSrc) {
-      html += '<img src="' + esc(imgSrc) + '" alt="" loading="lazy" onerror="this.style.display=\'none\'" />';
+    if (it.image) {
+      html += '<img src="' + esc(it.image) + '" alt="" loading="lazy" onerror="this.style.display=\'none\'" />';
+    } else if (it.type === 'audio' || it.type === 'song') {
+      html += '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;background:linear-gradient(135deg,#1a1a2e,#16213e);border-radius:16px;padding:2rem;"><div style="font-size:5rem;">🔊</div><div style="color:#ffb84d;font-size:1rem;margin-top:12px;text-align:center;">' + esc(it.title || 'صدای آرامش') + '</div>' + (it.channel ? '<div style="color:#888;font-size:.8rem;margin-top:8px;">' + esc(it.channel) + '</div>' : '') + '</div>';
+    } else if (it.type === 'video') {
+      html += '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;background:linear-gradient(135deg,#1a1a2e,#16213e);border-radius:16px;"><div style="font-size:5rem;">🎬</div><div style="color:#ffb84d;font-size:1rem;margin-top:12px;">پخش ویدیو</div></div>';
     }
     html += '</div>';
 

@@ -132,6 +132,20 @@ function renderSlide() {
       (item.channel ? '<div style="font-size:.9rem;color:#999;margin-top:8px;">' + item.channel + '</div>' : '') +
       '</div>';
   }
+  // play button for audio/video
+  if ((item.type === 'audio' || item.type === 'song') && item.url) {
+    var aTitle = (item.title||'').replace(/'/g, "\\'");
+    var aUrl = (item.url||'').replace(/'/g, "\\'");
+    var aCat = (item.category||'').replace(/'/g, "\\'");
+    var aCh = (item.channel||'').replace(/'/g, "\\'");
+    html += '<div style="position:absolute;bottom:16px;left:50%;transform:translateX(-50%);z-index:5;">' +
+      '<button onclick="window.yrPlay && yrPlay({title:\'' + aTitle + '\',audioUrl:\'' + aUrl + '\',category:\'' + aCat + '\',channel:\'' + aCh + '\'})" ' +
+      'style="background:#ffb84d;color:#3d2f1f;border:none;border-radius:50%;width:48px;height:48px;font-size:1.4rem;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.3);">▶</button></div>';
+  } else if (item.type === 'video' && item.url) {
+    html += '<div style="position:absolute;bottom:16px;left:50%;transform:translateX(-50%);z-index:5;">' +
+      '<button onclick="window.openMediaModal && openMediaModal({type:\'video\',title:\'' + (item.title||'').replace(/'/g,"\\'") + '\',url:\'' + (item.url||'').replace(/'/g,"\\'") + '\',desc:\'' + ((item.desc||'').replace(/'/g,"\\'")) + '\'})" style="background:#ffb84d;color:#3d2f1f;border:none;border-radius:20px;padding:8px 20px;font-size:.9rem;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.3);">▶ پخش ویدیو</button></div>';
+  }
+
   body.innerHTML = html;
   if (caption) {
     var capText = (item.title || '');
