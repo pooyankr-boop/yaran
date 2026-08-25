@@ -22,19 +22,27 @@ if (!fs.existsSync(path.join(botDir, 'node_modules'))) {
 const server = spawn(process.execPath, [path.join(__dirname, 'index.js')], { stdio: 'inherit' });
 const botEnv = {
   ...process.env,
-  // هر دو روی همان instance: ربات به سرور محلی وصل شود
   SERVER_URL: process.env.SERVER_URL || `http://localhost:${process.env.PORT || 4000}`,
   WS_URL: process.env.WS_URL || `ws://localhost:${process.env.PORT || 4000}/ws`,
 };
-const bot = spawn(process.execPath, [path.join(botDir, 'bot.js')], { stdio: 'inherit', cwd: botDir, env: botEnv });
+
+let bot = null;
+function startBot() {
+  bot = spawn(process.execPath, [path.join(botDir, 'bot.js')], { stdio: 'inherit', cwd: botDir, env: botEnv });
+  bot.on('exit', (code) => {
+    console.log('[start-all] bot exited', code);
+    // ربات standalone restart میشود — سرور نمیمیرد
+    setTimeout(startBot, 5000);
+  });
+}
+startBot();
 
 function killAll() {
   server.kill();
-  bot.kill();
+  if (bot) bot.kill();
   process.exit(0);
 }
 process.on('SIGTERM', killAll);
 process.on('SIGINT', killAll);
 
-server.on('exit', (code) => { console.log('[start-all] server exited', code); if (code) process.exit(code); });
-bot.on('exit', (code) => { console.log('[start-all] bot exited', code); if (code) process.exit(code); });
+server.on('exit', (code) => { console.log('[start-all] server exited', code); process.exit(code || 1); });
