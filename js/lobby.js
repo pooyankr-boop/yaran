@@ -233,3 +233,22 @@ function renderLobbyVideos() {
     });
   });
 }
+
+/* ── Lobby box z-layer: click box → bring to front; click outside → buttons back on top ── */
+(function() {
+  var tipBox = document.getElementById('lobby-tip-box');
+  var slideBox = document.getElementById('lobby-slideshow-box');
+  var boxes = [tipBox, slideBox].filter(Boolean);
+  function clearActive() { boxes.forEach(function(b) { b.classList.remove('box-active'); }); }
+  boxes.forEach(function(b) {
+    b.addEventListener('click', function(e) {
+      e.stopPropagation();
+      clearActive();
+      b.classList.add('box-active');
+    });
+  });
+  document.addEventListener('click', function(e) {
+    var inside = boxes.some(function(b) { return b.contains(e.target); });
+    if (!inside) clearActive();
+  });
+})();

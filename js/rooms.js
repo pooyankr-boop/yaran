@@ -1,7 +1,12 @@
 /* ساختار محتوای اتاق‌ها — غنی‌شده با محتوای واقعی (کاربرگ‌های سمیه‌روحی + جست‌وجوی عمیق وب) */
 const ZONE_POSITIONS = {"hero": {"left": {"x": 16, "y": 62}, "center": {"x": 50, "y": 58}, "right": {"x": 84, "y": 62}}, "herog": {"left": {"x": 20, "y": 55}, "center": {"x": 50, "y": 55}, "right": {"x": 80, "y": 55}}, "herog_left": {"left": {"x": 28, "y": 55}, "center": {"x": 55, "y": 55}, "right": {"x": 82, "y": 55}}, "herog_right": {"left": {"x": 18, "y": 55}, "center": {"x": 45, "y": 55}, "right": {"x": 72, "y": 55}}};
 
-const ENTRY_DOORS = [{"label": "ورودی کودک", "x": 16.5, "y": 77, "role": "child"}, {"label": "ورودی مربی", "x": 29, "y": 83, "role": "teacher"}, {"label": "ورودی والد", "x": 69, "y": 88, "role": "parent"}, {"label": "ورودی مدیر و کارکنان", "x": 79, "y": 80, "role": "manager"}];
+const ENTRY_DOORS = [
+  {"label": "ورودی کودک", "x": 48, "y": 87, "role": "child"},
+  {"label": "ورودی مربی", "x": 46, "y": 38, "role": "teacher"},
+  {"label": "ورودی والد", "x": 68, "y": 63, "role": "parent"},
+  {"label": "ورودی مدیر و کارکنان", "x": 88, "y": 67, "role": "manager"}
+];
 
 const ROOMS = [
   {

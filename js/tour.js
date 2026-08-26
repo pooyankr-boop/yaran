@@ -71,6 +71,7 @@ function renderDoors() {
   ENTRY_DOORS.forEach(door => {
     const el = document.createElement("div");
     el.className = "door-hotspot";
+    el.dataset.role = door.role;
     el.style.left = door.x + "%";
     el.style.top = door.y + "%";
     el.innerHTML = '<div class="door-icon">🚪</div><div class="door-label">' + door.label + '</div>';
@@ -102,22 +103,25 @@ function renderMapCircles() {
   const wrap = document.getElementById("map-circles");
   if (wrap) wrap.innerHTML = "";
 
-  // مکان دایره روی عکس plan2 (درصد از گوشه چپ‌بالا، از روی خودِ نقشه)
+  // مکان دایره روی عکس plan2 — نعل‌اسبی عمودی (پرسپکتیو راهرو)
   const PLAN_CENTER = {
-    amoozesh: { x: 33, y: 43 },
-    bazi: { x: 28, y: 65 },
-    honar: { x: 10, y: 76 },
-    motaleh: { x: 10, y: 43 },
-    salamat: { x: 58, y: 64 },
-    khab: { x: 87, y: 61 },
-    moraabi: { x: 50, y: 32 },
-            "esterahat-moraabian": { x: 38, y: 80 },
-            "jalase-owlia": { x: 58, y: 45.6 },
-        bayegani: { x: 87, y: 42 },
-        teria: { x: 58, y: 56 },
-        hayat: { x: 43.06, y: 32 },
-            maddakari: { x: 55, y: 58 },
-          };
+    /* ── بازوی چپ (جلو→عقب، پایین→بالا) ── */
+    amoozesh:  { x: 22, y: 80 },   // در سبز — راهرو چپ جلو
+    bazi:      { x: 24, y: 68 },   // در صورتی — راهرو چپ
+    honar:     { x: 26, y: 56 },   // در زرد — راهرو چپ
+    motaleh:   { x: 28, y: 46 },   // در آبی روشن — راهرو چپ
+    salamat:   { x: 30, y: 37 },   // در کرم — راهرو چپ نزدیک دیوار پشت
+    /* ── دیوار پشت (مرکز بالا) ── */
+    khab:      { x: 38, y: 26 },   // در بنفش — دیوار پشت چپ
+    moraabi:   { x: 50, y: 22 },   // در سبز — دیوار پشت مرکز
+    "esterahat-moraabian": { x: 62, y: 26 }, // در هلویی — دیوار پشت راست
+    /* ── بازوی راست (عقب→جلو، بالا→پایین) ── */
+    "jalase-owlia": { x: 70, y: 37 }, // در سالمون — راهرو راست نزدیک دیوار پشت
+    bayegani:  { x: 72, y: 46 },   // در آبی روشن — راهرو راست
+    teria:     { x: 74, y: 56 },   // در آبی — راهرو راست
+    hayat:     { x: 76, y: 68 },   // در قهوه‌ای — راهرو راست
+    maddakari: { x: 78, y: 80 },   // در کرم — راهرو راست جلو
+           };
   // تبدیل مکان نقشه (نسبت به تصویر کوچک) به مکان روی کل صفحه — نقشه در مرکز است
   const PLAN_SCALE = 1.08; // پخش دایره‌ها روی کل صفحه نسبت به مرکز (1.2 × 0.9 = هم‌راستا با scale(.9) عکس)
   const toScreen = (p) => ({ x: 50 + (p.x - 50) * PLAN_SCALE, y: 50 + (p.y - 50) * PLAN_SCALE });
@@ -127,42 +131,6 @@ function renderMapCircles() {
     const base = PLAN_CENTER[r.id] || (r.heroPos && r.heroPos.center ? r.heroPos.center : { x: 50, y: 50 });
     posOf[r.id] = toScreen(Object.assign({}, base));
   });
-  // جابجایی برای جلوگیری از همپوشانی (فاصله حداقل = قطر دایره)
-    const MIN_GAP = 18; // درصد فاصله مرکز تا مرکز روی کل صفحه
-    const LOCK = new Set(["moraabi", "jalase-owlia", "hayat", "teria"]); // مماس‌ها: قفل
-    for (let iter = 0; iter < 80; iter++) {
-      let moved = false;
-      const ids = Object.keys(posOf);
-      for (let a = 0; a < ids.length; a++) {
-        for (let b = a + 1; b < ids.length; b++) {
-          const A = posOf[ids[a]], B = posOf[ids[b]];
-          let dx = B.x - A.x, dy = B.y - A.y;
-          let dist = Math.hypot(dx, dy) || 0.01;
-          if (dist < MIN_GAP) {
-            // سه‌گانه مماس قفل‌اند — فقط همسایه را دور می‌کنیم
-            if (LOCK.has(ids[a]) && LOCK.has(ids[b])) continue;
-            const push = (MIN_GAP - dist) / 2;
-            const ux = dx / dist, uy = dy / dist;
-            if (LOCK.has(ids[a])) { B.x += ux * 2 * push; B.y += uy * 2 * push; }
-            else if (LOCK.has(ids[b])) { A.x -= ux * 2 * push; A.y -= uy * 2 * push; }
-            else { A.x -= ux * push; A.y -= uy * push; B.x += ux * push; B.y += uy * push; }
-            moved = true;
-          }
-        }
-      }
-      ids.forEach(id => {
-        posOf[id].x = Math.max(8, Math.min(92, posOf[id].x));
-        posOf[id].y = Math.max(10, Math.min(90, posOf[id].y));
-      });
-      if (!moved) break;
-    }
-    // مماس‌ها: حیاط↔مربی عوض شدند (مربی راست حیاط)؛ جلسه اولیا ↕ لبه بالای تریا (قطر دقیق ۱۰۰px)
-      {
-        const hy = posOf["hayat"], mr = posOf["moraabi"], tl = posOf["teria"], jl = posOf["jalase-owlia"];
-        const dX = 100 / window.innerWidth * 100, dY = 100 / window.innerHeight * 100;
-        mr.x = hy.x + dX; mr.y = hy.y;
-        jl.x = tl.x; jl.y = tl.y - dY;
-      }
 
   ROOMS.forEach(room => {
     const c = document.createElement("div");
