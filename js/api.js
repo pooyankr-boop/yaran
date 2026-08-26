@@ -87,6 +87,12 @@ const Api = {
   parentMessages: () => apiFetch("/parent-messages"),
   createParentMessage: (data) =>
     apiFetch("/parent-messages", { method: "POST", body: JSON.stringify(data) }),
+  /* ── برنامه هفتگی ── */
+  plannerWeekly: (week) => apiFetch("/planner/weekly?week=" + encodeURIComponent(week)),
+  plannerSaveWeeklyDay: (week, day, items) =>
+    apiFetch("/planner/weekly", { method: "POST", body: JSON.stringify({ week, day, items }) }),
+  plannerDeleteWeeklyItem: (week, day, itemId) =>
+    apiFetch("/planner/weekly", { method: "DELETE", body: JSON.stringify({ week, day, itemId }) }),
 };
 
 // اگر سرور بک‌اند بالا نباشد (مثلاً پایلوت روی سیستمی که هنوز server/ اجرا نشده)، APP_API_ONLINE

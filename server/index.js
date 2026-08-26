@@ -788,6 +788,9 @@ const logStart = (port) => {
   console.log(`   Tasks API: http://localhost:${port}/api/tasks`);
   console.log(`   WebSocket: ws://localhost:${port}/ws`);
 };
+// Register Planner API (MUST be before SPA catch-all)
+registerPlanner(app, { authMiddleware, staffOnly, TENANT, uuid, broadcast });
+
 if (PORT_RAW) {
   server.listen(Number(PORT_RAW), '0.0.0.0', () => logStart(PORT_RAW));
 } else {
@@ -796,9 +799,6 @@ if (PORT_RAW) {
 
 // Start Telegram bot (non-blocking, skips if no token)
 initBot();
-
-// Register Planner API
-registerPlanner(app, { authMiddleware, staffOnly, TENANT, uuid, broadcast });
 
 /* ══════════════════════════════════════════════════════════
    Keep-Alive: self-ping every 10 min to prevent Render sleep

@@ -7,5 +7,23 @@
     "role": "admin",
     "tenant": "yaran",
     "createdAt": "2026-08-19T08:01:35.270Z"
+  },
+  {
+    "id": "0186d988-7eed-463c-98ed-2dffb4f2d517",
+    "name": "??? ????",
+    "email": "ali@yaran.ir",
+    "password": "$2a$10$Ye.5DMct49eM363NkxUhFeqLro8aae/ThQmkPWgEnFtOl.j7VLk32",
+    "role": "parent",
+    "tenant": "yaran",
+    "createdAt": "2026-08-26T23:44:57.663Z"
+  },
+  {
+    "id": "4eaaf15a-c200-453e-adea-5a908f14482d",
+    "name": "???? ????",
+    "email": "sara@yaran.ir",
+    "password": "$2a$10$iMsaHoRUKdrQ/8bW1eUgZO3eeykvfrCDa0F5OmceyHAEM5SFfs0KW",
+    "role": "teacher",
+    "tenant": "yaran",
+    "createdAt": "2026-08-26T23:45:06.969Z"
   }
 ]

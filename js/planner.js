@@ -46,8 +46,10 @@ var Planner = (function () {
   }
 
   async function refreshData() {
-    const evRes = await Api.plannerEvents();
-    state.events = evRes.events || [];
+    try {
+      const evRes = await Api.plannerEvents();
+      state.events = (evRes && evRes.events) || [];
+    } catch (e) { state.events = []; }
     if (isStaffUser()) {
       try { state.parents = (await Api.plannerParents()).parents || []; } catch (e) { state.parents = []; }
     } else {
@@ -69,34 +71,42 @@ var Planner = (function () {
   function drawStaff(body) {
     body.innerHTML =
       '<div class="pl-wrap">' +
-        '<div class="pl-cols">' +
-          '<div class="pl-col">' +
-            '<h3 class="yr-display pl-h">🗓 تقویم یاران</h3>' +
-            '<div id="pl-calendar"></div>' +
-            '<div id="pl-day-detail"></div>' +
-          "</div>" +
-          '<div class="pl-col">' +
-            '<div class="pl-tabs2">' +
-              '<button class="pl-t2 active" data-v="compose">✉️ پیام به والدین</button>' +
-              '<button class="pl-t2" data-v="inbox">📥 ارسالی‌ها</button>' +
-            "</div>" +
-            '<div id="pl-comm"></div>' +
-          "</div>" +
-        "</div>" +
-      "</div>";
+        '<div class="pl-tabs2">' +
+          '<button class="pl-t2 active" data-v="calendar">🗓 تقویم و رویدادها</button>' +
+          '<button class="pl-t2" data-v="weekly">📋 برنامه هفتگی مهد</button>' +
+          '<button class="pl-t2" data-v="compose">✉️ پیام به والدین</button>' +
+          '<button class="pl-t2" data-v="inbox">📥 ارسالی‌ها</button>' +
+        '</div>' +
+        '<div id="pl-tab-body"></div>' +
+      '</div>';
 
     body.querySelectorAll(".pl-t2").forEach(function (b) {
       b.addEventListener("click", function () {
         body.querySelectorAll(".pl-t2").forEach(x => x.classList.remove("active"));
         b.classList.add("active");
         state.view = b.dataset.v;
-        drawComm(document.getElementById("pl-comm"));
+        renderTab();
       });
     });
+    renderTab();
+  }
 
-    drawCalendar(document.getElementById("pl-calendar"));
-    drawDayDetail(document.getElementById("pl-day-detail"));
-    drawComm(document.getElementById("pl-comm"));
+  function renderTab() {
+    var el = document.getElementById("pl-tab-body");
+    if (!el) return;
+    if (state.view === "calendar") {
+      el.innerHTML = '<div class="pl-cols">' +
+        '<div class="pl-col"><h3 class="yr-display pl-h">🗓 تقویم یاران</h3><div id="pl-calendar"></div><div id="pl-day-detail"></div></div>' +
+        '<div class="pl-col"><div id="pl-comm"></div></div></div>';
+      drawCalendar(el.querySelector("#pl-calendar"));
+      drawDayDetail(el.querySelector("#pl-day-detail"));
+      drawComm(el.querySelector("#pl-comm"));
+    } else if (state.view === "weekly") {
+      drawWeekly(el);
+    } else {
+      el.innerHTML = '<div id="pl-comm"></div>';
+      drawComm(document.getElementById("pl-comm"));
+    }
   }
 
   /* ── تقویم شمسی ── */
@@ -297,7 +307,7 @@ var Planner = (function () {
 
   function drawSent(el) {
     Api.parentMessages().then(function (r) {
-      var list = (r.messages || []).filter(function (m) { return m.fromEmail === (currentUser() || {}).email; });
+      var list = ((r && r.messages) || []).filter(function (m) { return m.fromEmail === (currentUser() || {}).email; });
       if (!list.length) { el.innerHTML = emptyBox("هنوز پیامی نفرستاده‌اید.", ""); return; }
       el.innerHTML = list.map(function (m) {
         var toFa = m.toEmail === "*" ? "همه‌ی والدین" : (m.toName || m.toEmail);
@@ -407,6 +417,250 @@ var Planner = (function () {
         renderAttChips();
       });
     });
+  }
+
+  /* ═══════════ برنامه هفتگی مهد ═══════════ */
+  var WEEK_DAYS = [
+    { key: "sat", fa: "شنبه" }, { key: "sun", fa: "یکشنبه" }, { key: "mon", fa: "دوشنبه" },
+    { key: "tue", fa: "سه‌شنبه" }, { key: "wed", fa: "چهارشنبه" }, { key: "thu", fa: "پنجشنبه" },
+    { key: "fri", fa: "جمعه" }
+  ];
+  var WEEK_SLOTS = ["08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00"];
+  var WEEK_SLOT_FA = ["۸", "۹", "۱۰", "۱۱", "۱۲", "۱۳", "۱۴", "۱۵", "۱۶"];
+  var _weeklyWeek = "";  // "2026-W35"
+  var _weeklyData = {};  // { sat: [...], sun: [...], ... }
+  var _weeklyTargetDay = "";
+  var _weeklyTargetSlot = "";
+
+  function isoWeekKey(dateStr) {
+    var d = new Date(dateStr + "T12:00:00");
+    var dayNum = d.getDay(); // 0=Sun
+    d.setDate(d.getDate() + 4 - (dayNum || 7));
+    var yearStart = new Date(d.getFullYear(), 0, 1);
+    var weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+    return d.getFullYear() + "-W" + String(weekNo).padStart(2, "0");
+  }
+
+  function drawWeekly(el) {
+    var today = todayISO();
+    if (!_weeklyWeek) _weeklyWeek = isoWeekKey(today);
+
+    el.innerHTML =
+      '<div class="pl-wk-head">' +
+        '<button class="pill-btn" id="pl-wk-prev">‹ هفته قبل</button>' +
+        '<span class="yr-display" id="pl-wk-title"></span>' +
+        '<button class="pill-btn" id="pl-wk-next">هفته بعد ›</button>' +
+        '<button class="pill-btn pl-today-btn" id="pl-wk-today">امروز</button>' +
+      '</div>' +
+      '<div class="pl-wk-grid" id="pl-wk-grid"></div>';
+
+    el.querySelector("#pl-wk-prev").addEventListener("click", function () { shiftWeekly(-1); });
+    el.querySelector("#pl-wk-next").addEventListener("click", function () { shiftWeekly(1); });
+    el.querySelector("#pl-wk-today").addEventListener("click", function () {
+      _weeklyWeek = isoWeekKey(todayISO());
+      loadWeekly();
+    });
+
+    loadWeekly();
+  }
+
+  function shiftWeekly(d) {
+    // Parse current week, shift by d weeks
+    var parts = _weeklyWeek.split("-W");
+    var dt = new Date(+parts[0], 0, 1 + ((+parts[1] - 1) * 7));
+    dt.setDate(dt.getDate() + d * 7);
+    _weeklyWeek = isoWeekKey(dt.getFullYear() + "-" + String(dt.getMonth() + 1).padStart(2, "0") + "-" + String(dt.getDate()).padStart(2, "0"));
+    loadWeekly();
+  }
+
+  async function loadWeekly() {
+    var titleEl = document.getElementById("pl-wk-title");
+    var gridEl = document.getElementById("pl-wk-grid");
+    if (titleEl) titleEl.textContent = "هفته " + _weeklyWeek.replace("-W", " — هفته ");
+    if (!gridEl) return;
+    gridEl.innerHTML = '<div style="text-align:center;color:#999;padding:20px;">در حال بارگذاری…</div>';
+    try {
+      var res = await Api.plannerWeekly(_weeklyWeek);
+      _weeklyData = res.days || {};
+    } catch (e) {
+      _weeklyData = {};
+    }
+    renderWeeklyGrid(gridEl);
+  }
+
+  function renderWeeklyGrid(gridEl) {
+    var html = '<div class="pl-wk-header">';
+    // Time column header
+    html += '<div class="pl-wk-cell pl-wk-time-hdr">ساعت</div>';
+    WEEK_DAYS.forEach(function (d) {
+      html += '<div class="pl-wk-cell pl-wk-day-hdr">' + d.fa + '</div>';
+    });
+    html += '</div>';
+
+    WEEK_SLOTS.forEach(function (slot, si) {
+      html += '<div class="pl-wk-row">';
+      html += '<div class="pl-wk-cell pl-wk-time">' + WEEK_SLOT_FA[si] + ':۰۰</div>';
+      WEEK_DAYS.forEach(function (d) {
+        var items = (_weeklyData[d.key] || []).filter(function (it) { return it.time === slot; });
+        html += '<div class="pl-wk-cell pl-wk-slot" data-day="' + d.key + '" data-slot="' + slot + '">';
+        items.forEach(function (it) {
+          var icon = ({ pdf: "📄", video: "🎬", audio: "🔊", game: "🎮", activity: "🎯" }[it.type] || "📎");
+          html += '<div class="pl-wk-item" data-id="' + it.id + '">' +
+            '<span class="pl-wk-item-icon">' + icon + '</span>' +
+            '<span class="pl-wk-item-title">' + esc(it.title) + '</span>' +
+            '<button class="pl-wk-item-x" data-id="' + it.id + '" data-day="' + d.key + '">✕</button>' +
+          '</div>';
+        });
+        html += '<button class="pl-wk-add" data-day="' + d.key + '" data-slot="' + slot + '">＋</button>';
+        html += '</div>';
+      });
+      html += '</div>';
+    });
+
+    // Bottom row: items without time
+    html += '<div class="pl-wk-row">';
+    html += '<div class="pl-wk-cell pl-wk-time">بدون ساعت</div>';
+    WEEK_DAYS.forEach(function (d) {
+      var items = (_weeklyData[d.key] || []).filter(function (it) { return !it.time; });
+      html += '<div class="pl-wk-cell pl-wk-slot pl-wk-notime" data-day="' + d.key + '" data-slot="">';
+      items.forEach(function (it) {
+        var icon = ({ pdf: "📄", video: "🎬", audio: "🔊", game: "🎮", activity: "🎯" }[it.type] || "📎");
+        html += '<div class="pl-wk-item" data-id="' + it.id + '">' +
+          '<span class="pl-wk-item-icon">' + icon + '</span>' +
+          '<span class="pl-wk-item-title">' + esc(it.title) + '</span>' +
+          '<button class="pl-wk-item-x" data-id="' + it.id + '" data-day="' + d.key + '">✕</button>' +
+        '</div>';
+      });
+      html += '<button class="pl-wk-add" data-day="' + d.key + '" data-slot="">＋</button>';
+      html += '</div>';
+    });
+    html += '</div>';
+
+    gridEl.innerHTML = html;
+
+    // Bind add buttons
+    gridEl.querySelectorAll(".pl-wk-add").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        _weeklyTargetDay = btn.dataset.day;
+        _weeklyTargetSlot = btn.dataset.slot;
+        openWeeklyPicker();
+      });
+    });
+
+    // Bind delete buttons
+    gridEl.querySelectorAll(".pl-wk-item-x").forEach(function (btn) {
+      btn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        if (!confirm("حذف شود؟")) return;
+        var day = btn.dataset.day;
+        var id = btn.dataset.id;
+        _weeklyData[day] = (_weeklyData[day] || []).filter(function (it) { return it.id !== id; });
+        Api.plannerSaveWeeklyDay(_weeklyWeek, day, _weeklyData[day]).then(function () {
+          renderWeeklyGrid(gridEl);
+        });
+      });
+    });
+  }
+
+  function openWeeklyPicker() {
+    var items = collectLibrary();
+    var overlay = document.createElement("div");
+    overlay.className = "pl-picker-overlay";
+    overlay.innerHTML =
+      '<div class="pl-picker">' +
+        '<div class="pl-picker-head"><strong>📎 انتخاب محتوا برای برنامه</strong><button class="dk-btn" id="pl-wk-pk-close">✕</button></div>' +
+        '<input id="pl-wk-pk-q" placeholder="🔍 جستجوی عنوان…" />' +
+        '<div class="pl-pk-types">' +
+          [["", "همه"], ["pdf", "📄 کاربرگ"], ["video", "🎬 ویدیو"], ["audio", "🔊 صوت"], ["game", "🎮 بازی"], ["activity", "🎯 فعالیت"]].map(function (t) {
+            return '<button class="content-type-tag' + (t[0] === "" ? " active" : "") + '" data-t="' + t[0] + '">' + t[1] + '</button>';
+          }).join("") +
+        '</div>' +
+        '<div class="pl-picker-list" id="pl-wk-pk-list"></div>' +
+        '<div class="pl-picker-footer">' +
+          '<label>ساعت: <select id="pl-wk-pk-time"><option value="' + _weeklyTargetSlot + '">' + (_weeklyTargetSlot || "بدون ساعت") + '</option>';
+    WEEK_SLOTS.forEach(function (s) {
+      if (s !== _weeklyTargetSlot) overlay.innerHTML; // just continue
+    });
+    overlay.querySelector('.pl-picker').innerHTML += '<div class="pl-picker-footer" style="padding:10px 17px;border-top:1.4px solid var(--yr-border);display:flex;justify-content:flex-end;gap:8px;"></div>';
+
+    document.body.appendChild(overlay);
+
+    // Fix: add footer to picker
+    var footer = overlay.querySelector('.pl-picker-footer');
+    if (footer) {
+      footer.innerHTML = '<label style="font-size:.82rem;font-weight:700;color:#8a7b6b;">ساعت: <select id="pl-wk-pk-time" style="padding:6px 10px;border-radius:8px;border:1.5px solid var(--yr-border);">' +
+        '<option value="' + _weeklyTargetSlot + '">' + (_weeklyTargetSlot || "بدون ساعت") + '</option>' +
+        WEEK_SLOTS.filter(function (s) { return s !== _weeklyTargetSlot; }).map(function (s) {
+          return '<option value="' + s + '">' + s + '</option>';
+        }).join("") +
+        '</select></label>' +
+        '<button class="svgx-fab" id="pl-wk-pk-done" style="font-size:.85rem;">✓ ثبت</button>';
+    }
+
+    var curType = "", q = "";
+    function rowHtml(it) {
+      var icon = ({ pdf: "📄", video: "🎬", audio: "🔊", game: "🎮", activity: "🎯" }[it.type] || "📎");
+      return '<button class="pl-pk-item" data-title="' + esc(it.title || "").replace(/"/g, "&quot;") + '">' +
+        "<span class='pi'>" + icon + "</span><span class='pt'>" + esc(it.title || "(بدون عنوان)") + "</span>" +
+        "<small>" + esc(it.category || "") + "</small></button>";
+    }
+    var selected = null;
+    function renderList() {
+      var filtered = items.filter(function (it) {
+        if (curType && (it.type || "").split("-")[0] !== curType) return false;
+        if (q && !((it.title || "").includes(q))) return false;
+        return true;
+      }).slice(0, 120);
+      var listEl = document.getElementById("pl-wk-pk-list");
+      if (listEl) listEl.innerHTML =
+        filtered.map(rowHtml).join("") || '<p style="text-align:center;color:#999;padding:20px;">چیزی یافت نشد</p>';
+      overlay.querySelectorAll(".pl-pk-item").forEach(function (b) {
+        b.addEventListener("click", function () {
+          overlay.querySelectorAll(".pl-pk-item").forEach(function (x) { x.classList.remove("selected"); x.style.background = ""; });
+          b.classList.add("selected");
+          b.style.background = "rgba(255,184,77,.18)";
+          selected = filtered.find(function (x) { return x.title === b.dataset.title; });
+        });
+      });
+    }
+
+    overlay.querySelector("#pl-wk-pk-close").addEventListener("click", function () { overlay.remove(); });
+    overlay.addEventListener("click", function (e) { if (e.target === overlay) overlay.remove(); });
+    overlay.querySelector("#pl-wk-pk-q").addEventListener("input", function (e) { q = e.target.value.trim(); renderList(); });
+    overlay.querySelectorAll(".content-type-tag").forEach(function (t) {
+      t.addEventListener("click", function () {
+        overlay.querySelectorAll(".content-type-tag").forEach(function (x) { x.classList.remove("active"); });
+        t.classList.add("active");
+        curType = t.dataset.t;
+        renderList();
+      });
+    });
+    var doneBtn = document.getElementById("pl-wk-pk-done");
+    if (doneBtn) {
+      doneBtn.addEventListener("click", function () {
+        if (!selected) { alert("یک آیتم انتخاب کنید"); return; }
+        var timeSel = document.getElementById("pl-wk-pk-time");
+        var time = timeSel ? timeSel.value : _weeklyTargetSlot;
+        var newItem = {
+          id: typeof uuid !== "undefined" ? uuid() : Date.now().toString(36),
+          title: selected.title || "",
+          type: selected.type || "activity",
+          time: time,
+          desc: selected.desc || "",
+          url: selected.url || "",
+          image: selected.image || "",
+          icon: ""
+        };
+        if (!_weeklyData[_weeklyTargetDay]) _weeklyData[_weeklyTargetDay] = [];
+        _weeklyData[_weeklyTargetDay].push(newItem);
+        Api.plannerSaveWeeklyDay(_weeklyWeek, _weeklyTargetDay, _weeklyData[_weeklyTargetDay]).then(function () {
+          overlay.remove();
+          var gridEl = document.getElementById("pl-wk-grid");
+          if (gridEl) renderWeeklyGrid(gridEl);
+        }).catch(function (e) { alert("خطا: " + e.message); });
+      });
+    }
+    renderList();
   }
 
   /* ═══════════ نمای والدین ═══════════ */

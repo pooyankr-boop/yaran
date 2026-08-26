@@ -2,6 +2,7 @@
    Yaran Planner & Parent Communication API
    برنامه‌ریز (تقویم شمسی سمت کلاینت) + جلسات با والدین
    + پیام‌های والدین با ضمیمه‌ی محتوای اتاق‌ها
+   + برنامه هفتگی مهد (ذخیره در planner.json)
    ═══════════════════════════════════════════════════════ */
 'use strict';
 const fs = require('fs');
@@ -13,16 +14,18 @@ function registerPlanner(app, ctx) {
   const PLANNER_PATH = path.join(__dirname, '..', 'data', 'planner.json');
   let events = [];
   let pmsgs = [];
+  let weeklyPlans = {};  // { "2026-W35": { days: { sat: [...], sun: [...], ... } } }
 
   function load() {
     try {
       const d = JSON.parse(fs.readFileSync(PLANNER_PATH, 'utf8'));
       events = Array.isArray(d.events) ? d.events : [];
       pmsgs = Array.isArray(d.messages) ? d.messages : [];
-    } catch { events = []; pmsgs = []; }
+      weeklyPlans = d.weeklyPlans || {};
+    } catch { events = []; pmsgs = []; weeklyPlans = {}; }
   }
   function save() {
-    try { fs.writeFileSync(PLANNER_PATH, JSON.stringify({ events, messages: pmsgs }, null, 2), 'utf8'); }
+    try { fs.writeFileSync(PLANNER_PATH, JSON.stringify({ events, messages: pmsgs, weeklyPlans }, null, 2), 'utf8'); }
     catch { /* read-only fs */ }
   }
   load();
@@ -168,6 +171,44 @@ function registerPlanner(app, ctx) {
     save();
     broadcast('message_update', { message: msg });
     res.json(msg);
+  });
+
+  /* ── برنامه هفتگی مهد ── */
+  app.get('/api/planner/weekly', authMiddleware, (req, res) => {
+    const week = req.query.week || '';
+    const plan = weeklyPlans[week] || { days: {} };
+    res.json({ week, days: plan.days });
+  });
+
+  app.post('/api/planner/weekly', authMiddleware, staffOnly, (req, res) => {
+    const { week, day, items } = req.body;
+    if (!week || !day) return res.status(400).json({ error: 'week و day الزامی است' });
+    const DAYS = ['sat', 'sun', 'mon', 'tue', 'wed', 'thu', 'fri'];
+    if (!DAYS.includes(day)) return res.status(400).json({ error: 'day نامعتبر' });
+    if (!weeklyPlans[week]) weeklyPlans[week] = { days: {} };
+    weeklyPlans[week].days[day] = Array.isArray(items) ? items.slice(0, 30).map(it => ({
+      id: it.id || uuid(),
+      title: String(it.title || '').substring(0, 200),
+      type: String(it.type || 'activity'),
+      time: String(it.time || ''),
+      desc: String(it.desc || '').substring(0, 500),
+      url: String(it.url || ''),
+      image: String(it.image || ''),
+      icon: String(it.icon || ''),
+    })) : [];
+    save();
+    broadcast('planner_update', { weeklyPlan: { week, day, items: weeklyPlans[week].days[day] } });
+    res.json({ ok: true, items: weeklyPlans[week].days[day] });
+  });
+
+  app.delete('/api/planner/weekly', authMiddleware, staffOnly, (req, res) => {
+    const { week, day, itemId } = req.body;
+    if (!week || !day || !itemId) return res.status(400).json({ error: 'week, day, itemId الزامی است' });
+    if (weeklyPlans[week] && weeklyPlans[week].days[day]) {
+      weeklyPlans[week].days[day] = weeklyPlans[week].days[day].filter(it => it.id !== itemId);
+      save();
+    }
+    res.json({ ok: true });
   });
 
   return { reload: load };

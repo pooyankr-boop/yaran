@@ -154,6 +154,9 @@ function renderPanelTab(tab) {
     renderReportsTab(body);
   } else if (tab === "admin") {
     renderAdminTab(body);
+  } else if (tab === "planner") {
+    if (typeof Planner !== "undefined" && Planner.render) Planner.render(body);
+    else body.innerHTML = '<div style="padding:2rem;text-align:center;color:#7a6b55;">برنامه‌ریز در حال بارگذاری...</div>';
   } else if (tab === "cms") {
     if (typeof renderCmsTab === "function") renderCmsTab(body);
     else body.innerHTML = '<div style="padding:2rem;text-align:center;color:#7a6b55;">مدیریت محتوا در حال بارگذاری...</div>';

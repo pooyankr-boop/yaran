@@ -153,3 +153,57 @@ body.theme-night .pl-badge.ok { color: #6fe0a5; } body.theme-night .pl-badge.no 
 .pl-pk-item .pi { flex-shrink: 0; }
 .pl-pk-item .pt { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pl-pk-item small { color: var(--yr-text-soft); font-size: .68rem; max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ═══════════ برنامه هفتگی مهد ═══════════ */
+.pl-wk-head { display: flex; align-items: center; gap: 10px; justify-content: center; margin-bottom: 14px; flex-wrap: wrap; }
+.pl-wk-grid { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.pl-wk-header, .pl-wk-row { display: grid; grid-template-columns: 70px repeat(7, 1fr); gap: 4px; }
+.pl-wk-header { position: sticky; top: 0; z-index: 5; }
+.pl-wk-cell { min-height: 36px; padding: 4px 5px; border-radius: 8px; background: var(--yr-surface-solid); border: 1px solid var(--yr-border); font-size: .78rem; }
+.pl-wk-time-hdr, .pl-wk-day-hdr {
+  background: linear-gradient(135deg, var(--yr-accent), var(--yr-accent-strong));
+  color: #fff; font-family: var(--f-ui); font-weight: 800; font-size: .76rem;
+  text-align: center; display: flex; align-items: center; justify-content: center;
+}
+.pl-wk-time {
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--f-ui); font-weight: 700; font-size: .72rem;
+  color: var(--yr-text-soft); background: var(--yr-bg);
+}
+.pl-wk-slot { min-height: 52px; position: relative; display: flex; flex-direction: column; gap: 3px; }
+.pl-wk-slot:hover { border-color: var(--yr-accent); }
+.pl-wk-item {
+  display: flex; align-items: center; gap: 4px;
+  background: rgba(77,150,255,.08); border: 1px solid rgba(77,150,255,.3);
+  border-radius: 6px; padding: 3px 6px; font-size: .72rem;
+  transition: all .15s;
+}
+.pl-wk-item:hover { background: rgba(77,150,255,.16); }
+.pl-wk-item-icon { flex-shrink: 0; }
+.pl-wk-item-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pl-wk-item-x {
+  flex-shrink: 0; width: 16px; height: 16px; border-radius: 50%;
+  background: rgba(224,82,99,.15); color: #d04858; border: none;
+  font-size: .6rem; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  opacity: 0; transition: opacity .15s;
+}
+.pl-wk-item:hover .pl-wk-item-x { opacity: 1; }
+.pl-wk-item-x:hover { background: rgba(224,82,99,.3); }
+.pl-wk-add {
+  position: absolute; bottom: 3px; left: 50%; transform: translateX(-50%);
+  width: 22px; height: 22px; border-radius: 50%;
+  background: rgba(255,184,77,.15); color: var(--yr-accent-strong); border: 1px dashed var(--yr-accent);
+  font-size: .8rem; cursor: pointer; opacity: 0; transition: all .15s;
+  display: flex; align-items: center; justify-content: center;
+}
+.pl-wk-slot:hover .pl-wk-add { opacity: 1; }
+.pl-wk-add:hover { background: rgba(255,184,77,.3); transform: translateX(-50%) scale(1.15); }
+.pl-wk-notime { background: rgba(255,248,240,.5); border-style: dashed; }
+
+/* mobile */
+@media (max-width: 768px) {
+  .pl-wk-header, .pl-wk-row { grid-template-columns: 50px repeat(7, minmax(90px, 1fr)); }
+  .pl-wk-cell { font-size: .68rem; min-height: 30px; }
+  .pl-wk-slot { min-height: 44px; }
+  .pl-wk-item { font-size: .65rem; padding: 2px 4px; }
+}
