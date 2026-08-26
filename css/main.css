@@ -410,7 +410,7 @@ html, body {
 }
 .map-enter-fx {
   position: fixed; inset: 0; z-index: 2; pointer-events: none;
-  background: url("assets/images/plan/plan2.jpeg") center/cover no-repeat;
+  background: url("assets/images/plan/plan2.webp") center/cover no-repeat;
   animation: mapEnter 1.8s cubic-bezier(.22,1,.36,1) forwards;
 }
 @keyframes mapEnter {
