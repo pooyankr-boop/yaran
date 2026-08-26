@@ -56,7 +56,7 @@ var VirtualTour = (function () {
     return b;
   }
   function getRoom(id) { return ROOMS.find(function (r) { return r.id === id; }); }
-  function roomImg(rid, view) { return 'assets/images/' + rid + '/' + view + '.webp'; }
+  function roomImg(rid, view) { return MediaAssets.resolve('assets/images/' + rid + '/' + view + '.webp'); }
 
   /* ── role filter ── */
   function isRoleMatch(item) {

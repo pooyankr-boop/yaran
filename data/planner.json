@@ -1,0 +1,26 @@
+{
+  "events": [],
+  "messages": [
+    {
+      "id": "979447c0-c538-422f-a75a-5bc28ddb2bcb",
+      "fromEmail": "admin@yaran.ir",
+      "fromName": "مدیر یاران",
+      "toEmail": "*",
+      "toName": "",
+      "text": "????? ?????? ????? ????? ??.",
+      "attachments": [
+        {
+          "title": "?????? ?????",
+          "type": "pdf",
+          "url": "https://example.com/x.pdf",
+          "image": "",
+          "icon": "",
+          "audioUrl": ""
+        }
+      ],
+      "date": "2026-08-26T08:16:21.659Z",
+      "readBy": [],
+      "tenant": "yaran"
+    }
+  ]
+}

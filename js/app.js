@@ -763,9 +763,47 @@ if (_btnTour) _btnTour.addEventListener("click", () => {
     var explorerToggle = document.getElementById('explorer-toggle');
     if (explorerPanel && explorerToggle && explorerPanel.classList.contains('open') && 
         !explorerPanel.contains(e.target) && !explorerToggle.contains(e.target) &&
-        !document.getElementById('yr-p-box')?.contains(e.target) &&
+        !document.getElementById('yr-p-box')?.contains(e.target) && 
         !document.getElementById('yr-p-mini')?.contains(e.target)) {
       explorerPanel.classList.remove('open');
       explorerToggle.classList.remove('shifted');
     }
   });
+
+/* ── Taxonomy search facets ── */
+var _searchFacetSel = {};
+
+function syncSearchFacetUI() {
+  document.querySelectorAll("#search-facets .tax-facet-opt input").forEach(function(cb) {
+    var fk = cb.closest(".tax-facet").dataset.facet;
+    cb.checked = !!((_searchFacetSel[fk] || []).indexOf(cb.value) >= 0);
+  });
+  document.querySelectorAll("#search-facets .tax-facet").forEach(function(fc) {
+    fc.classList.toggle("has-filter", !!(_searchFacetSel[fc.dataset.facet] || []).length);
+  });
+  var clearBtn = document.querySelector("#search-facets .tax-clear");
+  if (clearBtn) clearBtn.classList.toggle("hidden", !Object.keys(_searchFacetSel).length);
+}
+
+function refreshSearch() {
+  var q = (document.getElementById("search-input") || {}).value || "";
+  q = q.trim();
+  doSearch(q);
+}
+
+/* ── ZWNJ: fix Persian text after any DOM change ── */
+if (typeof fixZWNJAll === 'function') fixZWNJAll();
+
+/* ── Mount taxonomy facets on search ── */
+(function mountSearchFacets() {
+  function boot() {
+    var slot = document.getElementById("search-facets");
+    if (!slot || typeof YaranTax === "undefined") return;
+    YaranTax.facetBar("search-facets", getAllSearchItems(), function (sel) {
+      _searchFacetSel = sel || {};
+      refreshSearch();
+    }, ["type", "domain", "audience", "genre"]);
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
+  else boot();
+})();

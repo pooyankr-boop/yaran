@@ -1,0 +1,102 @@
+/*
+  یاران — استایل بازی‌های نسل ۳
+*/
+.g3-wrap { direction: rtl; font-family: var(--f-body); }
+.g3-head { display: flex; flex-direction: column; gap: 2px; margin-bottom: 12px; text-align: center; }
+.g3-title { font-size: 1.4rem; color: var(--yr-text); }
+.g3-sub { color: var(--yr-text-soft); font-size: .85rem; }
+.g3-hud { display: inline-block; margin-right: 10px; background: rgba(46,196,182,.14); color: #17948a; font-weight: 800; border-radius: 99px; padding: 1px 12px; font-size: .8rem; }
+
+/* دکمه‌های گزینه */
+.g3-diff { display: flex; gap: 9px; justify-content: center; margin: 16px 0; }
+.g3-opt-btn, .g3-num {
+  font-family: var(--f-ui); font-size: 1rem; font-weight: 700;
+  padding: 11px 22px; margin: 5px; border-radius: var(--r-md);
+  background: var(--yr-surface-solid); border: 2px solid var(--yr-border);
+  color: var(--yr-text); cursor: pointer;
+  transition: all .24s var(--spring);
+}
+.g3-opt-btn:hover:not(:disabled), .g3-num:hover:not(:disabled) { transform: translateY(-4px) scale(1.05); border-color: var(--yr-accent); box-shadow: 0 6px 16px rgba(255,148,48,.25); }
+.g3-opt-btn.right, .g3-num.right { border-color: #2fbf71; background: rgba(47,191,113,.15); animation: dk-pop .45s var(--spring); }
+.g3-opt-btn.wrong, .g3-num.wrong { border-color: #e05263; background: rgba(224,82,99,.12); animation: dk-shake .45s; }
+.g3-opts { text-align: center; }
+.g3-q-line { text-align: center; font-size: 1.05rem; font-weight: 700; margin: 10px 0 14px; color: var(--yr-text); }
+.g3-progress { text-align: center; color: var(--yr-text-soft); font-size: .8rem; margin-top: 12px; }
+
+/* سایه‌ها */
+.g3-shadow {
+  font-size: 4.6rem; width: 110px; height: 110px; line-height: 110px; text-align: center;
+  filter: brightness(0) opacity(.55); display: inline-block;
+  animation: pr-float-k 3s ease-in-out infinite;
+}
+.g3-target { text-align: center; margin-bottom: 8px; }
+.g3-target .g3-q-line { margin-top: 2px; }
+
+/* باغچه شمارش */
+.g3-garden {
+  min-height: 130px; display: flex; flex-wrap: wrap; gap: 13px; justify-content: center; align-items: center;
+  background: linear-gradient(180deg, transparent 62%, rgba(107,203,119,.18) 62%);
+  border-radius: var(--r-md); padding: 12px; max-width: 480px; margin: 0 auto;
+}
+.g3-flower { font-size: 2.3rem; display: inline-block; animation: pr-float-k 3.4s ease-in-out infinite; }
+.g3-num-opts { text-align: center; }
+.g3-num { min-width: 64px; font-family: var(--f-display); font-size: 1.35rem; }
+
+/* حباب‌های الفبا */
+.g3-bubble-field { position: relative; height: 260px; overflow: hidden; border-radius: var(--r-md); background: linear-gradient(180deg, rgba(77,150,255,.08), rgba(155,89,208,.07)); }
+.g3-bubble {
+  position: absolute; bottom: -60px; width: 58px; height: 58px; border-radius: 50%;
+  border: 2px solid rgba(255,255,255,.65);
+  font-family: "Lalezar", sans-serif; font-size: 1.7rem; color: #233;
+  cursor: pointer; z-index: 2;
+  animation-name: g3-rise; animation-timing-function: linear; animation-fill-mode: forwards;
+  display: flex; align-items: center; justify-content: center;
+  transition: transform .15s;
+}
+.g3-bubble:hover { transform: scale(1.12); }
+@keyframes g3-rise {
+  from { transform: translateY(0) translateX(0); }
+  30%  { transform: translateY(-90px) translateX(14px); }
+  70%  { transform: translateY(-210px) translateX(-12px); }
+  to   { transform: translateY(-330px) translateX(8px); opacity: .9; }
+}
+.g3-bubble.popped { transform: scale(1.5); opacity: 0; transition: all .28s ease-out; }
+.g3-bubble.missed { animation: dk-shake .35s; filter: grayscale(1); }
+.g3-target-letter { color: var(--yr-coral); font-size: 1.25em; }
+
+/* بزرگ/کوچک */
+.g3-size-stage {
+  height: 150px; display: flex; align-items: center; justify-content: center;
+  border-radius: var(--r-md); background: repeating-linear-gradient(45deg, rgba(255,184,77,.06) 0 14px, transparent 14px 28px);
+}
+.g3-size-item { display: inline-block; animation: pr-float-k 3.2s ease-in-out infinite; }
+.g3-size-btns { text-align: center; margin-top: 12px; }
+
+/* جادوی رنگ */
+.g3-mix-stage { display: flex; align-items: center; justify-content: center; gap: 13px; padding: 20px 0; }
+.g3-drop { font-size: 3.1rem; display: inline-block; }
+.g3-drop.d1 { animation: pr-float-k 2.8s ease-in-out infinite; }
+.g3-drop.d2 { animation: pr-float-k 2.8s ease-in-out infinite reverse; }
+.g3-drop.d3 { filter: drop-shadow(0 0 0 transparent); }
+.g3-drop.reveal { animation: dk-starpop .6s var(--spring) both; }
+.g3-plus { font-size: 1.7rem; color: var(--yr-text-soft); font-weight: 800; }
+
+/* هیولا */
+.g3-monster-slot { display: flex; justify-content: center; margin: 6px 0 10px; }
+.g3-monster { width: 150px; height: 150px; }
+.gm-eye { animation: m-blink 3.8s infinite; transform-origin: center; }
+.g3-want b { color: var(--yr-accent-strong); }
+.g3-tray { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 12px; }
+.g3-food {
+  font-size: 2.1rem; padding: 9px 13px; border-radius: var(--r-md);
+  background: var(--yr-surface-solid); border: 2px solid var(--yr-border); cursor: pointer;
+  transition: all .22s var(--spring);
+}
+.g3-food:hover { transform: scale(1.14) rotate(-6deg); border-color: var(--yr-grape); }
+.shake-x { animation: dk-shake .45s; }
+
+/* برد */
+.g3-win { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; background: radial-gradient(circle at center, rgba(255,248,236,.96), rgba(255,248,236,.88)); border-radius: var(--r-md); z-index: 5; animation: yr-rise .5s var(--spring) both; }
+body.theme-night .g3-win { background: radial-gradient(circle at center, rgba(38,30,62,.97), rgba(38,30,62,.92)); }
+.g3-win-stars { font-size: 2.6rem; letter-spacing: 6px; animation: dk-starpop .8s var(--spring) both; }
+.g3-win-msg { font-size: 1.4rem; color: var(--yr-text); }

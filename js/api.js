@@ -76,6 +76,17 @@ const Api = {
   cmsSaveRooms: (rooms) => apiFetch("/cms/rooms", { method: "POST", body: JSON.stringify({ rooms }) }),
   cmsFiles: () => apiFetch("/cms/files"),
   botStatus: () => apiFetch("/bot/status"),
+  /* ── برنامه‌ریز و ارتباط با والدین ── */
+  plannerEvents: () => apiFetch("/planner/events"),
+  plannerCreateEvent: (data) =>
+    apiFetch("/planner/events", { method: "POST", body: JSON.stringify(data) }),
+  plannerSetStatus: (id, status) =>
+    apiFetch("/planner/events/" + id, { method: "PATCH", body: JSON.stringify({ status }) }),
+  plannerDeleteEvent: (id) => apiFetch("/planner/events/" + id, { method: "DELETE" }),
+  plannerParents: () => apiFetch("/planner/parents"),
+  parentMessages: () => apiFetch("/parent-messages"),
+  createParentMessage: (data) =>
+    apiFetch("/parent-messages", { method: "POST", body: JSON.stringify(data) }),
 };
 
 // اگر سرور بک‌اند بالا نباشد (مثلاً پایلوت روی سیستمی که هنوز server/ اجرا نشده)، APP_API_ONLINE

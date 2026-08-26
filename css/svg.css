@@ -1,0 +1,199 @@
+/*
+  یاران — انیمیشن اجزای SVG (ماسکوت، لودر، دکور صحنه، ذرات محیطی)
+*/
+
+/* ═══════════ ماسکوت یاربر ═══════════ */
+.svgx-mascot { overflow: visible; }
+.m-body { transform-origin: 60px 110px; animation: m-breathe 3.4s ease-in-out infinite; }
+@keyframes m-breathe {
+  0%, 100% { transform: scaleY(1); }
+  50%      { transform: scaleY(1.035) scaleX(1.012); }
+}
+.m-eye { animation: m-blink 4.6s infinite; transform-origin: center; }
+@keyframes m-blink {
+  0%, 93%, 100% { transform: scaleY(1); }
+  95%, 97%      { transform: scaleY(.08); }
+}
+.m-arm { transform-origin: 94px 66px; animation: m-wave 1.9s ease-in-out infinite; }
+@keyframes m-wave {
+  0%, 100% { transform: rotate(0deg); }
+  30%      { transform: rotate(-26deg); }
+  65%      { transform: rotate(8deg); }
+}
+.m-lid rect { transition: height .05s; }
+
+/* ═══════════ لودرها ═══════════ */
+.ld-b1, .ld-b2, .ld-b3 { animation: ld-bounce 1.15s var(--spring) infinite; transform-origin: center bottom; }
+.ld-b2 { animation-delay: .14s; }
+.ld-b3 { animation-delay: .28s; }
+@keyframes ld-bounce {
+  0%, 100% { transform: translateY(0); }
+  40%      { transform: translateY(-17px) rotate(-7deg); }
+  70%      { transform: translateY(0) scale(1.06, .94); }
+}
+.svgx-spin { animation: svgx-spin-slow 2.4s linear infinite; transform-origin: center; }
+@keyframes svgx-spin-slow { to { transform: rotate(360deg); } }
+.orb-orbit { transform-origin: 40px 40px; animation: svgx-spin-slow 2.8s linear infinite; }
+
+/* ═══════════ حالت خالی: ابر بارانی و بادکنک ═══════════ */
+.es-cloud { animation: es-drift 5.5s ease-in-out infinite; }
+@keyframes es-drift {
+  0%, 100% { transform: translateX(0); }
+  50%      { transform: translateX(9px); }
+}
+.es-rain line { animation: es-drop 1.3s linear infinite; opacity: 0; }
+.es-rain line:nth-child(2) { animation-delay: .45s; }
+.es-rain line:nth-child(3) { animation-delay: .9s; }
+@keyframes es-drop {
+  0%   { transform: translateY(-4px); opacity: 0; }
+  25%  { opacity: 1; }
+  80%  { opacity: 1; }
+  100% { transform: translateY(16px); opacity: 0; }
+}
+.es-sun { animation: es-pop 3.4s var(--spring) infinite; transform-origin: 124px 22px; }
+@keyframes es-pop {
+  0%, 55%, 100% { transform: scale(.75); opacity: .35; }
+  75%           { transform: scale(1); opacity: 1; }
+}
+.es-balloon { animation: es-float 3.8s ease-in-out infinite; transform-origin: 60px 82px; }
+.es-string { animation: es-sway 3.8s ease-in-out infinite; transform-origin: 60px 82px; }
+@keyframes es-float {
+  0%, 100% { transform: rotate(-3deg) translateY(0); }
+  50%      { transform: rotate(3deg) translateY(-7px); }
+}
+@keyframes es-sway {
+  0%, 100% { transform: rotate(-3deg); }
+  50%      { transform: rotate(3deg); }
+}
+
+/* ═══════════ لایه‌ی دکور صحنه‌ی اتاق‌ها ═══════════ */
+.sx-decor-layer {
+  position: absolute; inset: 0; pointer-events: none; z-index: 5;
+}
+.sx-prop-wrap { position: absolute; filter: drop-shadow(0 4px 10px rgba(60, 40, 20, .18)); }
+.sx-prop-wrap > svg { width: 100%; height: auto; display: block; overflow: visible; }
+
+.pr-float { animation: pr-float-k 4.2s ease-in-out infinite; }
+@keyframes pr-float-k {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50%      { transform: translateY(-11px) rotate(2.5deg); }
+}
+.pr-drift { animation: pr-drift-k 13s ease-in-out infinite alternate; }
+@keyframes pr-drift-k { from { transform: translateX(-14px); } to { transform: translateX(16px); } }
+.pr-sunrays { animation: svgx-spin-slow 22s linear infinite; transform-origin: 45px 45px; }
+.pr-twinkle { animation: pr-glow-k 3.6s ease-in-out infinite; transform-origin: center; }
+.pr-fly { animation: pr-fly-k 7s ease-in-out infinite; }
+.wing-l { animation: pr-flapL .38s ease-in-out infinite alternate; transform-origin: 30px 22px; }
+.wing-r { animation: pr-flapR .38s ease-in-out infinite alternate; transform-origin: 30px 22px; }
+@keyframes pr-flapL { from { transform: rotate(14deg); } to { transform: rotate(-8deg); } }
+@keyframes pr-flapR { from { transform: rotate(-14deg); } to { transform: rotate(8deg); } }
+@keyframes pr-fly-k {
+  0%   { transform: translate(0, 0) rotate(0deg); }
+  25%  { transform: translate(13px, -9px) rotate(6deg); }
+  50%  { transform: translate(26px, 4px) rotate(0deg); }
+  75%  { transform: translate(12px, 11px) rotate(-6deg); }
+  100% { transform: translate(0, 0) rotate(0deg); }
+}
+.pr-note { animation: pr-note-k 4.4s ease-in-out infinite; opacity: .85; }
+.pr-note:nth-child(2) { animation-delay: 1.4s; }
+.pr-note:nth-child(3) { animation-delay: 2.7s; }
+@keyframes pr-note-k {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); opacity: .85; }
+  50%      { transform: translate(6px, -12px) rotate(9deg); opacity: 1; }
+}
+.pr-wobble { animation: pr-wobble-k 5s ease-in-out infinite; transform-origin: 45px 64px; }
+@keyframes pr-wobble-k {
+  0%, 100% { transform: rotate(0deg); }
+  30%      { transform: rotate(-3deg); }
+  70%      { transform: rotate(3deg); }
+}
+.pr-sway { animation: pr-sway-k 4.6s ease-in-out infinite; transform-origin: 35px 78px; }
+@keyframes pr-sway-k {
+  0%, 100% { transform: rotate(-3.5deg); }
+  50%      { transform: rotate(3.5deg); }
+}
+.pr-flag { animation: pr-flag-k 2.6s ease-in-out infinite; transform-origin: top center; }
+@keyframes pr-flag-k {
+  0%, 100% { transform: skewY(0deg); }
+  50%      { transform: skewY(6deg); }
+}
+.pr-star { animation: pr-star-k 2.8s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes pr-star-k {
+  0%, 100% { transform: scale(1) rotate(0deg); opacity: .92; }
+  50%      { transform: scale(1.28) rotate(18deg); opacity: 1; }
+}
+.pr-hover { animation: pr-hover-k 3.2s ease-in-out infinite; }
+.pr-hover .pr-flame { animation: pr-flame-k .34s ease-in-out infinite alternate; transform-origin: 35px 66px; }
+@keyframes pr-hover-k {
+  0%, 100% { transform: translate(0, 0) rotate(-4deg); }
+  50%      { transform: translate(4px, -8px) rotate(4deg); }
+}
+@keyframes pr-flame-k { from { transform: scaleY(.85); } to { transform: scaleY(1.15); } }
+.pr-glow { animation: pr-glow-k 4.4s ease-in-out infinite; }
+@keyframes pr-glow-k {
+  0%, 100% { opacity: .8; transform: scale(1); }
+  50%      { opacity: 1; transform: scale(1.05); }
+}
+.pr-beat { animation: pr-beat-k 1.6s ease-in-out infinite; transform-origin: 25px 24px; }
+@keyframes pr-beat-k {
+  0%, 100% { transform: scale(1); }
+  30%      { transform: scale(1.18); }
+  45%      { transform: scale(.98); }
+}
+.pr-drip { animation: pr-drip-k 3.4s ease-in-out infinite; transform-origin: 20px 6px; }
+@keyframes pr-drip-k {
+  0%, 100% { transform: scale(1, 1); }
+  60%      { transform: scale(1, 1.12); }
+}
+
+/* ═══════════ ذرات محیطی ═══════════ */
+.sx-ambient { position: fixed; inset: 0; pointer-events: none; z-index: 3; overflow: hidden; }
+.am-star {
+  position: absolute; background: #ffe9a8; border-radius: 50%;
+  opacity: 0; animation: am-twinkle 4s ease-in-out infinite;
+  box-shadow: 0 0 6px 1px rgba(255, 233, 168, .8);
+}
+@keyframes am-twinkle {
+  0%, 100% { opacity: .1; transform: scale(.7); }
+  50%      { opacity: .95; transform: scale(1.15); }
+}
+.am-confetti {
+  position: absolute; top: -3vh; width: 9px; height: 13px;
+  border-radius: 2.5px; opacity: .8;
+  animation-name: am-fall; animation-timing-function: linear; animation-iteration-count: infinite;
+}
+@keyframes am-fall {
+  0%   { transform: translateY(-4vh) rotate(0deg) translateX(0); }
+  25%  { transform: translateY(28vh) rotate(160deg) translateX(14px); }
+  50%  { transform: translateY(56vh) rotate(320deg) translateX(-12px); }
+  75%  { transform: translateY(84vh) rotate(480deg) translateX(10px); }
+  100% { transform: translateY(112vh) rotate(640deg) translateX(-6px); }
+}
+.am-bubble {
+  position: absolute; bottom: -30px; border-radius: 50%;
+  border: 1.5px solid rgba(120, 180, 255, .55);
+  background: radial-gradient(circle at 32% 30%, rgba(255,255,255,.85), rgba(160,210,255,.16));
+  animation-name: am-rise; animation-timing-function: ease-in; animation-iteration-count: infinite;
+}
+@keyframes am-rise {
+  0%   { transform: translateY(0) translateX(0) scale(.8); opacity: 0; }
+  12%  { opacity: .9; }
+  88%  { opacity: .55; }
+  100% { transform: translateY(-108vh) translateX(26px) scale(1.12); opacity: 0; }
+}
+
+/* در شب حباب‌ها خاموش، در روز ستاره‌ها خاموش */
+body:not(.theme-night) .am-star { display: none; }
+body.theme-night .am-bubble { display: none; }
+
+/* ═══════════ آیکون‌های SVGX ═══════════ */
+.svgx-icon { vertical-align: middle; }
+.svgx-icon.spin-hover { transition: transform .5s var(--spring); }
+button:hover .svgx-icon.spin-hover { transform: rotate(360deg); }
+
+/* هاور-بونس عمومی برای آیکون داخل دکمه‌های pill */
+.pill-btn:hover .svgx-icon { animation: icon-bounce .55s var(--spring); }
+@keyframes icon-bounce {
+  0%, 100% { transform: translateY(0); }
+  40%      { transform: translateY(-4px) scale(1.15); }
+}

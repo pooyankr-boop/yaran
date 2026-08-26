@@ -3,7 +3,7 @@
    Merged from reference + extended features
    ============================================ */
 
-@import url('https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css');
+/* فونت‌ها به‌صورت بومی از css/fonts.css بارگذاری می‌شوند (بدون وابستگی شبکه) */
 
 /* Screen reader only */
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
@@ -410,7 +410,7 @@ html, body {
 }
 .map-enter-fx {
   position: fixed; inset: 0; z-index: 2; pointer-events: none;
-  background: url("assets/images/plan/plan2.webp") center/cover no-repeat;
+  background: url("assets/images/plan/plan2.jpeg") center/cover no-repeat;
   animation: mapEnter 1.8s cubic-bezier(.22,1,.36,1) forwards;
 }
 @keyframes mapEnter {

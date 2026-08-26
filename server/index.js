@@ -17,6 +17,7 @@ const dns = require('dns');
 const net = require('net');
 const { WebSocketServer } = require('ws');
 const { initBot, getBotStatus, onTaskCreated, onTaskUpdated } = require('./telegram-bot');
+const { registerPlanner } = require('./planner');
 
 const app = express();
 app.use(compression());
@@ -795,6 +796,9 @@ if (PORT_RAW) {
 
 // Start Telegram bot (non-blocking, skips if no token)
 initBot();
+
+// Register Planner API
+registerPlanner(app, { authMiddleware, staffOnly, TENANT, uuid, broadcast });
 
 /* ══════════════════════════════════════════════════════════
    Keep-Alive: self-ping every 10 min to prevent Render sleep
