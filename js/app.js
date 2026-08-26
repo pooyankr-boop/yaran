@@ -616,6 +616,11 @@ function applySearchFilters(results, q) {
   if (type) r = r.filter(a => (a.type || "") === type);
   if (cat) r = r.filter(a => (a.category || "") === cat);
 
+  /* ── taxonomy facet filters ── */
+  if (typeof _searchFacetSel !== "undefined" && _searchFacetSel && typeof YaranTax !== "undefined" && YaranTax.filter) {
+    r = YaranTax.filter(r, _searchFacetSel);
+  }
+
   if (sort === "title") {
     r.sort((a, b) => (a.title || "").localeCompare((b.title || ""), "fa"));
   } else if (sort === "newest" || sort === "oldest") {
@@ -654,7 +659,8 @@ function doSearch(q) {
   const type = document.getElementById("search-type")?.value || "";
   const cat = document.getElementById("search-category")?.value || "";
   const hasFilter = type || cat;
-  if (!q && !hasFilter) { el.innerHTML = ""; return; }
+  const hasFacets = typeof _searchFacetSel !== "undefined" && Object.keys(_searchFacetSel).length > 0;
+  if (!q && !hasFilter && !hasFacets) { el.innerHTML = ""; return; }
   let results = getAllSearchItems();
   if (q) {
     results = results.filter(a =>
