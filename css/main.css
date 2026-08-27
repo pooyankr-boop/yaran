@@ -1838,9 +1838,9 @@ body.theme-night .slideshow-caption { color: #b8a8d0 !important; }
 
 /* ===== Mobile redesign: lobby / map / plan (max-width 768px) ===== */
 @media (max-width: 768px) {
-  /* fixed-stage screens: no scroll on mobile, everything fits in viewport */
-  #screen-lobby, #screen-map, #screen-plan { overflow: hidden !important; }
-  #screen-lobby .scene, #screen-map .scene, #screen-plan .scene { height: 100%; min-height: auto; max-height: 100%; }
+  /* mobile: allow scrolling on fixed-stage screens */
+  #screen-lobby, #screen-map, #screen-plan { overflow-y: auto !important; }
+  #screen-lobby .scene, #screen-map .scene, #screen-plan .scene { height: auto; min-height: 100%; }
 
   /* lobby: sticky top bar, boxes stack in document flow */
   #screen-lobby .top-bar { position: sticky; top: 0; z-index: 40; padding: .5rem .6rem; background: linear-gradient(rgba(0,0,0,.28), rgba(0,0,0,0)); }

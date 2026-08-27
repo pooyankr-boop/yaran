@@ -45,15 +45,22 @@ async function loadExplorerSource() {
 function initExplorerFilters() {
   const filtersEl = document.getElementById("explorer-filters");
   if (!filtersEl) return;
+  const isChild = (typeof currentUserRole !== "undefined" && currentUserRole === "child");
   const typeCats = [...new Set(explorerSourceItems.map(it => it.category).filter(Boolean))].sort();
+  /* کودک: فقط صوت + فقط دسته‌های مناسب کودک */
+  var typeChips;
+  if (isChild) {
+    typeChips = '<span class="filter-chip active" data-group="type" data-val="صوت">🔊 صوت</span>';
+  } else {
+    typeChips = '<span class="filter-chip active" data-group="type" data-val="همه">همه</span>' +
+      '<span class="filter-chip" data-group="type" data-val="ویدیو">🎬 ویدیو</span>' +
+      '<span class="filter-chip" data-group="type" data-val="صوت">🔊 صوت</span>' +
+      '<span class="filter-chip" data-group="type" data-val="آهنگ">🎶 آهنگ و ترانه</span>' +
+      typeCats.map((t) => '<span class="filter-chip" data-group="type" data-val="' + t + '">' + t + '</span>').join("");
+  }
   filtersEl.innerHTML =
-    '<div style="width:100%;font-size:.75rem;color:#999;margin-bottom:2px;\">دسته:</div>' +
-    '<div class="filter-row">' +
-    '<span class="filter-chip active" data-group="type" data-val="همه">همه</span>' +
-    '<span class="filter-chip" data-group="type" data-val="ویدیو">🎬 ویدیو</span>' +
-    '<span class="filter-chip" data-group="type" data-val="صوت">🔊 صوت</span>' +
-    '<span class="filter-chip" data-group="type" data-val="آهنگ">🎶 آهنگ و ترانه</span>' +
-    typeCats.map((t) => '<span class="filter-chip" data-group="type" data-val="' + t + '">' + t + '</span>').join("") + '</div>';
+    '<div style="width:100%;font-size:.75rem;color:#999;margin-bottom:2px;">دسته:</div>' +
+    '<div class="filter-row">' + typeChips + '</div>';
 
   filtersEl.querySelectorAll(".filter-chip").forEach(chip => {
     chip.addEventListener("click", () => {
@@ -124,6 +131,16 @@ function renderExplorerItems() {
   });
 
   let items = explorerSourceItems;
+
+  /* فیلتر کودک: فقط صوتی‌های مناسب کودک */
+  if (typeof currentUserRole !== "undefined" && currentUserRole === "child") {
+    var childCats = ["قصه","لالایی","ترانه و آهنگ","شعر","موسیقی آرامش","سایر صداها"];
+    items = items.filter(function (it) {
+      if (it.type !== "audio") return false;
+      var cat = it.category || "";
+      return childCats.some(function (c) { return cat.indexOf(c) >= 0; });
+    });
+  }
 
   if (query) {
     items = items.filter(it => (it.title || "").includes(query) || (it.desc && it.desc.includes(query)));

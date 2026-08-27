@@ -16,7 +16,7 @@ const crypto = require('crypto');
 const dns = require('dns');
 const net = require('net');
 const { WebSocketServer } = require('ws');
-const { initBot, getBotStatus, onTaskCreated, onTaskUpdated } = require('./telegram-bot');
+// Bot is run separately via telegram-bot/bot.js (start-all.js or standalone)
 const { registerPlanner } = require('./planner');
 
 const app = express();
@@ -206,9 +206,9 @@ app.get('/api/health', (_req, res) => {
   res.json({ ok: true, tenant: TENANT, time: new Date().toISOString() });
 });
 
-// ── Bot status ──
+// ── Bot status (always reports external bot) ──
 app.get('/api/bot/status', (_req, res) => {
-  res.json(getBotStatus());
+  res.json({ running: false, note: "Bot runs externally via telegram-bot/bot.js" });
 });
 
 // ── Auth ──
@@ -333,7 +333,6 @@ app.post('/api/tasks', (req, res) => {
   memoryTasks.push(task);
   saveTasks();
   broadcastTaskUpdate(task);
-  onTaskCreated(task);
   res.json(task);
 });
 
@@ -346,7 +345,6 @@ app.patch('/api/tasks/:id', (req, res) => {
     req.body.status === 'completed' ? { completed_at: new Date().toISOString() } : {});
   saveTasks();
   broadcastTaskUpdate(task);
-  onTaskUpdated(task);
   res.json(task);
 });
 
@@ -760,10 +758,6 @@ app.get('/api/cms/files', authMiddleware, adminOnly, (req, res) => {
   }
 });
 
-// ── Bot status ──
-app.get('/api/bot/status', (_req, res) => {
-  res.json({ running: typeof global._botRunning !== 'undefined' ? global._botRunning : false });
-});
 
 // ── Fallback to index.html ──
 app.get('*', (_req, res) => {
@@ -797,8 +791,7 @@ if (PORT_RAW) {
   findFreePort(4000).then((port) => server.listen(port, '0.0.0.0', () => logStart(port)));
 }
 
-// Start Telegram bot (non-blocking, skips if no token)
-initBot();
+// Telegram bot runs externally via telegram-bot/bot.js
 
 /* ══════════════════════════════════════════════════════════
    Keep-Alive: self-ping every 10 min to prevent Render sleep

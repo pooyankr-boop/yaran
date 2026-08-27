@@ -18,7 +18,9 @@ function showScreen(id) {
   // Explorer: only show from lobby onwards
   var et = document.getElementById("explorer-toggle");
   if (et) {
-    et.style.display = (id === "screen-intro" || id === "screen-plan" || id === "screen-role") ? "none" : "flex";
+    var isChild = (typeof currentUserRole !== "undefined" && currentUserRole === "child");
+    var hiddenScreens = (id === "screen-intro" || id === "screen-plan" || id === "screen-role");
+    et.style.display = (hiddenScreens || isChild) ? "none" : "flex";
   }
   // Apply role-based visibility when lobby is shown
   if (id === "screen-lobby" && typeof applyRoleVisibility === "function") {

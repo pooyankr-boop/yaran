@@ -195,6 +195,9 @@ var _origShowScreen = window.showScreen;
 window.showScreen = function(id) {
   _origShowScreen(id);
   if (id === "screen-lobby") {
+    /* ── مخفی کردن دکمه مشاوره برای کودک ── */
+    var decksBtn = document.getElementById("btn-decks");
+    if (decksBtn) decksBtn.style.display = (typeof currentUserRole !== "undefined" && currentUserRole === "child") ? "none" : "";
     tipIndex = Math.floor(Math.random() * PARENTING_TIPS.length);  // نکته اول همیشه رندوم
     renderTip();
     startTipRotation();
