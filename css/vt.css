@@ -250,9 +250,10 @@
   .vt-tip-top { position: relative; top: auto; left: auto; width: auto; max-height: none; margin: 0 0 12px; z-index: auto; }
   .vt-taskboard { position: relative !important; left: auto !important; right: auto !important; bottom: auto !important; width: auto !important; max-height: 140px; margin: 14px 0 0; }
   /* prevent vt content from overflowing viewport */
-  #screen-tour { overflow: hidden; }
+  #screen-tour { overflow: hidden; touch-action: pan-y; }
   .vt-glass { overflow: hidden; }
   .vt-content { overflow-x: hidden; }
+  .vt-top-bar { position: sticky; top: 0; z-index: 25; }
 }
 @media (max-width: 480px) {
   .vt-top-inner { flex-wrap: wrap; gap: 8px; row-gap: 6px; }

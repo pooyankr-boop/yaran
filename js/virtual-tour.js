@@ -723,8 +723,12 @@ var VirtualTour = (function () {
   /* ══════════════════════════════════════════════════════════
      EVENT DELEGATION — single handler on vt-glass, never lost
      ══════════════════════════════════════════════════════════ */
+  var _eventsBound = false;
+  var _sidebarCloserBound = false;
 
   function bindEvents() {
+    if (_eventsBound) return;
+    _eventsBound = true;
     var glass = $('vt-glass');
     /* tip-top lives OUTSIDE #vt-glass → needs its own closer */
     var tipTop = $('vt-tip-top');
@@ -845,7 +849,7 @@ var VirtualTour = (function () {
     /* intro2 video before tour starts */
     var introWrap = document.createElement('div');
     introWrap.id = 'vt-intro2-wrap';
-    introWrap.style.cssText = 'position:absolute;inset:0;z-index:9999;background:#000;display:flex;align-items:center;justify-content:center;flex-direction:column;';
+    introWrap.style.cssText = 'position:absolute;inset:0;z-index:9999;background:#000;display:flex;align-items:center;justify-content:center;flex-direction:column;transition:opacity .4s;';
     var introVid = document.createElement('video');
     introVid.src = 'assets/video/intro2.yar';
     introVid.autoplay = true;
@@ -855,9 +859,12 @@ var VirtualTour = (function () {
     introWrap.appendChild(introVid);
     var skipBtn = document.createElement('button');
     skipBtn.textContent = '\u2190 \u0631\u062F \u0634\u062F\u0646';
-    skipBtn.style.cssText = 'position:absolute;top:1rem;left:1rem;background:rgba(0,0,0,.6);color:#fff;border:1px solid #ffb84d;border-radius:8px;padding:.5rem 1rem;cursor:pointer;font-size:.9rem;z-index:10000;';
-    skipBtn.onclick = function() { introWrap.remove(); };
-    introVid.onended = function() { introWrap.remove(); };
+    skipBtn.style.cssText = 'position:absolute;top:1rem;left:1rem;background:rgba(0,0,0,.6);color:#fff;border:1px solid #ffb84d;border-radius:8px;padding:.5rem 1rem;cursor:pointer;font-size:.9rem;z-index:10000;pointer-events:auto;';
+    function removeIntro() { if (introWrap.parentNode) { introWrap.style.opacity = '0'; setTimeout(function() { introWrap.remove(); }, 400); } }
+    skipBtn.onclick = removeIntro;
+    introVid.onended = removeIntro;
+    introVid.onerror = removeIntro;
+    setTimeout(removeIntro, 8000); /* safety: auto-remove after 8s */
     introWrap.appendChild(skipBtn);
     tourScreen.appendChild(introWrap);
 
@@ -867,14 +874,17 @@ var VirtualTour = (function () {
     /* auto-play music removed per user request */
 
     /* outside-click closes sidebar */
-    document.addEventListener('click', function (e) {
-      if (!state.sidebarOpen) return;
-      var sidebar = $('vt-room-list');
-      var btn = e.target.closest && e.target.closest('[data-vt="sidebar"]');
-      if (!sidebar || sidebar.contains(e.target) || btn) return;
-      state.sidebarOpen = false;
-      sidebar.classList.remove('vt-rl-open');
-    });
+    if (!_sidebarCloserBound) {
+      _sidebarCloserBound = true;
+      document.addEventListener('click', function (e) {
+        if (!state.sidebarOpen) return;
+        var sidebar = $('vt-room-list');
+        var btn = e.target.closest && e.target.closest('[data-vt="sidebar"]');
+        if (!sidebar || sidebar.contains(e.target) || btn) return;
+        state.sidebarOpen = false;
+        sidebar.classList.remove('vt-rl-open');
+      });
+    }
 
     /* render */
     state.phase = 'overview';
