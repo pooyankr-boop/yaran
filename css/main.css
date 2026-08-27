@@ -2050,3 +2050,13 @@ textarea.cms-input { min-height: 60px; }
   /* Virtual tour: larger hotspot buttons */
   #screen-tour .vt-tb-btn { padding: 6px 12px; font-size: .78rem; }
 }
+
+
+/* ── Auth status ── */
+#auth-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Vazirmatn', Tahoma, sans-serif;
+  direction: rtl;
+}

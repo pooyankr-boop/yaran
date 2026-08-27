@@ -33,9 +33,20 @@ var Decks = (function () {
 
   function close() {
     var overlay = document.getElementById("deck-modal");
-    if (!overlay) return;
-    overlay.classList.add("hidden");
-    overlay.querySelector("#deck-shell").innerHTML = "";
+    if (overlay) {
+      overlay.classList.add("hidden");
+      overlay.classList.remove("active");
+      var shell = overlay.querySelector("#deck-shell");
+      if (shell) shell.innerHTML = "";
+    }
+    // Also close game-modal (used for picker)
+    var gameModal = document.getElementById("game-modal");
+    if (gameModal) {
+      gameModal.classList.add("hidden");
+      gameModal.classList.remove("active");
+      var gameBody = gameModal.querySelector("#game-body");
+      if (gameBody) gameBody.innerHTML = "";
+    }
     document.body.style.overflow = "";
     if (_prevFocus && _prevFocus.focus) try { _prevFocus.focus(); } catch (e) {}
     current = null;
@@ -419,6 +430,24 @@ var Decks = (function () {
         '<span class="dp-title">' + d.title + "</span>" +
         '<span class="dp-desc">' + (d.desc || "") + "</span>" +
         '<span class="dp-len">' + YCal.num((d.slides || []).length) + " اسلاید</span>" +
+        "</button>";
+    });
+    html += "</div>";
+    return html;
+  }
+
+  /* ═══════════ انتخابگر (picker) ═══════════ */
+  function picker(audience) {
+    var list = (typeof DECK_LIBRARY !== "undefined") ? DECK_LIBRARY.filter(function (d) {
+      return !audience || (d.audience || []).indexOf(audience) >= 0;
+    }) : [];
+    var html = '<div class="dk-picker-grid">';
+    list.forEach(function (d) {
+      html += '<button class="dk-picker-card" data-id="' + d.id + '">' +
+        '<span class="dp-icon">' + (d.icon || "🖥️") + "</span>" +
+        '<span class="dp-title">' + d.title + "</span>" +
+        '<span class="dp-desc">' + (d.desc || "") + "</span>" +
+        '<span class="dp-len">' + ((d.slides || []).length) + " اسلاید</span>" +
         "</button>";
     });
     html += "</div>";

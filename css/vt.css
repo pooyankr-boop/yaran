@@ -88,6 +88,7 @@
   border-bottom: 1px solid rgba(255,184,77,.2);
   padding: 6px 12px;
   z-index: 20;
+  flex-shrink: 0;
 }
 .vt-top-inner {
   display: flex;
@@ -237,6 +238,7 @@
   .vt-progress-bar-wrap { width: 100%; }
   .vt-room-sidebar { width: 240px; }
   .vt-content-inner { max-width: 100%; padding: 12px 14px; }
+  .vt-content { flex: 1; min-height: 0; overflow-y: auto; }
   .vt-two-col { flex-direction: column; }
   .vt-two-col-media { flex: none; max-width: 100%; position: static; order: -1; }
   .vt-two-col-media img { max-height: 40vh; }

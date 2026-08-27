@@ -90,6 +90,54 @@ document.getElementById("btn-goto-map").addEventListener("click", () => { playMa
 document.getElementById("lobby-panel").addEventListener("click", () => { initPanel(); showScreen("screen-panel"); });
 document.getElementById("lobby-search").addEventListener("click", () => { showScreen("screen-search"); document.getElementById("search-input").focus(); });
 
+/* ── دکمه‌های لابی ── */
+document.getElementById("btn-decks").addEventListener("click", function () {
+  if (typeof Decks === "undefined" || typeof DECK_LIBRARY === "undefined") return;
+  var aud = (typeof currentUserRole !== "undefined" && currentUserRole === "parent") ? "parent"
+    : (typeof currentUserRole !== "undefined" && currentUserRole === "manager") ? "staff" : "teacher";
+  var modal = document.getElementById("game-modal");
+  var header = document.getElementById("game-header");
+  var body = document.getElementById("game-body");
+  if (!modal || !header || !body) return;
+  header.innerHTML = '<span>🖥️</span> — ' + (aud === "parent"
+    ? "درس‌های تعاملی والدین"
+    : "درس‌های تعاملی مربیان و کارکنان");
+  body.innerHTML = Decks.picker(aud);
+  modal.classList.remove("hidden");
+  modal.classList.add("active");
+  body.querySelectorAll(".dk-picker-card").forEach(function (card) {
+    card.addEventListener("click", function () {
+      modal.classList.add("hidden");
+      modal.classList.remove("active");
+      Decks.open(card.dataset.id);
+    });
+  });
+});
+
+/* ── بستن game-modal با کلیک روی overlay ── */
+(function () {
+  var gm = document.getElementById("game-modal");
+  if (gm) gm.addEventListener("click", function (e) {
+    if (e.target === gm) {
+      gm.classList.add("hidden");
+      gm.classList.remove("active");
+      var gb = gm.querySelector("#game-body");
+      if (gb) gb.innerHTML = "";
+    }
+  });
+})();
+
+document.getElementById("btn-goto-games").addEventListener("click", function () {
+  showScreen("screen-lobby");
+  if (typeof openRoom === "function") openRoom("bazi");
+  else showScreen("screen-map");
+});
+document.getElementById("btn-virtual-tour").addEventListener("click", function () {
+  if (typeof VirtualTour !== "undefined") {
+    try { VirtualTour.start(); } catch(e) { /* silent */ }
+  }
+});
+
 /* ---------- نقشه اتاقها: دایرههای انیمیشنی ---------- */
 // عکس پایه هر دایره = نمای کلی اتاق (hero.webp)؛ اسلایدشو هاور فقط گوشه‌های راست/چپ
 const MAP_BASE = { key: "media", label: "نمای کلی" };
