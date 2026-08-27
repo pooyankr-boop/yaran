@@ -80,6 +80,19 @@ function initExplorer() {
 
   if (!panel || !toggle) return;
 
+  /* child role: hide explorer completely, never load */
+  function isChildRole() {
+    return (typeof currentUserRole !== "undefined" && currentUserRole === "child");
+  }
+  function hasRole() {
+    return (typeof currentUserRole !== "undefined" && currentUserRole !== null);
+  }
+  if (isChildRole() || !hasRole()) {
+    toggle.style.display = "none";
+    panel.style.display = "none";
+    return;
+  }
+
   // Single toggle handler - lazy load on first open
   toggle.addEventListener("click", function(e) {
     e.stopPropagation();
@@ -112,11 +125,6 @@ function initExplorer() {
     searchInput.addEventListener("input", renderExplorerItems);
   }
 
-  // Preload data in background (non-blocking)
-  loadExplorerSource().then(function() {
-    panel.dataset.loaded = "1";
-    initExplorerFilters();
-  });
 }
 
 function renderExplorerItems() {
@@ -220,7 +228,11 @@ function openExplorerItem(item) {
 
 function updateExplorerVisibility(roomId) {
   var toggle = document.getElementById("explorer-toggle");
-  if (toggle) toggle.style.display = "flex";
+  if (toggle) {
+    var isChild = (typeof currentUserRole !== "undefined" && currentUserRole === "child");
+    var hasRole = (typeof currentUserRole !== "undefined" && currentUserRole !== null);
+    toggle.style.display = (isChild || !hasRole) ? "none" : "flex";
+  }
 }
 
 document.addEventListener("DOMContentLoaded", initExplorer);

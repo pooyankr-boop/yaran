@@ -44,7 +44,7 @@ var VirtualTour = (function () {
     roomIds: [], ri: 0,
     phase: 'overview', vi: 0, hi: 0, ci: 0,
     items: [], playing: true, shuffleMode: 'all',
-    filters: { pdf: true, video: true, game: true, activity: true },
+    filters: { pdf: true, video: true, game: true, activity: true, audio: true },
     timer: null, role: 'مربی', kbIndex: 0, tipUsed: {}, sidebarOpen: false, tipClosed: false
   };
 
@@ -65,7 +65,7 @@ var VirtualTour = (function () {
     if (r === 'teacher' || r === 'مربی') return true;
     var t = (item.type || '').toLowerCase();
     if (r === 'parent' || r === 'والد') return true;
-    if (r === 'child' || r === 'کودک') return false; // کودک فقط تور مجازی
+    if (r === 'child' || r === 'کودک') return (t === 'audio' || t === 'song'); // کودک فقط صوت
     if (r === 'manager' || r === 'مدیر') return true;
     return true;
   }
@@ -77,7 +77,8 @@ var VirtualTour = (function () {
     var seen = {}, out = [];
 
     /* items from room hotspots */
-    VIEWS.forEach(function (v) {
+    var _childOnlyFront = (state.role === 'child' || state.role === 'کودک');
+    (_childOnlyFront ? ['herog'] : VIEWS).forEach(function (v) {
       if (!r.views[v]) return;
       (r.views[v].hotspots || []).forEach(function (h) {
         (h.categories || []).forEach(function (c) {
@@ -152,7 +153,14 @@ var VirtualTour = (function () {
     var items = state.items;
 
     if (state.phase === 'overview') {
-      state.phase = 'hotspot';
+      var _isChildVT = (state.role === 'child' || state.role === 'کودک');
+      if (_isChildVT && items.length > 0) {
+        state.phase = 'content'; state.ci = 0;
+      } else if (_isChildVT) {
+        nextRoom(); return;
+      } else {
+        state.phase = 'hotspot';
+      }
     } else if (state.phase === 'hotspot') {
       if (items.length > 0) {
         state.phase = 'content'; state.ci = 0;
@@ -167,6 +175,8 @@ var VirtualTour = (function () {
         return;
       }
     } else if (state.phase === 'tip') {
+      /* کودک: فاز tip رد شود */
+      if (state.role === 'child' || state.role === 'کودک') { nextRoom(); return; }
       nextRoom();
       return;
     }
@@ -334,7 +344,7 @@ var VirtualTour = (function () {
   /* ── tip box top-left (mirrored from lobby, closable) ── */
   function renderTipTop(el) {
     if (!el) return;
-    if (state.tipClosed) { el.style.display = 'none'; return; }
+    if (state.tipClosed || state.role === 'child' || state.role === 'کودک') { el.style.display = 'none'; return; }
     el.style.display = '';
     var tip = pickTip();
     el.innerHTML = '<div class="tip-header"><span class="tip-icon">💡</span><span class="tip-title">نکته روز</span>' +
@@ -409,8 +419,8 @@ var VirtualTour = (function () {
     /* ── room sidebar ── */
     renderRoomSidebar();
 
-    /* ── task board (persistent in VT) ── */
-    if (typeof TaskBoard !== 'undefined') {
+    /* ── task board (persistent in VT, hidden for child) ── */
+    if (typeof TaskBoard !== 'undefined' && state.role !== 'child' && state.role !== 'کودک') {
       TaskBoard.init('vt-task-board');
     }
 
@@ -477,7 +487,8 @@ var VirtualTour = (function () {
 
     /* tags row — type tags + audio subcategory tags */
     html += '<div class="vt-tags">';
-    ['activity','pdf','game','video'].forEach(function (t) {
+    var _isChildVT2 = (state.role === 'child' || state.role === 'کودک');
+    (_isChildVT2 ? ['audio'] : ['activity','pdf','game','video']).forEach(function (t) {
       var on = state.filters[t];
       html += '<button class="vt-tag ' + (on ? 'vt-tag-on' : 'vt-tag-off') + '" data-vt="tag" data-tag="' + t + '">' +
         (ICONS[t] || '📎') + ' ' + (TYPE_LABELS[t] || t) + '</button>';

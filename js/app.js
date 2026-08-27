@@ -3,13 +3,20 @@
 */
 
 /* ---------- نقش کاربر ---------- */
-var _savedRole = localStorage.getItem('yaran_role') || 'teacher';
-let currentUserRole = _savedRole;
+/* نقش فقط با انتخاب در پلان فعال می‌شود */
+var _savedRole = localStorage.getItem('yaran_role');
+let currentUserRole = _savedRole || null;
 
 function setRole(role) {
   currentUserRole = role;
   localStorage.setItem('yaran_role', role);
   applyRoleVisibility();
+}
+
+/* ریست نقش هنگام رفتن به پلان (انتخاب مجدد) */
+function resetRole() {
+  currentUserRole = null;
+  localStorage.removeItem('yaran_role');
 }
 
 /* ---------- کنترل دسترسی بر اساس نقش ---------- */
@@ -49,9 +56,9 @@ function applyRoleVisibility() {
   if (panelBtn) panelBtn.style.display = isChild ? 'none' : '';
   if (searchBtn) searchBtn.style.display = isChild ? 'none' : '';
 
-  // اکسپلورر: مخفی برای کودک
+  // اکسپلورر: مخفی برای کودک و بدون نقش
   var explorer = document.getElementById('explorer-toggle');
-  if (explorer) explorer.style.display = isChild ? 'none' : '';
+  if (explorer) explorer.style.display = (isChild || !currentUserRole) ? 'none' : 'flex';
 
   // ── پنل ──
   // تب CMS: فقط مدیر
@@ -70,7 +77,7 @@ function applyRoleVisibility() {
 
   // پنل کاربری: مخفی برای کودک
   var panelScreen = document.getElementById('screen-panel');
-  if (panelScreen && isChild) panelScreen.style.display = 'none';
+  if (panelScreen) panelScreen.style.display = isChild ? 'none' : '';
 
   // ── اتاق‌ها ──
   // دکمه محتوای اتاق: مخفی برای کودک
@@ -107,7 +114,7 @@ function escHtml(s) {
 /* ---------- پنل کاربری ---------- */
 function updateAdminTabVisibility() {
   const user = typeof currentUser === "function" ? currentUser() : null;
-  const isAdmin = user && user.role === "admin";
+  const isAdmin = (currentUserRole === 'manager' || currentUserRole === 'admin') || (user && user.role === "admin");
   const adminBtn = document.getElementById("panel-admin-tab-btn");
   if (adminBtn) adminBtn.classList.toggle("hidden", !isAdmin);
   const cmsBtn = document.getElementById("panel-cms-tab-btn");
@@ -210,7 +217,8 @@ async function renderMessagesTab(body) {
 /* ---------- پنل مدیریت — فقط برای نقش admin ---------- */
 async function renderAdminTab(body) {
   const user = typeof currentUser === "function" ? currentUser() : null;
-  if (!user || user.role !== "admin") {
+  var isManagerRole = (typeof currentUserRole !== "undefined" && (currentUserRole === 'manager' || currentUserRole === 'admin'));
+  if (!isManagerRole && (!user || user.role !== "admin")) {
     body.innerHTML = `<div style="text-align:center;color:#7a6b55;padding:2rem;">دسترسی فقط برای مدیر.</div>`;
     return;
   }
@@ -409,7 +417,8 @@ async function renderReportsTab(body) {
     body.innerHTML = `<div style="text-align:center;color:#7a6b55;padding:2rem;">کودکی برای این حساب ثبت نشده است.</div>`;
     return;
   }
-  const isStaff = user.role === "teacher" || user.role === "admin";
+  var isStaffLocal = (typeof currentUserRole !== "undefined" && (currentUserRole === 'teacher' || currentUserRole === 'manager' || currentUserRole === 'admin'));
+  var isStaff = isStaffLocal || (user && (user.role === "teacher" || user.role === "admin"));
   body.innerHTML = `<h3 style="margin-bottom:.8rem;">${isStaff ? "گزارش‌های کودکان" : "گزارش‌های روزانه‌ی فرزندم"}</h3>` +
     children.map(child => `
       <div class="report-child-card">

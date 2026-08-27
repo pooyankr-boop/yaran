@@ -302,9 +302,9 @@ var Games3 = (function () {
     }
     function start() {
       fed = 0;
-      bodyEl = base(container, "👾 هیولای گرسنه",
-        '<span class="g3-want"></span> <span class="g3-hud"></span>');
+      bodyEl = base(container, "👾 هیولای گرسنه");
       bodyEl.insertAdjacentHTML("beforeend",
+        '<span class="g3-want"></span> <span class="g3-hud"></span>' +
         '<div class="g3-monster-slot"></div><div class="g3-tray"></div>');
       updateHud();
       ask();

@@ -87,13 +87,14 @@ function renderDoors() {
 document.getElementById("plan-back-intro").addEventListener("click", () => showScreen("screen-intro"));
 
 /* ---------- لابی ---------- */
-document.getElementById("lobby-back-plan").addEventListener("click", () => showScreen("screen-plan"));
+document.getElementById("lobby-back-plan").addEventListener("click", () => { if (typeof resetRole === "function") resetRole(); showScreen("screen-plan"); });
 document.getElementById("btn-goto-map").addEventListener("click", () => { playMapEnter(); showScreen("screen-map"); });
-document.getElementById("lobby-panel").addEventListener("click", () => { initPanel(); showScreen("screen-panel"); });
+document.getElementById("lobby-panel").addEventListener("click", () => { if (typeof currentUserRole !== "undefined" && currentUserRole === "child") return; initPanel(); showScreen("screen-panel"); });
 document.getElementById("lobby-search").addEventListener("click", () => { showScreen("screen-search"); document.getElementById("search-input").focus(); });
 
 /* ── دکمه‌های لابی ── */
 document.getElementById("btn-decks").addEventListener("click", function () {
+  if (typeof currentUserRole !== "undefined" && currentUserRole === "child") return;
   if (typeof Decks === "undefined" || typeof DECK_LIBRARY === "undefined") return;
   var aud = (typeof currentUserRole !== "undefined" && currentUserRole === "parent") ? "parent"
     : (typeof currentUserRole !== "undefined" && currentUserRole === "manager") ? "staff" : "teacher";
@@ -130,9 +131,7 @@ document.getElementById("btn-decks").addEventListener("click", function () {
 })();
 
 document.getElementById("btn-goto-games").addEventListener("click", function () {
-  showScreen("screen-lobby");
-  if (typeof openRoom === "function") openRoom("bazi");
-  else showScreen("screen-map");
+  /* app.js handles this — openGamePicker() */
 });
 document.getElementById("btn-virtual-tour").addEventListener("click", function () {
   if (typeof VirtualTour !== "undefined") {
@@ -299,7 +298,10 @@ function openRoom(id) {
   a.classList.add("on");
   activeLayer = "a";
   updateRoomChrome();
-  if (typeof updateExplorerVisibility === "function") updateExplorerVisibility(id);
+  if (typeof updateExplorerVisibility === "function") {
+    var _isChild = (typeof currentUserRole !== "undefined" && currentUserRole === "child");
+    if (!_isChild) updateExplorerVisibility(id);
+  }
   injectAudioIntoHotspots();
 }
 
@@ -446,12 +448,12 @@ function buildMediaHotspots() {
   all.forEach((it) => (it.type === "audio" ? audio : visual).push(it));
 
   // ── بایگانی: والد فقط محتوای غیرصوتی ──
-  if (currentRoom && currentRoom.id === 'baghaghi' && currentUserRole === 'parent') {
+  if (currentRoom && currentRoom.id === 'baghaghi' && typeof currentUserRole !== "undefined" && currentUserRole === 'parent') {
     audio.length = 0;
   }
   if (typeof AUDIO_LIBRARY !== "undefined" && AUDIO_LIBRARY && typeof ROOM_AUDIO_MAP !== "undefined") {
     // ── بایگانی: والد صوت نمی‌بیند ──
-    if (currentRoom && currentRoom.id === 'baghaghi' && currentUserRole === 'parent') {
+    if (currentRoom && currentRoom.id === 'baghaghi' && typeof currentUserRole !== "undefined" && currentUserRole === 'parent') {
       // skip audio library for archive/parent
     } else {
     var rcats = ROOM_AUDIO_MAP[currentRoom.id];
