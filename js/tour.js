@@ -88,7 +88,39 @@ document.getElementById("plan-back-intro").addEventListener("click", () => showS
 
 /* ---------- لابی ---------- */
 document.getElementById("lobby-back-plan").addEventListener("click", () => { if (typeof resetRole === "function") resetRole(); showScreen("screen-plan"); });
-document.getElementById("btn-goto-map").addEventListener("click", () => { playMapEnter(); showScreen("screen-map"); });
+document.getElementById("btn-goto-map").addEventListener("click", function () {
+  /* intro1 video قبل از نمایش اتاق‌ها */
+  var tourScreen = document.getElementById("screen-map");
+  if (!tourScreen) { showScreen("screen-map"); return; }
+  var introWrap = document.createElement('div');
+  introWrap.id = 'map-intro-wrap';
+  introWrap.style.cssText = 'position:absolute;inset:0;z-index:9999;background:#000;display:flex;align-items:center;justify-content:center;flex-direction:column;transition:opacity .4s;';
+  var introVid = document.createElement('video');
+  introVid.src = 'assets/video/intro1.yar';
+  introVid.autoplay = true;
+  introVid.muted = true;
+  introVid.playsInline = true;
+  introVid.style.cssText = 'max-width:100%;max-height:90vh;';
+  introWrap.appendChild(introVid);
+  var skipBtn = document.createElement('button');
+  skipBtn.textContent = '\u2190 \u0631\u062F \u0634\u062F\u0646';
+  skipBtn.style.cssText = 'position:absolute;top:1rem;left:1rem;background:rgba(0,0,0,.6);color:#fff;border:1px solid #ffb84d;border-radius:8px;padding:.5rem 1rem;cursor:pointer;font-size:.9rem;z-index:10000;pointer-events:auto;';
+  function removeIntro() {
+    if (introWrap.parentNode) {
+      introWrap.style.opacity = '0';
+      setTimeout(function() { introWrap.remove(); }, 400);
+      playMapEnter();
+      showScreen("screen-map");
+    }
+  }
+  skipBtn.onclick = removeIntro;
+  introVid.onended = removeIntro;
+  introVid.onerror = removeIntro;
+  setTimeout(removeIntro, 12000);
+  introWrap.appendChild(skipBtn);
+  tourScreen.appendChild(introWrap);
+  showScreen("screen-map");
+});
 document.getElementById("lobby-panel").addEventListener("click", () => { if (typeof currentUserRole !== "undefined" && currentUserRole === "child") return; initPanel(); showScreen("screen-panel"); });
 document.getElementById("lobby-search").addEventListener("click", () => { showScreen("screen-search"); document.getElementById("search-input").focus(); });
 
@@ -135,7 +167,7 @@ document.getElementById("btn-goto-games").addEventListener("click", function () 
 });
 document.getElementById("btn-virtual-tour").addEventListener("click", function () {
   if (typeof VirtualTour !== "undefined") {
-    try { VirtualTour.start(); } catch(e) { /* silent */ }
+    try { VirtualTour.start(typeof currentUserRole !== 'undefined' ? currentUserRole : undefined); } catch(e) { /* silent */ }
   }
 });
 
@@ -152,27 +184,27 @@ function renderMapCircles() {
   const wrap = document.getElementById("map-circles");
   if (wrap) wrap.innerHTML = "";
 
-  // مکان دایره روی عکس plan2 — نعل‌اسبی عمودی (پرسپکتیو راهرو)
+  // مکان دایره روی عکس plan2 — بیضی ناتمام (arch) بالای صفحه
   const PLAN_CENTER = {
-    /* ── بازوی چپ (جلو→عقب، پایین→بالا) ── */
-    amoozesh:  { x: 22, y: 80 },   // در سبز — راهرو چپ جلو
-    bazi:      { x: 24, y: 68 },   // در صورتی — راهرو چپ
-    honar:     { x: 26, y: 56 },   // در زرد — راهرو چپ
-    motaleh:   { x: 28, y: 46 },   // در آبی روشن — راهرو چپ
-    salamat:   { x: 30, y: 37 },   // در کرم — راهرو چپ نزدیک دیوار پشت
-    /* ── دیوار پشت (مرکز بالا) ── */
-    khab:      { x: 38, y: 26 },   // در بنفش — دیوار پشت چپ
-    moraabi:   { x: 50, y: 22 },   // در سبز — دیوار پشت مرکز
-    "esterahat-moraabian": { x: 62, y: 26 }, // در هلویی — دیوار پشت راست
-    /* ── بازوی راست (عقب→جلو، بالا→پایین) ── */
-    "jalase-owlia": { x: 70, y: 37 }, // در سالمون — راهرو راست نزدیک دیوار پشت
-    bayegani:  { x: 72, y: 46 },   // در آبی روشن — راهرو راست
-    teria:     { x: 74, y: 56 },   // در آبی — راهرو راست
-    hayat:     { x: 76, y: 68 },   // در قهوه‌ای — راهرو راست
-    maddakari: { x: 78, y: 80 },   // در کرم — راهرو راست جلو
+    /* ── بازوی چپ (پایین→بالا) ── */
+    amoozesh:  { x: 18, y: 78 },   // انتهای چپ پایین
+    bazi:      { x: 19, y: 66 },   // چپ پایین‌تر
+    honar:     { x: 21, y: 54 },   // چپ میانی
+    motaleh:   { x: 24, y: 42 },   // چپ بالاتر
+    salamat:   { x: 29, y: 31 },   // چپ نزدیک قوس
+    /* ── قوس بالا (مرکز) ── */
+    khab:      { x: 37, y: 22 },   // چپ قوس
+    moraabi:   { x: 50, y: 18 },   // بالاترین نقطه
+    "esterahat-moraabian": { x: 63, y: 22 }, // راست قوس
+    /* ── بازوی راست (بالا→پایین) ── */
+    "jalase-owlia": { x: 71, y: 31 }, // راست نزدیک قوس
+    bayegani:  { x: 76, y: 42 },   // راست بالاتر
+    teria:     { x: 79, y: 54 },   // راست میانی
+    hayat:     { x: 81, y: 66 },   // راست پایین‌تر
+    maddakari: { x: 82, y: 78 },   // انتهای راست پایین
            };
   // تبدیل مکان نقشه (نسبت به تصویر کوچک) به مکان روی کل صفحه — نقشه در مرکز است
-  const PLAN_SCALE = 1.08; // پخش دایره‌ها روی کل صفحه نسبت به مرکز (1.2 × 0.9 = هم‌راستا با scale(.9) عکس)
+  const PLAN_SCALE = 1.0;
   const toScreen = (p) => ({ x: 50 + (p.x - 50) * PLAN_SCALE, y: 50 + (p.y - 50) * PLAN_SCALE });
   // مکان اولیه از روی عکس نقشه
   const posOf = {};
@@ -220,8 +252,17 @@ function renderMapCircles() {
       imgs.forEach((im, i) => im.classList.toggle("active", i === 0));
       if (ring) ring.textContent = MAP_BASE.label + " • " + MAP_BASE.label + " • ";
     }
-    c.addEventListener("mouseenter", () => { if (baseImg) baseImg.style.opacity = "0"; reset(); step(); timer = setInterval(step, 2000); });
-    c.addEventListener("mouseleave", () => { if (timer) clearInterval(timer); timer = null; reset(); if (baseImg) baseImg.style.opacity = "1"; });
+    c.addEventListener("mouseenter", () => {
+      if (baseImg) baseImg.style.opacity = "0"; reset(); step(); timer = setInterval(step, 2000);
+      var gn = document.getElementById("map-ghost-name");
+      if (gn) { gn.textContent = room.name; gn.classList.add("show"); }
+    });
+    c.addEventListener("mouseleave", () => {
+      if (timer) clearInterval(timer); timer = null; reset();
+      if (baseImg) baseImg.style.opacity = "1";
+      var gn = document.getElementById("map-ghost-name");
+      if (gn) gn.classList.remove("show");
+    });
     if (wrap) {
       // قرارگیری روی نقشه در محل اتاق (با فاصله اگر هم‌مکان باشند)
       const pos = posOf[room.id] || (room.heroPos && room.heroPos.center ? room.heroPos.center : { x: 50, y: 50 });
@@ -376,12 +417,14 @@ function renderHotspots() {
   let hotspots = (viewData && viewData.hotspots) || [];
   // منوی محتوای تصویری/صوتی فقط در نمای جلو؛ نمای کلی فقط زون‌های ناوبری دارد
   if (currentView === "media") hotspots = buildMediaHotspots();
-  // کودک فقط هات‌اسپات "محتوای صوتی" در نمای جلو می‌بیند
+  // کودک فقط هات‌اسپات صوتی در نمای جلو (یا کلی) ببیند
   if (typeof currentUserRole !== 'undefined' && currentUserRole === 'child') {
     if (currentView === "media") {
-      hotspots = hotspots.filter(function(h) { return h.title === "محتوای صوتی"; });
+      hotspots = hotspots.filter(function(h) { return h.title.indexOf("صوتی") !== -1; });
     } else {
-      hotspots = [];
+      /* نمای کلی: فقط هات‌اسپات صوتی از buildMediaHotspots */
+      var _childAudio = buildMediaHotspots().filter(function(h) { return h.title.indexOf("صوتی") !== -1; });
+      hotspots = _childAudio;
     }
   }
   hotspots.forEach((hotspot) => {
@@ -500,8 +543,8 @@ function buildMediaHotspots() {
   };
   const p = isPortrait(); // موبایل: باکس تور پایین صفحه → منوها بروند بالا؛ دسکتاپ: کناره‌ها خارج از کادر
   return [
-      { title: "🖼 محتوای تصویری", x: p ? 15 : 92, y: p ? 12 : 50, categories: byType(visual) },
-      { title: "🎧 محتوای صوتی", x: p ? 85 : 8, y: p ? 12 : 50, categories: byType(audio) },
+      { title: "🖼 محتوای تصویری", x: p ? 15 : 92, y: p ? 20 : 50, categories: byType(visual) },
+      { title: "🎧 محتوای صوتی", x: p ? 85 : 8, y: p ? 20 : 50, categories: byType(audio) },
     ];
   }
 
@@ -889,11 +932,9 @@ function openGlassMenu(hotspot, hotspotEl) {
   if (typeof currentUserRole !== 'undefined' && currentUserRole === 'child') {
     allItems.length = 0;
     (hotspot.categories || []).forEach((cat, ci) => {
-      if (cat.title === "محتوای صوتی") {
-        cat.items.forEach((it, ii) => {
-          allItems.push({ ...it, _ci: ci, _ii: ii });
-        });
-      }
+      cat.items.forEach((it, ii) => {
+        if (it.type === "audio") allItems.push({ ...it, _ci: ci, _ii: ii });
+      });
     });
   }
 

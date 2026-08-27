@@ -461,11 +461,12 @@ process.once('SIGTERM', () => bot.stop('SIGTERM'));
    ══════════════════════════════════════════════════════════ */
 const KEEPALIVE_MS = 10 * 60 * 1000; // 10 minutes
 function selfPing() {
-  const url = `http://127.0.0.1:${PORT}/health`;
-  const http = require('http');
-  const req = http.get(url, (res) => {
+  const externalUrl = process.env.RENDER_EXTERNAL_URL || process.env.SELF_URL;
+  const url = externalUrl ? `${externalUrl}/health` : `http://127.0.0.1:${PORT}/health`;
+  const proto = url.startsWith('https') ? require('https') : require('http');
+  const req = proto.get(url, (res) => {
     res.resume();
-    console.log(`[keepalive] ping OK — ${new Date().toISOString()}`);
+    console.log(`[keepalive] ping OK — ${new Date().toISOString()} — ${url}`);
   });
   req.on('error', (e) => console.log(`[keepalive] ping error: ${e.message}`));
   req.setTimeout(10000, () => { req.destroy(); });

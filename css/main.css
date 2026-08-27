@@ -480,7 +480,24 @@ html, body {
   position: absolute; left: 50%; bottom: -26px; transform: translateX(-50%);
   color: #fff; font-size: .8rem; font-weight: 700; white-space: nowrap;
   text-shadow: 0 1px 6px rgba(0,0,0,.9); pointer-events: none;
+  transition: color .2s, font-size .2s, text-shadow .2s;
 }
+.map-circle:hover .circle-name {
+  color: #000; font-size: 1.05rem;
+  text-shadow: 0 0 8px rgba(255,255,255,.7), 0 1px 3px rgba(0,0,0,.2);
+}
+/* ── نام محو وسط صفحه — مثل اسپری روی کف راهرو ── */
+.map-ghost-name {
+  position: absolute; left: 50%; top: 55%;
+  transform: translate(-50%, -50%) perspective(600px) rotateX(35deg) scaleY(0.7);
+  font-size: 2.2rem; font-weight: 900; color: rgba(255,255,255,.18);
+  text-shadow: 0 0 30px rgba(255,255,255,.08), 0 2px 12px rgba(0,0,0,.15);
+  white-space: nowrap; pointer-events: none; z-index: 3;
+  opacity: 0; transition: opacity .4s ease;
+  font-family: 'Vazirmatn', Tahoma, sans-serif;
+  letter-spacing: 4px;
+}
+.map-ghost-name.show { opacity: 1; }
 @media (prefers-reduced-motion: reduce) {
   .map-circle:hover { --d: 260px; }
   .circle-ring { animation: none !important; }
@@ -1691,11 +1708,18 @@ body.theme-night .slideshow-caption { color: #b8a8d0 !important; }
   .ms-media { flex: 0 0 30%; max-width: 30%; }
 }
 @media (max-width: 640px) {
-  .media-slideshow { width: 96%; aspect-ratio: 3 / 2; top: auto; bottom: 4%; transform: translateX(-50%); }
+  .media-slideshow { width: 94%; aspect-ratio: 9 / 16; top: 50%; bottom: auto; transform: translate(-50%, -50%); max-height: 68vh; }
   .ms-two-col { flex-direction: column; }
-  .ms-media { order: -1; flex: none; max-width: 100%; }
-  .ms-media-frame img { max-height: 26vh; }
-  .ms-cat-title { font-size: 1.25rem; }
+  .ms-media { order: 0; flex: none; max-width: 45%; float: inline-start; margin: 0 0 8px 10px; shape-outside: margin-box; }
+  .ms-media-frame img { max-height: 18vh; }
+  .ms-body { padding: 8px 12px; font-size: .78rem; line-height: 1.7; }
+  .ms-title { font-size: .88rem; line-height: 1.6; margin-bottom: 4px; }
+  .ms-desc { font-size: .78rem; line-height: 1.8; }
+  .ms-cat-title { font-size: 1rem; padding: 6px 16px; }
+  .ms-badge { font-size: .62rem; }
+  .ms-sec-t { font-size: .65rem; }
+  .ms-step-item { font-size: .76rem; }
+  .ms-act { font-size: .72rem; padding: 5px 12px; }
   .hero-zone-media { inset: auto; width: 18%; left: 41%; top: 41%; }
   .hotspot { width: 38px; height: 38px; }
 }

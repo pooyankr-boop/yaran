@@ -75,6 +75,7 @@ const DB = {
   users: [],
   children: [],
   reports: [],
+  classes: [],    // برنامه کلاسی
 };
 
 const USERS_PATH = path.join(__dirname, '..', 'data', 'users.json');
@@ -88,13 +89,22 @@ function saveUsers() {
 }
 loadUsers();
 
+// فهرست والدین برای انتخابگر مخاطب در برنامه‌ریز (بخش پنل)
+function listParents() {
+  return DB.users
+    .filter(u => u.role === 'parent' && u.tenant === TENANT)
+    .map(u => ({ name: u.name, email: u.email }));
+}
+
 // Seed admin account on first run (env overridable, bcrypt-hashed)
 if (!DB.users.some(u => u.role === 'admin')) {
-  let adminPassword = process.env.ADMIN_PASSWORD || 'Yaran@1403Admin';
-  if (!process.env.ADMIN_PASSWORD) {
-    console.warn('⚠️  ADMIN_PASSWORD در env تنظیم نشده — از رمز پیش‌فرض استفاده شد.');
-    console.warn(`⚠️  ایمیل: ${(process.env.ADMIN_EMAIL || 'admin@yaran.ir').toLowerCase()}  |  رمز: Yaran@1403Admin`);
-    console.warn('⚠️  برای امنیت بیشتر، ADMIN_PASSWORD را در env تنظیم کنید.');
+  let adminPassword = process.env.ADMIN_PASSWORD;
+  if (!adminPassword) {
+    // هرگز رمز پیش‌فرض ثابت نساز — یک رمز تصادفی امن بساز و در لاگ چاپ کن
+    adminPassword = crypto.randomBytes(9).toString('base64url');
+    console.warn('⚠️  ADMIN_PASSWORD در env تنظیم نشده — رمز موقت ادمین ساخته شد:');
+    console.warn(`⚠️  ایمیل: ${(process.env.ADMIN_EMAIL || 'admin@yaran.ir').toLowerCase()}  |  رمز موقت: ${adminPassword}`);
+    console.warn('⚠️  این رمز فقط در همین اجرا معتبر است. برای رمز ثابت، ADMIN_PASSWORD را در env تنظیم کنید.');
   }
   DB.users.push({
     id: uuid(),
@@ -696,6 +706,108 @@ app.post('/api/children/:childId/reports', authMiddleware, staffOnly, (req, res)
   res.json(report);
 });
 
+// ── Admin: Children CRUD (تعریف کودک برای والدین و اختصاص به مربی) ──
+app.get('/api/admin/children', authMiddleware, adminOnly, (_req, res) => {
+  res.json(DB.children.filter(c => c.tenant === TENANT));
+});
+app.post('/api/admin/children', authMiddleware, adminOnly, (req, res) => {
+  const { name, age, parentEmail, teacherId, classId } = req.body;
+  if (!name) return res.status(400).json({ error: 'نام کودک الزامی است' });
+  const child = {
+    id: uuid(), name: String(name).substring(0, 60),
+    age: String(age || '').substring(0, 20),
+    parentEmail: String(parentEmail || '').toLowerCase(),
+    teacherId: teacherId || null,
+    classId: classId || null,
+    tenant: TENANT, createdAt: new Date().toISOString(),
+  };
+  DB.children.push(child);
+  res.json(child);
+});
+app.put('/api/admin/children/:id', authMiddleware, adminOnly, (req, res) => {
+  const child = DB.children.find(c => c.id === req.params.id && c.tenant === TENANT);
+  if (!child) return res.status(404).json({ error: 'not found' });
+  const { name, age, parentEmail, teacherId, classId } = req.body;
+  if (name !== undefined) child.name = String(name).substring(0, 60);
+  if (age !== undefined) child.age = String(age).substring(0, 20);
+  if (parentEmail !== undefined) child.parentEmail = String(parentEmail).toLowerCase();
+  if (teacherId !== undefined) child.teacherId = teacherId || null;
+  if (classId !== undefined) child.classId = classId || null;
+  res.json(child);
+});
+app.delete('/api/admin/children/:id', authMiddleware, adminOnly, (req, res) => {
+  const before = DB.children.length;
+  DB.children = DB.children.filter(c => c.id !== req.params.id);
+  if (DB.children.length === before) return res.status(404).json({ error: 'not found' });
+  res.json({ ok: true });
+});
+
+// ── Admin: Classes CRUD (برنامه کلاسی) ──
+app.get('/api/admin/classes', authMiddleware, adminOnly, (_req, res) => {
+  res.json(DB.classes.filter(c => c.tenant === TENANT));
+});
+app.post('/api/admin/classes', authMiddleware, adminOnly, (req, res) => {
+  const { name, teacherId, schedule, published } = req.body;
+  if (!name) return res.status(400).json({ error: 'نام کلاس الزامی است' });
+  const cls = {
+    id: uuid(), name: String(name).substring(0, 60),
+    teacherId: teacherId || null,
+    schedule: schedule || [], // [{day, time, activity}]
+    published: !!published,
+    tenant: TENANT, createdAt: new Date().toISOString(),
+  };
+  DB.classes.push(cls);
+  res.json(cls);
+});
+app.put('/api/admin/classes/:id', authMiddleware, adminOnly, (req, res) => {
+  const cls = DB.classes.find(c => c.id === req.params.id && c.tenant === TENANT);
+  if (!cls) return res.status(404).json({ error: 'not found' });
+  const { name, teacherId, schedule, published } = req.body;
+  if (name !== undefined) cls.name = String(name).substring(0, 60);
+  if (teacherId !== undefined) cls.teacherId = teacherId || null;
+  if (schedule !== undefined) cls.schedule = schedule;
+  if (published !== undefined) cls.published = !!published;
+  res.json(cls);
+});
+app.delete('/api/admin/classes/:id', authMiddleware, adminOnly, (req, res) => {
+  const before = DB.classes.length;
+  DB.classes = DB.classes.filter(c => c.id !== req.params.id);
+  if (DB.classes.length === before) return res.status(404).json({ error: 'not found' });
+  res.json({ ok: true });
+});
+
+// ── Admin: Reports CRUD (گزارش کودک توسط مدیر/مربی) ──
+app.get('/api/admin/reports', authMiddleware, adminOnly, (_req, res) => {
+  res.json(DB.reports.filter(r => r.tenant === TENANT).sort((a, b) => new Date(b.date) - new Date(a.date)));
+});
+app.put('/api/admin/reports/:id', authMiddleware, adminOnly, (req, res) => {
+  const report = DB.reports.find(r => r.id === req.params.id && r.tenant === TENANT);
+  if (!report) return res.status(404).json({ error: 'not found' });
+  const { mood, food, sleep, note, published } = req.body;
+  if (mood !== undefined) report.mood = mood;
+  if (food !== undefined) report.food = food;
+  if (sleep !== undefined) report.sleep = sleep;
+  if (note !== undefined) report.note = String(note).substring(0, 500);
+  if (published !== undefined) report.published = !!published;
+  res.json(report);
+});
+app.delete('/api/admin/reports/:id', authMiddleware, adminOnly, (req, res) => {
+  const before = DB.reports.length;
+  DB.reports = DB.reports.filter(r => r.id !== req.params.id);
+  if (DB.reports.length === before) return res.status(404).json({ error: 'not found' });
+  res.json({ ok: true });
+});
+
+// ── Parent: view own children's reports ──
+app.get('/api/parent/reports', authMiddleware, (req, res) => {
+  if (req.user.role !== 'parent') return res.status(403).json({ error: 'فقط والد' });
+  const kids = DB.children.filter(c => c.parentEmail === req.user.email && c.tenant === TENANT);
+  const kidIds = new Set(kids.map(k => k.id));
+  const reports = DB.reports.filter(r => kidIds.has(r.childId) && r.tenant === TENANT)
+    .sort((a, b) => new Date(b.date) - new Date(a.date));
+  res.json({ children: kids, reports });
+});
+
 // ── CMS: save rooms content ──
 const ROOMS_PATH = path.join(__dirname, '..', 'js', 'rooms.js');
 app.get('/api/cms/rooms', authMiddleware, adminOnly, (req, res) => {
@@ -783,7 +895,7 @@ const logStart = (port) => {
   console.log(`   WebSocket: ws://localhost:${port}/ws`);
 };
 // Register Planner API (MUST be before SPA catch-all)
-registerPlanner(app, { authMiddleware, staffOnly, TENANT, uuid, broadcast });
+registerPlanner(app, { authMiddleware, staffOnly, TENANT, uuid, broadcast, listParents });
 
 if (PORT_RAW) {
   server.listen(Number(PORT_RAW), '0.0.0.0', () => logStart(PORT_RAW));
@@ -799,11 +911,14 @@ if (PORT_RAW) {
 const KEEPALIVE_MS = 10 * 60 * 1000; // 10 minutes
 function selfPing() {
   const port = process.env.PORT || 4000;
-  const url = `http://127.0.0.1:${port}/health`;
-  const http = require('http');
-  const req = http.get(url, (res) => {
+  /* Render only counts EXTERNAL requests for sleep detection.
+     RENDER_EXTERNAL_URL is auto-set by Render; fall back to localhost for dev. */
+  const externalUrl = process.env.RENDER_EXTERNAL_URL || process.env.SELF_URL;
+  const url = externalUrl ? `${externalUrl}/health` : `http://127.0.0.1:${port}/health`;
+  const proto = url.startsWith('https') ? require('https') : require('http');
+  const req = proto.get(url, (res) => {
     res.resume(); // drain response
-    console.log(`[keepalive] ping OK — ${new Date().toISOString()}`);
+    console.log(`[keepalive] ping OK — ${new Date().toISOString()} — ${url}`);
   });
   req.on('error', (e) => console.log(`[keepalive] ping error: ${e.message}`));
   req.setTimeout(10000, () => { req.destroy(); });

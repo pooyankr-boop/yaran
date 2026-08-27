@@ -161,15 +161,29 @@ function openContentForRoom(roomId) {
   '<div style="text-align:center;padding:2rem 0 1rem;"><button class="pill-btn" onclick="document.getElementById(\'screen-content\').scrollTo({top:0,behavior:\'smooth\'})">⬆️ بازگشت به بالا</button></div>';
 
   // نوار جستجو + تگ نوع بالای محتوا
+  var _isChildContent = (typeof currentUserRole !== 'undefined' && currentUserRole === 'child');
+  var _tags = _isChildContent
+    ? CONTENT_TYPE_TAGS.filter(function(t) { return t.v === '' || t.v === 'audio' || t.v.startsWith('audio-'); })
+    : CONTENT_TYPE_TAGS;
   const toolbar = '<div class="content-toolbar">' +
     '<input type="text" id="content-filter-input" class="content-filter-input" placeholder="🔍 جستجو در محتوای این اتاق..." />' +
     '<div class="content-type-tags" id="content-type-tags">' +
-    CONTENT_TYPE_TAGS.map(t =>
+    _tags.map(t =>
       '<button class="content-type-tag' + (t.v === "" ? " active" : "") + '" data-type="' + t.v + '">' + t.l + '</button>'
     ).join("") +
     '</div></div>';
   zonesEl.insertAdjacentHTML("afterbegin", toolbar);
   bindContentFilters(zonesEl);
+
+  /* کودک: فقط بخش‌های صوتی نمایش داده شود */
+  if (typeof currentUserRole !== 'undefined' && currentUserRole === 'child') {
+    zonesEl.querySelectorAll('.content-section').forEach(function(sec) {
+      var title = (sec.querySelector('.content-section-title') || {}).textContent || '';
+      if (title.indexOf('صوت') === -1 && title.indexOf('🔊') === -1) {
+        sec.style.display = 'none';
+      }
+    });
+  }
 }
 
 /* فیلتر زنده: جستجو + تگ نوع */

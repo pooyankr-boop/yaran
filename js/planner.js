@@ -576,12 +576,8 @@ var Planner = (function () {
           }).join("") +
         '</div>' +
         '<div class="pl-picker-list" id="pl-wk-pk-list"></div>' +
-        '<div class="pl-picker-footer">' +
-          '<label>ساعت: <select id="pl-wk-pk-time"><option value="' + _weeklyTargetSlot + '">' + (_weeklyTargetSlot || "بدون ساعت") + '</option>';
-    WEEK_SLOTS.forEach(function (s) {
-      if (s !== _weeklyTargetSlot) overlay.innerHTML; // just continue
-    });
-    overlay.querySelector('.pl-picker').innerHTML += '<div class="pl-picker-footer" style="padding:10px 17px;border-top:1.4px solid var(--yr-border);display:flex;justify-content:flex-end;gap:8px;"></div>';
+        '<div class="pl-picker-footer" style="padding:10px 17px;border-top:1.4px solid var(--yr-border);display:flex;justify-content:flex-end;gap:8px;"></div>' +
+      '</div>';
 
     document.body.appendChild(overlay);
 

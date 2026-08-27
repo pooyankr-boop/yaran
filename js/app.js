@@ -80,9 +80,9 @@ function applyRoleVisibility() {
   if (panelScreen) panelScreen.style.display = isChild ? 'none' : '';
 
   // ── اتاق‌ها ──
-  // دکمه محتوای اتاق: مخفی برای کودک
+  // دکمه محتوای اتاق: برای کودک فقط صوتی نشان داده می‌شود
   var roomContentBtn = document.getElementById('room-view-content');
-  if (roomContentBtn) roomContentBtn.style.display = isChild ? 'none' : '';
+  if (roomContentBtn) roomContentBtn.style.display = '';
 
   // بایگانی: منوی هات‌اسپات خالی برای والد
   if (typeof ROOMS !== 'undefined') {
@@ -165,6 +165,12 @@ function renderPanelTab(tab) {
     if (typeof Planner !== "undefined" && Planner.render) Planner.render(body);
     else body.innerHTML = '<div style="padding:2rem;text-align:center;color:#7a6b55;">برنامه‌ریز در حال بارگذاری...</div>';
   } else if (tab === "cms") {
+    /* فقط مدیر: جلوگیری از دسترسی مستقیم */
+    var _r = (typeof currentUserRole !== 'undefined') ? currentUserRole : null;
+    if (_r !== 'manager' && _r !== 'admin') {
+      body.innerHTML = '<div style="padding:2rem;text-align:center;color:#7a6b55;">دسترسی فقط برای مدیر.</div>';
+      return;
+    }
     if (typeof renderCmsTab === "function") renderCmsTab(body);
     else body.innerHTML = '<div style="padding:2rem;text-align:center;color:#7a6b55;">مدیریت محتوا در حال بارگذاری...</div>';
   }
@@ -224,8 +230,17 @@ async function renderAdminTab(body) {
   }
   body.innerHTML = `<div style="text-align:center;color:#7a6b55;padding:1rem;">در حال بارگذاری...</div>`;
   try {
-      const [usersRes, panelRes, tasksRes] = await Promise.all([Api.adminUsers(), Api.panel(), Api.tasks()]);
-      const users = usersRes.users || [];
+      const [usersRes, panelRes, tasksRes, childrenRes, classesRes, reportsRes] = await Promise.all([Api.adminUsers(), Api.panel(), Api.tasks(), Api.adminChildren(), Api.adminClasses(), Api.adminReports()]);
+      const users = (usersRes && usersRes.users) || [];
+      const children = Array.isArray(childrenRes) ? childrenRes : ((childrenRes && childrenRes.children) || []);
+      const classes = Array.isArray(classesRes) ? classesRes : ((classesRes && classesRes.classes) || []);
+      const reports = Array.isArray(reportsRes) ? reportsRes : ((reportsRes && reportsRes.reports) || []);
+      const parentUsers = users.filter(u => u.role === "parent");
+      const teacherUsers = users.filter(u => u.role === "teacher");
+      const teacherName = (id) => { const t = users.find(u => u.id === id); return t ? t.name : "—"; };
+      const parentName = (id) => { const p = users.find(u => u.id === id); return p ? p.name : "—"; };
+      const childName = (id) => { const c = children.find(ch => ch.id === id); return c ? c.name : "—"; };
+      const className = (id) => { const cl = classes.find(c => c.id === id); return cl ? cl.name : "—"; };
       const allTasks = tasksRes.tasks || [];
       const openTasks = allTasks.filter(t => t.status !== 'completed' && t.status !== 'done');
       const doneTasks = allTasks.filter(t => t.status === 'completed' || t.status === 'done');
@@ -299,6 +314,56 @@ async function renderAdminTab(body) {
             <button class="pill-btn admin-delete-message" data-message-id="${escHtml(m.id)}">🗑</button>
           </div>`).join("") || '<p style="color:#7a6b55;">پیامی نیست.</p>'}
       </div>
+
+      <h3 style="margin:1.5rem 0 .8rem;">👶 کودکان (${children.length})</h3>
+      <div style="margin-bottom:1rem;display:flex;gap:6px;flex-wrap:wrap;">
+        <input id="admin-child-name" type="text" placeholder="نام کودک" style="flex:1;min-width:100px;padding:6px 10px;border:1px solid #d4c8b8;border-radius:8px;font-size:.85rem;" />
+        <input id="admin-child-age" type="number" placeholder="سن" style="width:60px;padding:6px 10px;border:1px solid #d4c8b8;border-radius:8px;font-size:.85rem;" />
+        <select id="admin-child-parent" style="padding:6px 10px;border:1px solid #d4c8b8;border-radius:8px;font-size:.85rem;">
+          <option value="">— والد —</option>
+          ${parentUsers.map(p => `<option value="${escHtml(p.id)}">${escHtml(p.name)}</option>`).join("")}
+        </select>
+        <select id="admin-child-teacher" style="padding:6px 10px;border:1px solid #d4c8b8;border-radius:8px;font-size:.85rem;">
+          <option value="">— مربی —</option>
+          ${teacherUsers.map(t => `<option value="${escHtml(t.id)}">${escHtml(t.name)}</option>`).join("")}
+        </select>
+        <select id="admin-child-class" style="padding:6px 10px;border:1px solid #d4c8b8;border-radius:8px;font-size:.85rem;">
+          <option value="">— کلاس —</option>
+          ${classes.map(c => `<option value="${escHtml(c.id)}">${escHtml(c.name)}</option>`).join("")}
+        </select>
+        <button id="admin-add-child-btn" class="pill-btn">+ افزودن</button>
+      </div>
+      <div class="admin-mod-list">
+        ${children.map(c => `<div class="admin-mod-row">
+          <span>${escHtml(c.name)} — سن: ${escHtml(String(c.age || ""))} — والد: ${escHtml(c.parentEmail || "—")} — مربی: ${escHtml(teacherName(c.teacherId))} — کلاس: ${escHtml(className(c.classId))}</span>
+          <button class="pill-btn admin-delete-child" data-id="${escHtml(c.id)}">🗑</button>
+        </div>`).join("") || '<p style="color:#7a6b55;">کودکی ثبت نشده.</p>'}
+      </div>
+
+      <h3 style="margin:1.5rem 0 .8rem;">🏫 کلاس‌ها (${classes.length})</h3>
+      <div style="margin-bottom:1rem;display:flex;gap:6px;">
+        <input id="admin-class-name" type="text" placeholder="نام کلاس" style="flex:1;padding:6px 10px;border:1px solid #d4c8b8;border-radius:8px;font-size:.85rem;" />
+        <select id="admin-class-teacher" style="padding:6px 10px;border:1px solid #d4c8b8;border-radius:8px;font-size:.85rem;">
+          <option value="">— مربی —</option>
+          ${teacherUsers.map(t => `<option value="${escHtml(t.id)}">${escHtml(t.name)}</option>`).join("")}
+        </select>
+        <button id="admin-add-class-btn" class="pill-btn">+ افزودن</button>
+      </div>
+      <div class="admin-mod-list">
+        ${classes.map(c => `<div class="admin-mod-row">
+          <span>${escHtml(c.name)} — مربی: ${escHtml(teacherName(c.teacherId))} — ${c.published ? '✅ منتشر' : '⏸ پیش‌نویس'}</span>
+          <button class="pill-btn admin-toggle-class-published" data-id="${escHtml(c.id)}" data-published="${c.published}">${c.published ? '⏸' : '✅'}</button>
+          <button class="pill-btn admin-delete-class" data-id="${escHtml(c.id)}">🗑</button>
+        </div>`).join("") || '<p style="color:#7a6b55;">کلاسی ثبت نشده.</p>'}
+      </div>
+
+      <h3 style="margin:1.5rem 0 .8rem;">📊 گزارش‌ها (${reports.length})</h3>
+      <div class="admin-mod-list">
+        ${reports.slice(0, 30).map(r => `<div class="admin-mod-row">
+          <span>${escHtml(childName(r.childId))} — ${escHtml(r.teacher?.name || '')} — ${escHtml((r.date || '').substring(0,10))} — ${escHtml(r.note || '')}</span>
+          <button class="pill-btn admin-delete-report" data-id="${escHtml(r.id)}">🗑</button>
+        </div>`).join("") || '<p style="color:#7a6b55;">گزارشی ثبت نشده.</p>'}
+      </div>
     `;
 
     body.querySelectorAll(".admin-role-select").forEach(sel => {
@@ -342,6 +407,64 @@ async function renderAdminTab(body) {
     body.querySelectorAll(".admin-delete-message").forEach(btn => {
       btn.addEventListener("click", async () => {
         try { await Api.deleteMessage(btn.dataset.messageId); renderAdminTab(body); }
+        catch (e) { alert(e.message); }
+      });
+    });
+    // ── کودکان handlers ──
+    const addChildBtn = document.getElementById("admin-add-child-btn");
+    if (addChildBtn) {
+      addChildBtn.addEventListener("click", async () => {
+        const name = document.getElementById("admin-child-name")?.value.trim();
+        const age = document.getElementById("admin-child-age")?.value;
+        const parentId = document.getElementById("admin-child-parent")?.value;
+        const teacherId = document.getElementById("admin-child-teacher")?.value;
+        const classId = document.getElementById("admin-child-class")?.value;
+        if (!name) return alert("نام کودک را وارد کنید.");
+        try {
+          await Api.adminCreateChild({ name, age: age ? String(age) : undefined, parentEmail: parentId || undefined, teacherId: teacherId || undefined, classId: classId || undefined });
+          renderAdminTab(body);
+        } catch (e) { alert(e.message); }
+      });
+    }
+    body.querySelectorAll(".admin-delete-child").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        if (!confirm("این کودک حذف شود؟")) return;
+        try { await Api.adminDeleteChild(btn.dataset.id); renderAdminTab(body); }
+        catch (e) { alert(e.message); }
+      });
+    });
+    // ── کلاس‌ها handlers ──
+    const addClassBtn = document.getElementById("admin-add-class-btn");
+    if (addClassBtn) {
+      addClassBtn.addEventListener("click", async () => {
+        const name = document.getElementById("admin-class-name")?.value.trim();
+        const teacherId = document.getElementById("admin-class-teacher")?.value;
+        if (!name) return alert("نام کلاس را وارد کنید.");
+        try {
+          await Api.adminCreateClass({ name, teacherId: teacherId || undefined });
+          renderAdminTab(body);
+        } catch (e) { alert(e.message); }
+      });
+    }
+    body.querySelectorAll(".admin-toggle-class-published").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        const newPublished = btn.dataset.published === "true" ? false : true;
+        try { await Api.adminUpdateClass(btn.dataset.id, { published: newPublished }); renderAdminTab(body); }
+        catch (e) { alert(e.message); }
+      });
+    });
+    body.querySelectorAll(".admin-delete-class").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        if (!confirm("این کلاس حذف شود؟")) return;
+        try { await Api.adminDeleteClass(btn.dataset.id); renderAdminTab(body); }
+        catch (e) { alert(e.message); }
+      });
+    });
+    // ── گزارش‌ها handlers ──
+    body.querySelectorAll(".admin-delete-report").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        if (!confirm("این گزارش حذف شود؟")) return;
+        try { await Api.adminDeleteReport(btn.dataset.id); renderAdminTab(body); }
         catch (e) { alert(e.message); }
       });
     });

@@ -122,6 +122,22 @@ var VirtualTour = (function () {
       });
     }
 
+    /* audio items from AUDIO_LIBRARY for this room */
+    if (typeof AUDIO_LIBRARY !== 'undefined' && AUDIO_LIBRARY && typeof ROOM_AUDIO_MAP !== 'undefined') {
+      var rcats = ROOM_AUDIO_MAP[rid];
+      if (rcats) {
+        AUDIO_LIBRARY.forEach(function(a) {
+          if (rcats.indexOf(a.category) === -1 || !a.audioUrl) return;
+          var key = a.title.trim().toLowerCase();
+          if (seen[key]) return;
+          seen[key] = 1;
+          if (!isRoleMatch({ type: 'audio' })) return;
+          if (!state.filters['audio']) return;
+          out.push({ item: { title: a.title, type: 'audio', audioUrl: a.audioUrl, category: a.category, channel: a.channel || a.category || '', desc: (a.info || '').substring(0, 300), duration: a.duration || '' }, hs: 'محتوای صوتی', cat: a.category || 'صوت', view: 'herog' });
+        });
+      }
+    }
+
     return out;
   }
 
@@ -153,14 +169,7 @@ var VirtualTour = (function () {
     var items = state.items;
 
     if (state.phase === 'overview') {
-      var _isChildVT = (state.role === 'child' || state.role === 'کودک');
-      if (_isChildVT && items.length > 0) {
-        state.phase = 'content'; state.ci = 0;
-      } else if (_isChildVT) {
-        nextRoom(); return;
-      } else {
-        state.phase = 'hotspot';
-      }
+      state.phase = 'hotspot';
     } else if (state.phase === 'hotspot') {
       if (items.length > 0) {
         state.phase = 'content'; state.ci = 0;

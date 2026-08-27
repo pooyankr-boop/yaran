@@ -48,3 +48,4 @@ server/node_modules/
 # assets/video/*.mp4
 # assets/images/**/*.png
 new-images/
+data/users.json

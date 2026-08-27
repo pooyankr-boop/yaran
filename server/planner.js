@@ -59,7 +59,7 @@ function registerPlanner(app, ctx) {
       parentName: String(parentName || '').substring(0, 80),
       childName: String(childName || '').substring(0, 80),
       room: String(room || '').substring(0, 40),
-      status: 'confirmed',
+      status: kind === 'meeting' ? 'pending' : 'confirmed',
       attachments: Array.isArray(attachments) ? attachments.slice(0, 10).map(a => ({
         title: String(a.title || '').substring(0, 160),
         type: String(a.type || 'pdf'),
@@ -122,8 +122,8 @@ function registerPlanner(app, ctx) {
     // از users + از کودکان ثبت‌شده (ایمیل‌های یکتا)
     const map = {};
     (ctx.listParents ? ctx.listParents() : []).forEach(p => { map[p.email] = p; });
-    Object.values(map).sort((a, b) => a.name.localeCompare(b.name, 'fa'));
-    res.json({ parents: Object.values(map) });
+    const list = Object.values(map).sort((a, b) => a.name.localeCompare(b.name, 'fa'));
+    res.json({ parents: list });
   });
 
   /* ── پیام‌های والدین (با ضمیمه‌ی محتوا) ── */

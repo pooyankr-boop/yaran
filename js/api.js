@@ -93,6 +93,26 @@ const Api = {
     apiFetch("/planner/weekly", { method: "POST", body: JSON.stringify({ week, day, items }) }),
   plannerDeleteWeeklyItem: (week, day, itemId) =>
     apiFetch("/planner/weekly", { method: "DELETE", body: JSON.stringify({ week, day, itemId }) }),
+  /* ── مدیریت کودکان ── */
+  adminChildren: () => apiFetch("/admin/children"),
+  adminCreateChild: (data) =>
+    apiFetch("/admin/children", { method: "POST", body: JSON.stringify(data) }),
+  adminUpdateChild: (id, data) =>
+    apiFetch("/admin/children/" + id, { method: "PUT", body: JSON.stringify(data) }),
+  adminDeleteChild: (id) => apiFetch("/admin/children/" + id, { method: "DELETE" }),
+  /* ── مدیریت کلاس‌ها ── */
+  adminClasses: () => apiFetch("/admin/classes"),
+  adminCreateClass: (data) =>
+    apiFetch("/admin/classes", { method: "POST", body: JSON.stringify(data) }),
+  adminUpdateClass: (id, data) =>
+    apiFetch("/admin/classes/" + id, { method: "PUT", body: JSON.stringify(data) }),
+  adminDeleteClass: (id) => apiFetch("/admin/classes/" + id, { method: "DELETE" }),
+  /* ── مدیریت گزارش‌ها ── */
+  adminReports: () => apiFetch("/admin/reports"),
+  adminUpdateReport: (id, data) =>
+    apiFetch("/admin/reports/" + id, { method: "PUT", body: JSON.stringify(data) }),
+  adminDeleteReport: (id) => apiFetch("/admin/reports/" + id, { method: "DELETE" }),
+  parentReports: () => apiFetch("/parent/reports"),
 };
 
 // اگر سرور بک‌اند بالا نباشد (مثلاً پایلوت روی سیستمی که هنوز server/ اجرا نشده)، APP_API_ONLINE
