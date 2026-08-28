@@ -307,7 +307,10 @@ var Decks = (function () {
     });
 
     stage.querySelectorAll(".dk-flip").forEach(function (btn) {
-      btn.addEventListener("click", function () { btn.classList.toggle("flipped"); });
+      btn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        btn.classList.toggle("flipped");
+      });
     });
 
     var ol = stage.querySelector(".dk-order-list");
@@ -416,25 +419,6 @@ var Decks = (function () {
       if (dx < 0 && current && current.idx < current.deck.slides.length - 1) { current.idx++; render(); }
     }, { passive: true });
   })();
-
-  /* انتخابگر دک‌ها بر اساس مخاطب */
-  function picker(audience) {
-    var list = (typeof DECK_LIBRARY !== "undefined") ? DECK_LIBRARY.filter(function (d) {
-      return !audience || (d.audience || []).indexOf(audience) >= 0;
-    }) : [];
-    var body = document.getElementById("game-body") || document.body;
-    var html = '<div class="dk-picker-grid">';
-    list.forEach(function (d) {
-      html += '<button class="dk-picker-card" data-id="' + d.id + '">' +
-        '<span class="dp-icon">' + (d.icon || "🖥️") + "</span>" +
-        '<span class="dp-title">' + d.title + "</span>" +
-        '<span class="dp-desc">' + (d.desc || "") + "</span>" +
-        '<span class="dp-len">' + YCal.num((d.slides || []).length) + " اسلاید</span>" +
-        "</button>";
-    });
-    html += "</div>";
-    return html;
-  }
 
   /* ═══════════ انتخابگر (picker) ═══════════ */
   function picker(audience) {

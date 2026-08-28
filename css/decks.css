@@ -145,7 +145,7 @@ body.theme-night .dk-opt-letter { background: rgba(255,255,255,.1); }
 .dk-hint { margin-top: 12px; color: var(--yr-text-soft); font-size: .84rem; animation: yr-wavy 2.6s ease-in-out infinite; display: inline-block; }
 
 /* کارت‌های برگردان */
-.dk-flip-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; margin-top: 12px; }
+.dk-flip-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; margin-top: 12px; max-height: 60vh; overflow-y: auto; }
 .dk-flip { perspective: 900px; background: none; border: none; padding: 0; cursor: pointer; height: 150px; }
 .dk-flip-inner {
   position: relative; display: block; width: 100%; height: 100%;

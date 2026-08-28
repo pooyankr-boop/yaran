@@ -25,5 +25,41 @@
     "role": "teacher",
     "tenant": "yaran",
     "createdAt": "2026-08-26T23:55:28.685Z"
+  },
+  {
+    "id": "20619354-1a6a-4d22-bc98-a3812b44a21d",
+    "name": "مدیر محتوا",
+    "email": "manager@yaran.ir",
+    "password": "$2a$10$JLwcATXg25JIhm4Rnwk.1OBg2RfVZlKUATGjfH1oJyIHHG.BNOT3u",
+    "role": "teacher",
+    "tenant": "yaran",
+    "createdAt": "2026-08-27T12:11:55.078Z"
+  },
+  {
+    "id": "5e2ebf27-d9b7-4cc6-ac93-e5cc0e23002e",
+    "name": "مربی",
+    "email": "teacher@yaran.ir",
+    "password": "$2a$10$EflhgsAH5AARAgqs6oV0JulvnDR91qpzaJkaEOyfsVs5r3Iwt60nm",
+    "role": "teacher",
+    "tenant": "yaran",
+    "createdAt": "2026-08-27T12:11:55.169Z"
+  },
+  {
+    "id": "06f7eccd-0ef2-48c0-8a96-1333b9afe456",
+    "name": "والد",
+    "email": "parent@yaran.ir",
+    "password": "$2a$10$y3TZAAsD28CKpbyjBmz8rOYRu1G5H3PAzhNJAHiRGg//R2D7qYpeu",
+    "role": "parent",
+    "tenant": "yaran",
+    "createdAt": "2026-08-27T12:11:55.253Z"
+  },
+  {
+    "id": "2064317f-662b-490c-bdb5-2e2e3b45bcfe",
+    "name": "کودک",
+    "email": "child@yaran.ir",
+    "password": "$2a$10$p6oWLTkUCoivWHfYLj9QEOe3FNCxYaZfUkSow9Vk46XswP.kTUXgS",
+    "role": "teacher",
+    "tenant": "yaran",
+    "createdAt": "2026-08-27T12:11:55.337Z"
   }
 ]
