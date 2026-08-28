@@ -15,6 +15,18 @@ const http = require('http');
 const crypto = require('crypto');
 const dns = require('dns');
 const net = require('net');
+
+// Simple .env loader (no dotenv dependency)
+const envPath = path.join(__dirname, '..', '.env');
+if (fs.existsSync(envPath)) {
+  fs.readFileSync(envPath, 'utf8').split('\n').forEach(line => {
+    const trimmed = line.trim();
+    if (trimmed && !trimmed.startsWith('#') && trimmed.includes('=')) {
+      const [key, ...val] = trimmed.split('=');
+      process.env[key.trim()] = val.join('=').trim();
+    }
+  });
+}
 const { WebSocketServer } = require('ws');
 // Bot is run separately via telegram-bot/bot.js (start-all.js or standalone)
 const { registerPlanner } = require('./planner');
@@ -379,6 +391,41 @@ app.delete('/api/tasks/:id', (req, res) => {
 
 app.get('/api/tasks', (_req, res) => {
   res.json({ tasks: memoryTasks.reverse() });
+});
+
+// ── Chat Bot Proxy (Groq API) ──
+app.post('/api/chat', async (req, res) => {
+  try {
+    const { messages } = req.body;
+    if (!messages || !Array.isArray(messages)) {
+      return res.status(400).json({ error: 'messages required' });
+    }
+    const apiKey = process.env.GROQ_API_KEY;
+    if (!apiKey) {
+      return res.status(500).json({ error: 'GROQ_API_KEY not configured' });
+    }
+    const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + apiKey
+      },
+      body: JSON.stringify({
+        model: 'openai/gpt-oss-120b',
+        messages: [
+          { role: 'system', content: 'مهم‌ترین قانون: هرگز اطلاعات جعلی، آدرس وب‌سایت ابداعی، شماره تلفن ساختگی یا هیچ اطلاعاتی که مطمئن نیستی صحیح است ارائه نکن. اگر چیزی را نمی‌دانی بگو «اطلاعات دقیقی در این مورد ندارم». فقط به فارسی پاسخ بده. تو یاران هستی، نه ChatGPT.' },
+          ...messages
+        ],
+        max_tokens: 500,
+        temperature: 0.7
+      })
+    });
+    const data = await groqRes.json();
+    res.json(data);
+  } catch (e) {
+    console.error('Chat proxy error:', e.message);
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // ── Content update (staff only) ──

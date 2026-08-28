@@ -203,6 +203,13 @@ window.showScreen = function(id) {
     startTipRotation();
     initSlideshow();
     startSlideshow();
+    /* ── خوشامدگویی ربات یاران ── */
+    if (typeof YaranBot !== "undefined") {
+      setTimeout(function () {
+        var fab = document.getElementById("yr-chat-fab");
+        if (fab) fab.classList.add("yr-chat-fab-pulse-active");
+      }, 1500);
+    }
   } else {
     clearInterval(tipTimer);
     clearInterval(slideTimer);
