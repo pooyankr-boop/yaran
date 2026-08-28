@@ -129,13 +129,15 @@ document.getElementById("btn-decks").addEventListener("click", function () {
   if (typeof currentUserRole !== "undefined" && currentUserRole === "child") return;
   if (typeof Decks === "undefined" || typeof DECK_LIBRARY === "undefined") return;
   var aud = (typeof currentUserRole !== "undefined" && currentUserRole === "parent") ? "parent"
-    : (typeof currentUserRole !== "undefined" && currentUserRole === "manager") ? "staff" : "teacher";
+    : (typeof currentUserRole !== "undefined" && currentUserRole === "manager") ? null : "teacher";
   var modal = document.getElementById("game-modal");
   var header = document.getElementById("game-header");
   var body = document.getElementById("game-body");
   if (!modal || !header || !body) return;
   header.innerHTML = '<span>🖥️</span> — ' + (aud === "parent"
     ? "درس‌های تعاملی والدین"
+    : aud === null
+    ? "درس‌های تعاملی (همه محتواها)"
     : "درس‌های تعاملی مربیان و کارکنان");
   body.innerHTML = Decks.picker(aud);
   modal.classList.remove("hidden");
