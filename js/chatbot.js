@@ -312,7 +312,9 @@ var YaranBot = (function () {
         } else if (err === "providers_exhausted") {
           addBotMessage("فعلاً همه مدلهای هوش مصنوعی در دسترس نیستند 📵 — چند دقیقه دیگر دوباره امتحان کن."); setRayanState("sad");
         } else if (res.status === 429 || err === "rate_limited") {
-          addBotMessage("سهمیه هوش مصنوعی موقتاً پر شده ⏳ — چند ثانیه صبر کن و دوباره بفرست."); setRayanState("sad");
+          var ra = parseInt(res.headers && res.headers.get ? res.headers.get("Retry-After") : "", 10);
+          addBotMessage("سهمیه هوش مصنوعی موقتاً پر شده ⏳" + (ra > 0 ? " — " + ra + " ثانیه دیگر دوباره امتحان کن." : " — چند ثانیه صبر کن و دوباره بفرست."));
+          setRayanState("sad");
         } else {
           addBotMessage("متأسفم، مشکلی پیش اومد. لطفاً دوباره امتحان کن. 🙏"); setRayanState("sad");
         }
@@ -340,7 +342,12 @@ var YaranBot = (function () {
         if (chatHistory[hi].role === "assistant" && lastBot === "") lastBot = chatHistory[hi].content || "";
         if (chatHistory[hi].role === "user" && lastUser === "") lastUser = chatHistory[hi].content || "";
       }
-      renderActionButtons("after_msg");
+      // پیشنهادهای سرور (از نتایج ابزار — بدون توکن اضافه)
+      if (Array.isArray(data.suggestions) && data.suggestions.length) {
+        renderServerSuggestions(data.suggestions);
+      } else {
+        renderActionButtons("after_msg");
+      }
     } catch (e) {
       console.error("Bot fetch error:", e);
       hideTyping();
@@ -349,6 +356,20 @@ var YaranBot = (function () {
     } finally {
       btn.disabled = false;
     }
+  }
+
+  /* ── پیشنهادهای سرور: دکمههای data-msg ── */
+  function renderServerSuggestions(list) {
+    var box = document.getElementById("yr-chat-suggestions");
+    if (!box) return;
+    var html = "";
+    list.slice(0, 4).forEach(function (s) {
+      if (!s || !s.msg) return;
+      html += '<button class="yr-chat-sug" data-msg="' + String(s.msg).replace(/"/g, "&quot;") + '">' + (s.label || "→") + "</button>";
+    });
+    if (!html) return;
+    box.innerHTML = html;
+    box.style.display = "flex";
   }
 
   /* ── اجرای اقدامات Needle سمت مرورگر ── */

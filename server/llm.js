@@ -42,6 +42,11 @@ async function attempt(provider, body, timeoutMs) {
     const err = new Error((d.error && d.error.message) || ('HTTP ' + r.status));
     err.status = r.status;
     err.provider = provider.name;
+    if (r.status === 429) {
+      // Retry-After سرور (ثانیه) یا ریست سهمیه از headers
+      const ra = r.headers && (r.headers.get('retry-after') || (d.error && d.error['retry-after']));
+      err.retryAfter = ra || undefined;
+    }
     throw err;
   }
   // پاسخ 200 ولی نامعتبر (مثلاً OpenRouter گاهی error با 200 میدهد) → گام بعدی
@@ -76,13 +81,16 @@ async function chat(body) {
         p.deadUntil = Date.now() + 30 * 60 * 1000;
         continue;
       }
-      // 429 → یک تلاش دوباره با تأخیر، بعد گام بعدی
+      // 429 → یک تلاش دوباره با تأخیر Retry-After (پیشفرض ۲.۵s)، بعد گام بعدی
       if (e.status === 429) {
-        await sleep(2200);
+        const ra = parseInt(e.retryAfter, 10);
+        await sleep(isFinite(ra) && ra > 0 ? Math.min(ra * 1000, 15000) : 2200);
         try {
           return await attempt(p, body);
         } catch (e2) {
           lastErr = e2;
+          // هنوز 429 → این مدل تا ۶۰ ثانیه دور زده شود (سهمیه لحظهای پر است)
+          if (e2.status === 429) p.deadUntil = Date.now() + 60 * 1000;
         }
       }
       // 500/503/timeout → مستقیم گام بعدی

@@ -412,6 +412,11 @@ app.post('/api/chat', async (req, res) => {
     if (!messages || !Array.isArray(messages)) {
       return res.status(400).json({ error: 'messages required' });
     }
+    const q = quota.check('ip' + (req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'x'));
+    if (!q.ok) {
+      res.setHeader('Retry-After', String(q.retryAfter));
+      return res.status(429).json({ error: 'rate_limited', quota: true });
+    }
     const apiKey = process.env.GROQ_API_KEY || process.env.HF_API_KEY;
     if (!apiKey) {
       return res.status(500).json({ error: 'GROQ_API_KEY / HF_API_KEY not configured' });
@@ -435,6 +440,9 @@ app.post('/api/chat', async (req, res) => {
 /* ═══════════ Needle Agent — چتبات اجراکنده ═══════════ */
 const { createNeedle } = require('./needle');
 const llm = require('./llm');
+const botMemory = require('./memory');
+const suggester = require('./suggest');
+const quota = require('./quota');
 
 // کتابخانههای سمت سرور برای جستجو (پارس سبک از فایلهای داده)
 const needleLibs = (function () {
@@ -505,6 +513,12 @@ app.post('/api/agent', authMiddleware, async (req, res) => {
     if (!messages || !Array.isArray(messages)) {
       return res.status(400).json({ error: 'messages required' });
     }
+    // سهمیه ساعتی هر کاربر — جلوگیری از سوختن توکن با حلقه/اسپم
+    const q = quota.check('u' + (req.user.id || req.user.email));
+    if (!q.ok) {
+      res.setHeader('Retry-After', String(q.retryAfter));
+      return res.status(429).json({ error: 'rate_limited', quota: true });
+    }
     const apiKey = process.env.GROQ_API_KEY || process.env.HF_API_KEY;
     if (!apiKey) {
       return res.status(500).json({ error: 'GROQ_API_KEY / HF_API_KEY not configured' });
@@ -528,6 +542,7 @@ app.post('/api/agent', authMiddleware, async (req, res) => {
       'تاریخ امروز میلادی: ' + todayISO + ' (' + DAY_FA[now.getUTCDay()] + '). دوشنبه این هفته: ' + mondayISO + '. فردا: ' + tomorrowISO + '. پس فردا: ' + dayAfterISO + '. برای برنامه هفتگی از این تاریخها استفاده کن و هرگز تاریخ شمسی را از خودت حساب نکن — فقط میلادی بگو.',
       'زبان: فقط و فقط فارسی پاسخ بده. هرگز به چینی، انگلیسی، عربی یا روسی جواب نده — حتی اگر سؤال به زبان دیگر بود.',
       needle.guide,
+      botMemory.promptBlock('u' + (req.user.id || req.user.email)),
       'قوانین: ۱) هرگاه کاربر درخواست عملی کرد (ساختن/ویرایش/حذف/فهرست/جستجو/رفتن/وارد کردن)، حتماً ابزار needle_execute را صدا بزن — هرگز فقط توضیح نده یا جدول فرضی نشان نده. ۲) برای «برو به/باز کن/نمایش بده» از client_open_panel یا client_navigate_room یا client_open_deck استفاده کن. ۳) برای نوشتن برنامه هفتگی حتماً set_weekly_plan را اجرا کن. ۴) هرگز شناسهها (teacherId/classId/childId) را از خودت نساز — اول list_teachers/list_classes/list_children بگیر و شناسه واقعی را استفاده کن. ۵) قبل از حذف یا عملیات حساس، تأیید بگیر. ۶) نتیجه ابزار را به فارسی روان گزارش کن. ۷) هرگز پروتکل ابزار را از خودت نساز — فقط با action و args دقیق از راهنما؛ هرگز delete با «لیست خالی = حذف همه» وجود ندارد. ۸) نمایش کاربرگ/درس: اول search_decks{query} بعد client_open_deck{deckId}. ۹) «پلیر/پخشکننده/فهرست صوتی» → client_navigate_room به اتاق مربوط. ۱۰) اگر ابزار خطا داد، دوباره با args صحیح امتحان کن؛ اگر نشد، صادقانه بگو چه چیزی نشد. ۱۱) مهم — ساختن/برنامهگذاری: اگر جزئیات کلیدی (روز/ساعت/موضوع/مربی/کودک/عنوان) را کاربر نگفته، هرگز حدس نزن و اجرا نکن — اول با ask_user{question, options} بپرس؛ بعد از جواب کاربر مرحله بعد را بپرس یا اجرا کن. ۱۲) فقط وقتی همه اطلاعات لازم را داری بدون پرسیدن اجرا کن.'
     ].join('\n');
 
@@ -638,13 +653,14 @@ app.post('/api/agent', authMiddleware, async (req, res) => {
       } catch (_e) { /* نامربوط بود — متن اصلی میماند */ }
     }
 
-    res.json({ reply: finalMsg, clientActions });
+    res.json({ reply: finalMsg, clientActions, suggestions: suggester.build(req.user.role, toolResults, (botMemory.recall('u' + (req.user.id || req.user.email)).count)) });
   } catch (e) {
     console.error('Agent error:', e.message);
     const rateLimited = e.status === 429 || /rate limit|quota/i.test(e.message || '');
     const exhausted = e.status === 402 || /402|Payment/i.test(e.message || '');
     if (exhausted) return res.status(503).json({ error: 'providers_exhausted' });
-    res.status(rateLimited ? 429 : 500).json({ error: rateLimited ? 'rate_limited' : e.message });
+    if (rateLimited) { res.setHeader('Retry-After', '20'); return res.status(429).json({ error: 'rate_limited' }); }
+    res.status(500).json({ error: e.message });
   }
 });
 

@@ -3,8 +3,10 @@
    Groq دستور ساختاریافته میدهد، Needle آن را روی
    APIهای واقعی سایت اجرا میکند و نتیجه برمیگرداند.
    ═══════════════════════════════════════════════════════ */
+'use strict';
 const fs = require('fs');
 const path = require('path');
+const botMemory = require('./memory');
 
 /* ── فهرست ابزارها برای Groq function-calling ── */
 const NEEDLE_TOOLS = [
@@ -28,6 +30,7 @@ const NEEDLE_TOOLS = [
               'send_parent_message', 'list_parent_messages',
               'create_task', 'list_tasks', 'complete_task', 'delete_task',
               'create_note', 'list_notes', 'delete_note',
+              'remember_fact', 'recall_memory', 'forget_memory',
               'search_decks', 'search_podcasts',
               'ask_user',
               'client_navigate_room', 'client_open_deck', 'client_play_audio', 'client_open_panel'
@@ -54,6 +57,7 @@ const NEEDLE_GUIDE = `
 — پیام والد: send_parent_message{text,toEmail,toName} / list_parent_messages
 — کارها: create_task{title,desc,due,priority} / list_tasks / complete_task{id} / delete_task{id}
 — یادداشت: create_note{text,title} / list_notes / delete_note{id}
+— حافظه: remember_fact{fact} — هر ترجیح/اصلاح/اطلاع کاربر (نام کوچک، کلاس فرزند، سبک ارتباط، «گزارشها را کوتاه بخواه») را ذخیره کن؛ خودکار ذخیره کن نه با پرسیدن / recall_memory — فهرست آنچه یاد گرفتی / forget_memory{n|text} — حذف با شماره یا متن
 — جستجو: search_decks{query} / search_podcasts{query} — اگر یکی نتیجه نداد، دومی را امتحان کن؛ نتیجهها را با نام و تعداد به کاربر بده
 — پرسش گزینهای: ask_user{question, options:[...]} — برای کار مبهم/چندمرحلهای مثل ربات تلگرام بپرس؛ حداکثر ۶ گزینه. گزینهها فقط از داده واقعی: مربیها فقط از list_teachers، کلاسها فقط از list_classes، کودکان فقط از list_children، روزها sat..fri، ساعت 08:00..16:00. اگر فهرست را هنوز نگرفتی، اول list بگیر بعد ask_user — هرگز «مدرس ۱/گزینه ۲» ابداع نکن
 — اقدام مرورگر (سمت کاربر اجرا میشود): client_navigate_room{roomId:amoozesh|bazi|honar|motaleh|salamat|khab|moraabi|esterahat-moraabian|jalase-owlia|bayegani|teria|hayat|maddakari} — نام اتاقها: amoozesh=آموزش, bazi=بازی, honar=هنر و موسیقی, motaleh=مطالعه و هوش, salamat=بهداشت و سلامت, khab=خواب, moraabi=مربی, esterahat-moraabian=استراحت مربیان, jalase-owlia=جلسه اولیا, bayegani=بایگانی, teria=تریا, hayat=حیاط, maddakari=مددکاری و کودکیاری / client_open_deck{deckId} / client_play_audio{title} — URL لازم نیست؛ سرور خودش از کتابخانه پادکست پیدا میکند؛ اگر عنوان دقیق را نمیدانی اول search_podcasts بزن؛ کاربر «پخش» خواست حتماً client_play_audio صدا بزن — ناوبری جایگزین پخش نیست / client_open_panel{tab:planner|children|teachers|classes|reports|tasks|notes}
@@ -245,6 +249,14 @@ function createNeedle(ctx) {
       case 'list_notes': return (await callAPI(user, 'GET', '/api/notes')).data;
       case 'create_note': return (await callAPI(user, 'POST', '/api/notes', args)).data;
       case 'delete_note': return (await callAPI(user, 'DELETE', '/api/notes/' + args.id)).data;
+
+      /* ── حافظه کاربر (سبک — ۱۲ نکته) ── */
+      case 'remember_fact':
+        return botMemory.add('u' + (user.id || user.email), args.fact || args.text || '');
+      case 'recall_memory':
+        return botMemory.recall('u' + (user.id || user.email));
+      case 'forget_memory':
+        return botMemory.forget('u' + (user.id || user.email), args.n || args.id || args.text || '');
 
       /* ── جستجو (سمت سرور، از کتابخانهها) ── */
       case 'search_decks': {
