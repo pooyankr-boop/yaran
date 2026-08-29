@@ -23,7 +23,7 @@
   border: 1.5px solid var(--yr-border);
   border-radius: var(--r-lg);
   box-shadow: var(--yr-shadow);
-  overflow: hidden;
+  overflow: clip;
 }
 
 /* هدر */

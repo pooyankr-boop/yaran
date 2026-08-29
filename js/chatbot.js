@@ -90,9 +90,9 @@ var YaranBot = (function () {
   function createDOM() {
     // FAB button
     var fab = document.createElement("button");
-    fab.className = "yr-chat-fab";
+    fab.className = "yr-chat-fab"; fab.style.cssText = "position:absolute;width:0;height:0;overflow:hidden;opacity:0;pointer-events:none;";
     fab.id = "yr-chat-fab";
-    fab.innerHTML = '<span class="yr-chat-fab-emoji">🤖</span><span class="yr-chat-fab-pulse"></span>';
+    fab.innerHTML = '<img src="img/kebo/idle.gif" class="yr-chat-fab-emoji" style="width:50px;height:50px;border-radius:50%;image-rendering:pixelated;" alt="رایان" /><span class="yr-chat-fab-pulse"></span>';
     fab.title = "چت با رایان";
     document.body.appendChild(fab);
 
