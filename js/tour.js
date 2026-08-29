@@ -64,7 +64,7 @@ window.addEventListener("resize", () => {
 window.addEventListener("load", positionPlanLayout);
 
 /* ---------- اینترو ---------- */
-document.getElementById("btn-enter").addEventListener("click", () => showScreen("screen-plan"));
+document.getElementById("btn-enter").addEventListener("click", () => { showScreen("screen-plan"); setTimeout(function(){ if (typeof RayanPet !== "undefined") RayanPet.init(); }, 300); });
 
 /* ---------- پلان ---------- */
 function renderDoors() {
@@ -77,7 +77,7 @@ function renderDoors() {
     el.style.left = door.x + "%";
     el.style.top = door.y + "%";
     el.innerHTML = '<div class="door-icon">🚪</div><div class="door-label">' + door.label + '</div>';
-    el.addEventListener("click", () => { setRole(door.role); showScreen("screen-lobby"); });
+    el.addEventListener("click", () => { setRole(door.role); showScreen("screen-lobby"); if (typeof RayanPet !== "undefined") RayanPet.init(); });
     wrap.appendChild(el);
   });
   positionPlanLayout();

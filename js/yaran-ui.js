@@ -1,5 +1,5 @@
 /*
-  یاران — راه‌اندازی اجزای بصری جدید (ماسکوت اینترو، ذرات محیطی، دکور صحنه‌ها)
+  رایان — راه‌اندازی اجزای بصری جدید (ماسکوت اینترو، ذرات محیطی، دکور صحنه‌ها)
 */
 (function () {
   "use strict";
@@ -12,7 +12,7 @@
   /* ماسکوت صفحه‌ی اینترو */
   function mountIntro() {
     var slot = document.getElementById("intro-mascot");
-    if (slot) slot.innerHTML = '<img src="img/kebo/wave.gif" style="width:130px;height:130px;image-rendering:pixelated;" alt="یاران" />';
+    if (slot) slot.innerHTML = '<img src="img/kebo/wave.gif" style="width:130px;height:130px;image-rendering:pixelated;" alt="رایان" />';
   }
 
   /* تصاویر استاتیک HTML (پلان/لابی/نقشه) از مانیفست رسانه حل شوند
