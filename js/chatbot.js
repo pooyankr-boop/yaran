@@ -1,4 +1,4 @@
-/* ═══════════ چت‌بات یاران — دستیار هوشمند مهدکودک ═══════════ */
+/* ═══════════ چت‌بات رایان — دستیار هوشمند مهدکودک ═══════════ */
 var YaranBot = (function () {
   var GROQ_KEY = "";  // Used server-side only via /api/chat proxy
   var GROQ_URL = "/api/chat";
@@ -71,9 +71,9 @@ var YaranBot = (function () {
   }
   var systemPrompt = [
     "مهم‌ترین قانون مطلق: هرگز اطلاعات جعلی، آدرس وب‌سایت ابداعی، شماره تلفن ساختگی، یا هیچ اطلاعاتی که مطمئن نیستی صحیح است ارائه نکن. اگر چیزی را نمی‌دانی صریحاً بگو «اطلاعات دقیقی در این مورد ندارم».",
-    "تو «یاران» هستی، دستیار هوشمند مهدکودک مجازی یاران. یک شخصیت کارتونی مهربان و باانرژی هستی.",
+    "تو «رایان» هستی، دستیار هوشمند مهدکودک مجازی یاران. یک شخصیت کارتونی مهربان و باانرژی هستی.",
     "فقط به فارسی پاسخ بده. هرگز انگلیسی، عربی، روسی یا هیچ زبان دیگری استفاده نکن.",
-    "تو ChatGPT یا OpenAI نیستی. تو یاران هستی.",
+    "تو ChatGPT یا OpenAI نیستی. تو رایان هستی.",
     "قوانین سختگیرانه:\n- فقط اطلاعاتی بده که در این system prompt آمده\n- هرگز آدرس وب‌سایت، شماره تلفن، لینک یا منبعی ابداع نکن\n- اگر سؤالی خارج از اطلاعات موجود پرسیده شد، بگو «اطلاعات دقیقی در این مورد ندارم»\n- مختصر و مفید باش\n- مهربان و صمیمی باش\n- از ایموجی مناسب استفاده کن",
     (typeof YARAN_KB !== "undefined" ? YARAN_KB : ""),
     "تخصص تو: مهدکودک، تربیت کودک، رشد کودک، بازی‌های آموزشی، مشاوره والدین، مدیریت کلاس، محتوای آموزشی پیش‌دبستانی."
@@ -89,10 +89,10 @@ var YaranBot = (function () {
   function createDOM() {
     // FAB button
     var fab = document.createElement("button");
-    fab.className = "yr-chat-fab"; fab.style.display = "none";
+    fab.className = "yr-chat-fab";
     fab.id = "yr-chat-fab";
     fab.innerHTML = '<span class="yr-chat-fab-emoji">🤖</span><span class="yr-chat-fab-pulse"></span>';
-    fab.title = "چت با یاران";
+    fab.title = "چت با رایان";
     document.body.appendChild(fab);
 
     // Panel
@@ -103,7 +103,7 @@ var YaranBot = (function () {
       '<div class="yr-chat-header">' +
         '<div class="yr-chat-avatar-wrap"><img id="yr-chat-avatar" src="img/kebo/idle.gif" alt="یاران" style="width:42px;height:42px;border-radius:50%;image-rendering:pixelated;" /></div>' +
         '<div class="yr-chat-header-info">' +
-          '<div class="yr-chat-header-name">🤖 یاران — دستیار هوشمند</div>' +
+          '<div class="yr-chat-header-name">🤖 رایان — دستیار هوشمند</div>' +
           '<div class="yr-chat-header-status">آنلاین • متخصص مهدکودک</div>' +
         '</div>' +
         '<button class="yr-chat-close" id="yr-chat-close">✕</button>' +
@@ -149,7 +149,7 @@ var YaranBot = (function () {
       fab.querySelector(".yr-chat-fab-pulse").style.display = "none";
       // Welcome message on first open
       if (chatHistory.length === 0) {
-        addBotMessage("سلام! 👋 من یارانم، دستیار هوشمند مهدکودک یاران.\n\nمی‌تونم کمکت کنم:\n• راهنمایی محتواهای سایت\n• مشاوره تربیت کودک\n• پیشنهاد بازی و فعالیت آموزشی\n• برنامه‌ریزی روزانه مهدکودک\n\nهر سؤالی داری بپرس! 😊");
+        addBotMessage("سلام! 👋 من رایانم، دستیار هوشمند مهدکودک یاران.\n\nمی‌تونم کمکت کنم:\n• راهنمایی محتواهای سایت\n• مشاوره تربیت کودک\n• پیشنهاد بازی و فعالیت آموزشی\n• برنامه‌ریزی روزانه مهدکودک\n\nهر سؤالی داری بپرس! 😊");
         renderActionButtons(); setTimeout(function(){ setKeboState("idle"); }, 3000);
       }
       setTimeout(function () { document.getElementById("yr-chat-input").focus(); }, 300);
