@@ -46,12 +46,7 @@ var YaranBot = (function () {
         '<button class="yr-chat-close" id="yr-chat-close">✕</button>' +
       '</div>' +
       '<div class="yr-chat-messages" id="yr-chat-messages"></div>' +
-      '<div class="yr-chat-suggestions" id="yr-chat-suggestions">' +
-        '<button class="yr-chat-sug" data-msg="چه امکاناتی داری؟">🎯 امکانات سایت</button>' +
-        '<button class="yr-chat-sug" data-msg="چطوری با بچه ارتباط برقرار کنم؟">💬 ارتباط با کودک</button>' +
-        '<button class="yr-chat-sug" data-msg="بهترین بازی‌های آموزشی کدامند؟">🎮 بازی آموزشی</button>' +
-        '<button class="yr-chat-sug" data-msg="برنامه روزانه مهد پیشنهاد بده">📅 برنامه روزانه</button>' +
-      '</div>' +
+      '<div class="yr-chat-suggestions" id="yr-chat-suggestions" style="display:none"></div>' +
       '<div class="yr-chat-input">' +
         '<input type="text" id="yr-chat-input" placeholder="پیامتون رو بنویسید..." autocomplete="off" />' +
         '<button class="yr-chat-send" id="yr-chat-send">⬆</button>' +
@@ -256,7 +251,7 @@ var YaranBot = (function () {
         hideTyping();
         if (res.status === 401) {
           // توکن نامعتبر — پاکسازی و راهنمای لاگین مجدد
-          localStorage.removeItem("yaran_jwt");
+          localStorage.removeItem("yaran-token");
           localStorage.removeItem("yaran_user");
           addBotMessage("توکن نشست منقضی شد. لطفاً دوباره از در وارد شو و لاگین کن. 🔑");
         } else if (err === "providers_exhausted") {

@@ -522,7 +522,7 @@ app.post('/api/agent', authMiddleware, async (req, res) => {
     async function callGroq(msgs, tools) {
       const body = {
         messages: [{ role: 'system', content: sysPrompt }, ...msgs],
-        max_tokens: 2000,
+        max_tokens: 1200,
         temperature: 0.4
       };
       if (tools) { body.tools = tools; body.tool_choice = 'auto'; }
