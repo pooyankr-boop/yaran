@@ -88,6 +88,38 @@
       "days": {
         "sat": []
       }
+    },
+    "2026-09-07": {
+      "days": {
+        "sat": [
+          {
+            "id": "b3991250-7ca5-4f9d-af8e-c879d0cfd7d7",
+            "title": "قصه کبوتر کوچک",
+            "type": "story",
+            "time": "09:00",
+            "desc": "",
+            "url": "",
+            "image": "",
+            "icon": "",
+            "teacherId": "ce8a33f7-9fa3-41a2-9eea-4f56d062c4cd",
+            "classId": "class-1"
+          }
+        ],
+        "sun": [
+          {
+            "id": "be426474-d0ad-4d8b-ba3d-896210adf77d",
+            "title": "نقاشی",
+            "type": "art",
+            "time": "10:00",
+            "desc": "",
+            "url": "",
+            "image": "",
+            "icon": "",
+            "teacherId": "7881d956-c818-43e8-95de-8b40e0132e6b",
+            "classId": "ef6c7f9b-2f4b-4cbd-9260-612e13cbdf8a"
+          }
+        ]
+      }
     }
   }
 }

@@ -429,8 +429,33 @@ var Planner = (function () {
   var WEEK_SLOT_FA = ["۸", "۹", "۱۰", "۱۱", "۱۲", "۱۳", "۱۴", "۱۵", "۱۶"];
   var _weeklyWeek = "";  // "2026-W35"
   var _weeklyData = {};  // { sat: [...], sun: [...], ... }
+  var _weeklySaved = {}; // آخرین وضعیت ذخیرهشده (مقایسه draft)
   var _weeklyTargetDay = "";
   var _weeklyTargetSlot = "";
+
+  /* ذخیره همهروزها — فقط روزهای تغییرکرده */
+  function wkStatus(msg, isErr) {
+    var s = document.getElementById("pl-wk-status");
+    if (s) s.textContent = msg || "";
+  }
+  async function saveAllWeekly() {
+    var days = ["sat", "sun", "mon", "tue", "wed", "thu", "fri"];
+    var changed = days.filter(function (d) {
+      return JSON.stringify(_weeklyData[d] || []) !== JSON.stringify(_weeklySaved[d] || []);
+    });
+    if (!changed.length) { wkStatus("تغییری برای ذخیره نیست ✓"); return; }
+    wkStatus("در حال ذخیره...");
+    try {
+      for (var i = 0; i < changed.length; i++) {
+        var d = changed[i];
+        var r = await Api.plannerSaveWeeklyDay(_weeklyWeek, d, _weeklyData[d] || []);
+        _weeklySaved[d] = JSON.parse(JSON.stringify(_weeklyData[d] || []));
+      }
+      wkStatus("برنامه ذخیره شد ✓ (" + changed.length + " روز)");
+    } catch (e) {
+      wkStatus("خطا در ذخیره: " + (e.message || e));
+    }
+  }
 
   function isoWeekKey(dateStr) {
     var d = new Date(dateStr + "T12:00:00");
@@ -451,9 +476,12 @@ var Planner = (function () {
         '<span class="yr-display" id="pl-wk-title"></span>' +
         '<button class="pill-btn" id="pl-wk-next">هفته بعد ›</button>' +
         '<button class="pill-btn pl-today-btn" id="pl-wk-today">امروز</button>' +
+        '<button class="svgx-fab cool" id="pl-wk-save" style="margin-inline-start:auto;">💾 ذخیره برنامه</button>' +
       '</div>' +
-      '<div class="pl-wk-grid" id="pl-wk-grid"></div>';
+      '<div class="pl-wk-grid" id="pl-wk-grid"></div>' +
+      '<div id="pl-wk-status" style="text-align:center;font-size:.85rem;color:#7a6b55;padding:8px;"></div>';
 
+    el.querySelector("#pl-wk-save").addEventListener("click", function () { saveAllWeekly(); });
     el.querySelector("#pl-wk-prev").addEventListener("click", function () { shiftWeekly(-1); });
     el.querySelector("#pl-wk-next").addEventListener("click", function () { shiftWeekly(1); });
     el.querySelector("#pl-wk-today").addEventListener("click", function () {
@@ -482,8 +510,10 @@ var Planner = (function () {
     try {
       var res = await Api.plannerWeekly(_weeklyWeek);
       _weeklyData = res.days || {};
+      _weeklySaved = JSON.parse(JSON.stringify(_weeklyData));
     } catch (e) {
       _weeklyData = {};
+      _weeklySaved = {};
     }
     renderWeeklyGrid(gridEl);
   }
@@ -555,9 +585,8 @@ var Planner = (function () {
         var day = btn.dataset.day;
         var id = btn.dataset.id;
         _weeklyData[day] = (_weeklyData[day] || []).filter(function (it) { return it.id !== id; });
-        Api.plannerSaveWeeklyDay(_weeklyWeek, day, _weeklyData[day]).then(function () {
-          renderWeeklyGrid(gridEl);
-        });
+        renderWeeklyGrid(gridEl);
+        wkStatus("آیتم حذف شد — برای اعمال، «💾 ذخیره برنامه» را بزن");
       });
     });
   }
@@ -649,11 +678,10 @@ var Planner = (function () {
         };
         if (!_weeklyData[_weeklyTargetDay]) _weeklyData[_weeklyTargetDay] = [];
         _weeklyData[_weeklyTargetDay].push(newItem);
-        Api.plannerSaveWeeklyDay(_weeklyWeek, _weeklyTargetDay, _weeklyData[_weeklyTargetDay]).then(function () {
-          overlay.remove();
-          var gridEl = document.getElementById("pl-wk-grid");
-          if (gridEl) renderWeeklyGrid(gridEl);
-        }).catch(function (e) { alert("خطا: " + e.message); });
+        overlay.remove();
+        var gridEl = document.getElementById("pl-wk-grid");
+        if (gridEl) renderWeeklyGrid(gridEl);
+        wkStatus("آیتم اضافه شد — برای اعمال، «💾 ذخیره برنامه» را بزن");
       });
     }
     renderList();

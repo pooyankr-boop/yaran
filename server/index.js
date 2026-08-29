@@ -101,6 +101,18 @@ function saveUsers() {
 }
 loadUsers();
 
+/* کلاسها — persist (فیلتر مربی در برنامه هفتگی به teacherId نیاز دارد) */
+const CLASSES_PATH = path.join(__dirname, '..', 'data', 'classes.json');
+function loadClasses() {
+  try { DB.classes = JSON.parse(fs.readFileSync(CLASSES_PATH, 'utf8')) || []; }
+  catch { DB.classes = []; }
+}
+function saveClasses() {
+  try { fs.writeFileSync(CLASSES_PATH, JSON.stringify(DB.classes, null, 2), 'utf8'); }
+  catch { /* read-only fs (Render free) */ }
+}
+loadClasses();
+
 // فهرست والدین برای انتخابگر مخاطب در برنامه‌ریز (بخش پنل)
 function listParents() {
   return DB.users
@@ -1012,6 +1024,7 @@ app.post('/api/admin/classes', authMiddleware, adminOnly, (req, res) => {
     tenant: TENANT, createdAt: new Date().toISOString(),
   };
   DB.classes.push(cls);
+  saveClasses();
   res.json(cls);
 });
 app.put('/api/admin/classes/:id', authMiddleware, adminOnly, (req, res) => {
@@ -1022,12 +1035,14 @@ app.put('/api/admin/classes/:id', authMiddleware, adminOnly, (req, res) => {
   if (teacherId !== undefined) cls.teacherId = teacherId || null;
   if (schedule !== undefined) cls.schedule = schedule;
   if (published !== undefined) cls.published = !!published;
+  saveClasses();
   res.json(cls);
 });
 app.delete('/api/admin/classes/:id', authMiddleware, adminOnly, (req, res) => {
   const before = DB.classes.length;
   DB.classes = DB.classes.filter(c => c.id !== req.params.id);
   if (DB.classes.length === before) return res.status(404).json({ error: 'not found' });
+  saveClasses();
   res.json({ ok: true });
 });
 
@@ -1127,7 +1142,7 @@ app.get('/api/cms/files', authMiddleware, adminOnly, (req, res) => {
 
 
 // ── Planner API (MUST be before SPA catch-all) ──
-registerPlanner(app, { authMiddleware, staffOnly, TENANT, uuid, broadcast, listParents });
+registerPlanner(app, { authMiddleware, staffOnly, TENANT, uuid, broadcast, listParents, DB });
 
 // ── Fallback to index.html ──
 app.get('*', (_req, res) => {

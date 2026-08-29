@@ -1,16 +1,16 @@
 /* ═══════════════════════════════════════════════════════
    LLM Chain — زنجیرهی مدلها با fallback خودکار
-   Groq 120b → Groq 20b → HF Llama-3.3-70B → HF Qwen-72B
-   هر گام: 429/500/503 → یک تلاش دوباره → گام بعدی
+   Groq 20b → Groq 120b → OpenRouter → HF (402 مرده)
+   20b اول: TPM آزادتر، خطای توکن کمتر
    ═══════════════════════════════════════════════════════ */
 
 const PROVIDERS = [
-  { name: 'groq-120b', url: 'https://api.groq.com/openai/v1/chat/completions', key: () => process.env.GROQ_API_KEY, model: 'openai/gpt-oss-120b' },
   { name: 'groq-20b', url: 'https://api.groq.com/openai/v1/chat/completions', key: () => process.env.GROQ_API_KEY, model: 'openai/gpt-oss-20b' },
-  { name: 'hf-llama33', url: 'https://router.huggingface.co/v1/chat/completions', key: () => process.env.HF_API_KEY, model: 'meta-llama/Llama-3.3-70B-Instruct' },
-  { name: 'hf-qwen72', url: 'https://router.huggingface.co/v1/chat/completions', key: () => process.env.HF_API_KEY, model: 'Qwen/Qwen2.5-72B-Instruct' },
+  { name: 'groq-120b', url: 'https://api.groq.com/openai/v1/chat/completions', key: () => process.env.GROQ_API_KEY, model: 'openai/gpt-oss-120b' },
   { name: 'or-llama33', url: 'https://openrouter.ai/api/v1/chat/completions', key: () => process.env.OPENROUTER_API_KEY, model: 'meta-llama/llama-3.3-70b-instruct' },
   { name: 'or-qwen72', url: 'https://openrouter.ai/api/v1/chat/completions', key: () => process.env.OPENROUTER_API_KEY, model: 'qwen/qwen-2.5-72b-instruct' },
+  { name: 'hf-llama33', url: 'https://router.huggingface.co/v1/chat/completions', key: () => process.env.HF_API_KEY, model: 'meta-llama/Llama-3.3-70B-Instruct' },
+  { name: 'hf-qwen72', url: 'https://router.huggingface.co/v1/chat/completions', key: () => process.env.HF_API_KEY, model: 'Qwen/Qwen2.5-72B-Instruct' },
 ];
 
 const sleep = (ms) => new Promise((res) => setTimeout(res, ms));

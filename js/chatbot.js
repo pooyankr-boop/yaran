@@ -9,14 +9,20 @@ var YaranBot = (function () {
   var chatHistory = [];
   var lastBotText = "";
 
+  /* آواتار چت + پت شناور همزمان — sad فقط برای خطا صدا زده میشود */
   var RAYAN_GIFS = {idle:"img/kebo/idle.gif",think:"img/kebo/think.gif",happy:"img/kebo/happy.gif",sad:"img/kebo/sad.gif",wave:"img/kebo/wave.gif"};
   function setRayanState(state) {
     var el = document.getElementById("yr-chat-avatar");
     if (el && RAYAN_GIFS[state]) el.src = RAYAN_GIFS[state];
+    /* پت شناور هم هماهنگ — فقط حالتهای موجود پت */
+    var petMap = { think: "think", happy: "happy", sad: "sad", idle: "idle", wave: "wave" };
+    if (typeof RayanPet !== "undefined" && RayanPet.setState && petMap[state]) {
+      try { RayanPet.setState(petMap[state]); } catch (_e) {}
+    }
   }
 
-  /* ═══════════ دکمه‌های عملیاتی — بدون LLM ═══════════ */
-  /* ═══ دکمه‌های هوشمند — نقش‌محور ═══ */
+  /* ═══════════ دکمههای عملیاتی — بدون LLM، نقشمحور ═══════════ */
+  /* ═══ دکمههای هوشمند — نقشمحور ═══ */
   var INITIAL_ACTIONS = [
     { icon: "🏫", label: "اتاق\u200cها",   run: function () { showScreen("screen-lobby"); closePanel(); }},
     { icon: "📚", label: "درس\u200cها",     run: function () { if (typeof Tour !== "undefined" && Tour.openPicker) Tour.openPicker(); closePanel(); }},
@@ -25,7 +31,7 @@ var YaranBot = (function () {
   ];
   var CONVO_ACTIONS = [
     { icon: "📋", label: "کارها",      run: function () { sendDirect("کارهای امروز را نشان بده"); }},
-    { icon: "📅", label: "برنامه",      run: function () { sendDirect("برنامه هفتگی را بچین"); }},
+    { icon: "📅", label: "برنامه",      run: function () { sendDirect("برنامه هفتگی این هفته را نشان بده"); }},
     { icon: "🎮", label: "بازی",       run: function () { if (typeof openRoom === "function") openRoom("bazi"); closePanel(); }},
     { icon: "📝", label: "گزارش",      run: function () { sendDirect("گزارش وضعیت کودکان را بده"); }},
   ];
@@ -34,6 +40,23 @@ var YaranBot = (function () {
     { icon: "👩\u200d🏫", label: "مربیان", run: function () { sendDirect("فهرست مربیان را نشان بده"); }},
     { icon: "📊", label: "داشبورد", run: function () { sendDirect("خلاصه وضعیت مهدکودک را بده"); }},
   ];
+  /* مربی: پنل برنامهریزی مستقیم (برنامه هفتگی خودش را ببیند) */
+  var TEACHER_ACTIONS = [
+    { icon: "🗓", label: "پنل من",    run: function () { openPlannerTab(); }},
+    { icon: "📅", label: "برنامه\u200cام", run: function () { sendDirect("برنامه هفتگی کلاس من را نشان بده"); }},
+  ];
+
+  function openPlannerTab() {
+    try {
+      if (typeof showScreen === "function") showScreen("screen-panel");
+      if (typeof renderPanelTab === "function") renderPanelTab("planner");
+      /* برنامه هفتگی داخل پنل برنامهریزی */
+      setTimeout(function () {
+        var tab = document.querySelector('.pl-t2[data-v="weekly"]');
+        if (tab) tab.click();
+      }, 350);
+    } catch (e) { console.warn("openPlannerTab:", e); }
+  }
 
   function renderActionButtons(context) {
     var box = document.getElementById("yr-chat-suggestions");

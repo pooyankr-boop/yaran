@@ -9,7 +9,7 @@ const fs = require('fs');
 const path = require('path');
 
 function registerPlanner(app, ctx) {
-  const { authMiddleware, staffOnly, TENANT, uuid, broadcast } = ctx;
+  const { authMiddleware, staffOnly, TENANT, uuid, broadcast, DB } = ctx;
 
   const PLANNER_PATH = path.join(__dirname, '..', 'data', 'planner.json');
   let events = [];
@@ -177,7 +177,20 @@ function registerPlanner(app, ctx) {
   app.get('/api/planner/weekly', authMiddleware, (req, res) => {
     const week = req.query.week || '';
     const plan = weeklyPlans[week] || { days: {} };
-    res.json({ week, days: plan.days });
+    const user = req.user;
+    let days = plan.days;
+    /* مربی فقط برنامه کلاسهای خودش را میبیند (manager@ همه) */
+    if (user.role === 'teacher' && user.email !== 'manager@yaran.ir') {
+      const myClasses = DB.classes.filter(c => c.tenant === TENANT && c.teacherId === user.id).map(c => c.id);
+      const filtered = {};
+      Object.keys(days).forEach(day => {
+        filtered[day] = (days[day] || []).filter(it =>
+          !it.classId || myClasses.includes(it.classId) || it.teacherId === user.id
+        );
+      });
+      days = filtered;
+    }
+    res.json({ week, days });
   });
 
   app.post('/api/planner/weekly', authMiddleware, staffOnly, (req, res) => {
