@@ -12,7 +12,7 @@
   /* ماسکوت صفحه‌ی اینترو */
   function mountIntro() {
     var slot = document.getElementById("intro-mascot");
-    if (slot && typeof SVGX !== "undefined") slot.innerHTML = SVGX.mascot({ size: 130 });
+    if (slot) slot.innerHTML = '<img src="img/kebo/wave.gif" style="width:130px;height:130px;image-rendering:pixelated;" alt="یاران" />';
   }
 
   /* تصاویر استاتیک HTML (پلان/لابی/نقشه) از مانیفست رسانه حل شوند

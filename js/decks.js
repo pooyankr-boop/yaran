@@ -141,7 +141,7 @@ var Decks = (function () {
 
   function slideTitle(s) {
     return '<div class="dk-title-slide">' +
-      '<div class="dk-art">' + SVGX.mascot({ size: 120 }) + "</div>" +
+      '<div class="dk-art">' + '<img src="img/kebo/idle.gif" style="width:120px;height:120px;image-rendering:pixelated;" alt="یاران" />' + "</div>" +
       '<h1 class="yr-display rainbow-shadow yr-glow">' + esc(s.title) + "</h1>" +
       (s.sub ? '<p class="dk-sub yr-editorial">' + esc(s.sub) + "</p>" : "") +
       '<div class="dk-start-hint">با دکمه‌ی «بعدی» شروع کنید ▾</div></div>';

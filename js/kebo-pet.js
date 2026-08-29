@@ -1,147 +1,128 @@
 /* ═══════════ Kebo — حیوان خانگی شناور سایت ═══════════ */
-/* شخصیت انیمیشنی که روی صفحه قدم میزند و با کاربر تعامل دارد */
+/* شخصیت انیمیشنی با GIFهای مجزا — بدون sprite sheet */
 var KeboPet = (function () {
-  var el, speechEl, spriteEl;
+  var el, speechEl, imgEl;
   var state = "idle";
-  var x = 0, y = 0;
-  var targetX = 0;
-  var moveTimer = null;
   var speechTimer = null;
-  var facingLeft = false;
+  var moveTimer = null;
+  var isDragging = false;
+  var dragOffX = 0, dragOffY = 0;
 
-  var GREETINGS = [
-    "سلام! 🌟",
-    "خوش اومدی! 😊",
-    "حالت چطوره؟",
-    "بیا بازی کنیم! 🎮",
-    "درس داریم امروز! 📚",
-    "musiqi گوش بده! 🎵",
-    "من کبو هستم! 🐨",
-  ];
-
-  var STATE_MSGS = {
-    idle: "من اینجام! 😊",
-    walk: "دارم قدم میزنم... 🚶",
-    wave: "سلام! 👋",
-    happy: "خوشحالم! ✨",
-    sleep: "z z z... 😴",
+  var STATES = {
+    idle:  "img/kebo/idle.gif",
+    walk:  "img/kebo/walk.gif",
+    think: "img/kebo/think.gif",
+    happy: "img/kebo/happy.gif",
+    sad:   "img/kebo/sad.gif",
+    wave:  "img/kebo/wave.gif",
+    sleep: "img/kebo/sleep.gif"
   };
+
+  var MESSAGES = [
+    "سلام! من یارانم",
+    "بیا با هم یاد بگیریم!",
+    "درس خیلی fun هست!",
+    "هر سوالی داری بپرس",
+    "من اینجام کمکت کنم!",
+    "بزن بریم! "
+  ];
 
   function create() {
     if (document.getElementById("kebo-pet")) return;
     el = document.createElement("div");
     el.id = "kebo-pet";
-    el.className = "kebo-pet";
-    el.innerHTML =
-      '<div class="kebo-speech" id="kebo-speech"></div>' +
-      '<div class="kebo-sprite" data-state="idle"></div>' +
-      '<div class="kebo-name">Kebo</div>';
+    el.style.cssText = "position:fixed;bottom:90px;right:12px;z-index:899;cursor:pointer;" +
+      "display:flex;flex-direction:column;align-items:center;user-select:none;" +
+      "transition:transform 0.3s ease;pointer-events:auto;";
+    el.title = "کلیک کن تا چت باز شود";
+
+    imgEl = document.createElement("img");
+    imgEl.src = STATES.idle;
+    imgEl.alt = "";
+    imgEl.style.cssText = "width:72px;height:72px;image-rendering:pixelated;border-radius:50%;" +
+      "box-shadow:0 2px 8px rgba(0,0,0,0.2);";
+
+    speechEl = document.createElement("div");
+    speechEl.style.cssText = "position:absolute;top:-40px;left:50%;transform:translateX(-50%);" +
+      "background:#fff;border-radius:12px;padding:4px 10px;font-size:12px;" +
+      "white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.15);opacity:0;" +
+      "transition:opacity 0.3s;pointer-events:none;color:#333;";
+
+    el.appendChild(speechEl);
+    el.appendChild(imgEl);
     document.body.appendChild(el);
 
-    spriteEl = el.querySelector(".kebo-sprite");
-    speechEl = document.getElementById("kebo-speech");
-
-    // Random position
-    x = Math.max(20, Math.random() * (window.innerWidth - 120));
-    y = window.innerHeight - 180;
-    el.style.left = x + "px";
-    el.style.bottom = "auto";
-    el.style.top = y + "px";
-
-    // Click = open chat
     el.addEventListener("click", function () {
-      if (typeof YaranBot !== "undefined" && YaranBot.toggle) YaranBot.toggle();
-      else {
-        var fab = document.getElementById("yr-chat-fab");
-        if (fab) fab.click();
-      }
-      say("بیا چت کنیم! 💬");
-      setState("wave");
-      setTimeout(function () { setState("idle"); }, 2000);
+      if (typeof Chatbot !== "undefined" && Chatbot.toggle) Chatbot.toggle();
     });
 
-    // Hover
-    el.addEventListener("mouseenter", function () {
-      setState("wave");
-      say(STATE_MSGS.wave);
+    // Drag
+    el.addEventListener("mousedown", function (e) {
+      if (e.target === speechEl) return;
+      isDragging = true;
+      dragOffX = e.clientX - el.offsetLeft;
+      dragOffY = e.clientY - el.offsetTop;
+      e.preventDefault();
     });
-    el.addEventListener("mouseleave", function () {
-      setState("idle");
+    document.addEventListener("mousemove", function (e) {
+      if (!isDragging) return;
+      el.style.right = "auto";
+      el.style.left = (e.clientX - dragOffX) + "px";
+      el.style.top = (e.clientY - dragOffY) + "px";
     });
+    document.addEventListener("mouseup", function () { isDragging = false; });
 
-    // Start walking
     setTimeout(function () {
-      say(GREETINGS[Math.floor(Math.random() * GREETINGS.length)]);
-      setState("wave");
-      setTimeout(function () {
-        setState("idle");
-        startWandering();
-      }, 2500);
-    }, 1500);
+      set("wave");
+      showSpeech("سلام! من یارانم ");
+      setTimeout(function () { set("idle"); }, 3000);
+    }, 2000);
+
+    scheduleRandom();
   }
 
-  function setState(s) {
+  function set(s) {
+    if (!el || state === s) return;
     state = s;
-    if (spriteEl) spriteEl.setAttribute("data-state", s);
+    if (STATES[s]) imgEl.src = STATES[s];
   }
 
-  function say(msg) {
+  function showSpeech(text) {
     if (!speechEl) return;
-    speechEl.textContent = msg;
-    speechEl.classList.add("show");
+    speechEl.textContent = text;
+    speechEl.style.opacity = "1";
     clearTimeout(speechTimer);
-    speechTimer = setTimeout(function () {
-      speechEl.classList.remove("show");
-    }, 3500);
+    speechTimer = setTimeout(function () { speechEl.style.opacity = "0"; }, 4000);
   }
 
-  function startWandering() {
-    function wander() {
-      // Pick random target
-      var maxX = window.innerWidth - 100;
-      targetX = 40 + Math.random() * (maxX - 40);
-
-      var dist = Math.abs(targetX - x);
-      var duration = Math.max(2000, dist * 10);
-
-      setState("walk");
-      facingLeft = targetX < x;
-      spriteEl.style.transform = facingLeft ? "scaleX(-1)" : "";
-
-      // Animate position
-      var startX = x;
-      var startTime = Date.now();
-      function step() {
-        var t = Math.min(1, (Date.now() - startTime) / duration);
-        x = startX + (targetX - startX) * t;
-        el.style.left = x + "px";
-        if (t < 1) {
-          requestAnimationFrame(step);
-        } else {
-          setState("idle");
-          spriteEl.style.transform = "";
-          // Random idle time before next wander
-          var idleTime = 5000 + Math.random() * 15000;
-          // Random speech
-          if (Math.random() < 0.3) {
-            say(STATE_MSGS.idle);
-          }
-          moveTimer = setTimeout(wander, idleTime);
-        }
+  function scheduleRandom() {
+    var delay = 15000 + Math.random() * 25000;
+    clearTimeout(moveTimer);
+    moveTimer = setTimeout(function () {
+      var r = Math.random();
+      if (r < 0.3) {
+        set("walk");
+        setTimeout(function () { set("idle"); }, 2000);
+      } else if (r < 0.5) {
+        set("happy");
+        showSpeech(MESSAGES[Math.floor(Math.random() * MESSAGES.length)]);
+        setTimeout(function () { set("idle"); }, 3000);
+      } else if (r < 0.7) {
+        set("wave");
+        showSpeech(MESSAGES[Math.floor(Math.random() * MESSAGES.length)]);
+        setTimeout(function () { set("idle"); }, 2000);
       }
-      requestAnimationFrame(step);
-    }
-    wander();
+      scheduleRandom();
+    }, delay);
   }
 
   return {
     init: create,
-    say: say,
-    state: function (s) { setState(s); },
+    set: set,
+    say: showSpeech
   };
 })();
 
-// Auto-init when DOM ready
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", function () { KeboPet.init(); });
 } else {

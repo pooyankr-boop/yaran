@@ -70,7 +70,7 @@ body.theme-night .dk-progress { background: rgba(255,255,255,.09); }
 }
 
 /* صحنه */
-.dk-stage { flex: 1 1 0; min-height: 0; height: 0; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; padding: 6px 26px 20px; }
+.dk-stage { flex: 1 1 0; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; padding: 6px 26px 20px; }
 .dk-slide { max-width: 720px; margin: 0 auto; animation: yr-rise .5s var(--spring) both; }
 .dk-h { font-size: 1.5rem; color: var(--yr-text); margin: 8px 0 12px; line-height: 1.7; }
 .dk-p { font-size: .98rem; line-height: 2.1; color: var(--yr-text); }
@@ -275,7 +275,7 @@ body.theme-night .dk-dot { background: rgba(255,255,255,.18); }
 
 @media (max-width: 768px) {
   .dk-shell { height: 100dvh; width: 100vw; border-radius: 0; border: none; overflow: hidden; }
-  .dk-stage { padding: 6px 16px 16px; flex: 1 1 0; min-height: 0; height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .dk-stage { padding: 6px 16px 16px; flex: 1 1 0; overflow-y: auto; -webkit-overflow-scrolling: touch; }
   .dk-slide { word-wrap: break-word; overflow-wrap: break-word; }
   .dk-p, .dk-list li, .dk-quote, .dk-scenario-box, .dk-note, .dk-takeaway { max-width: 100%; overflow-wrap: break-word; word-break: break-word; }
   .dk-flip-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); max-height: 50vh; overflow-y: auto; }

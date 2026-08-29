@@ -8,9 +8,10 @@ var YaranBot = (function () {
   var chatHistory = [];
   var lastBotText = "";
 
+  var KEBO_GIFS = {idle:"img/kebo/idle.gif",think:"img/kebo/think.gif",happy:"img/kebo/happy.gif",sad:"img/kebo/sad.gif",wave:"img/kebo/wave.gif"};
   function setKeboState(state) {
     var el = document.getElementById("yr-chat-avatar");
-    if (el) el.setAttribute("data-state", state);
+    if (el && KEBO_GIFS[state]) el.src = KEBO_GIFS[state];
   }
 
   /* ═══════════ دکمه‌های عملیاتی — بدون LLM ═══════════ */
@@ -88,7 +89,7 @@ var YaranBot = (function () {
   function createDOM() {
     // FAB button
     var fab = document.createElement("button");
-    fab.className = "yr-chat-fab";
+    fab.className = "yr-chat-fab"; fab.style.display = "none";
     fab.id = "yr-chat-fab";
     fab.innerHTML = '<span class="yr-chat-fab-emoji">🤖</span><span class="yr-chat-fab-pulse"></span>';
     fab.title = "چت با یاران";
@@ -100,7 +101,7 @@ var YaranBot = (function () {
     panel.id = "yr-chat-panel";
     panel.innerHTML = '' +
       '<div class="yr-chat-header">' +
-        '<div class="yr-chat-avatar-wrap"><div id="yr-chat-avatar" class="kebo-avatar" data-state="idle"></div></div>' +
+        '<div class="yr-chat-avatar-wrap"><img id="yr-chat-avatar" src="img/kebo/idle.gif" alt="یاران" style="width:42px;height:42px;border-radius:50%;image-rendering:pixelated;" /></div>' +
         '<div class="yr-chat-header-info">' +
           '<div class="yr-chat-header-name">🤖 یاران — دستیار هوشمند</div>' +
           '<div class="yr-chat-header-status">آنلاین • متخصص مهدکودک</div>' +
