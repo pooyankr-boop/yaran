@@ -70,7 +70,7 @@ body.theme-night .dk-progress { background: rgba(255,255,255,.09); }
 }
 
 /* صحنه */
-.dk-stage { flex: 1; overflow-y: auto; padding: 6px 26px 20px; }
+.dk-stage { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 6px 26px 20px; }
 .dk-slide { max-width: 720px; margin: 0 auto; animation: yr-rise .5s var(--spring) both; }
 .dk-h { font-size: 1.5rem; color: var(--yr-text); margin: 8px 0 12px; line-height: 1.7; }
 .dk-p { font-size: .98rem; line-height: 2.1; color: var(--yr-text); }

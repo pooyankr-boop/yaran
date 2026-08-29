@@ -400,31 +400,239 @@ app.post('/api/chat', async (req, res) => {
     if (!messages || !Array.isArray(messages)) {
       return res.status(400).json({ error: 'messages required' });
     }
-    const apiKey = process.env.GROQ_API_KEY;
+    const apiKey = process.env.GROQ_API_KEY || process.env.HF_API_KEY;
     if (!apiKey) {
-      return res.status(500).json({ error: 'GROQ_API_KEY not configured' });
+      return res.status(500).json({ error: 'GROQ_API_KEY / HF_API_KEY not configured' });
     }
-    const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + apiKey
-      },
-      body: JSON.stringify({
-        model: 'openai/gpt-oss-120b',
-        messages: [
-          { role: 'system', content: 'مهم‌ترین قانون: هرگز اطلاعات جعلی، آدرس وب‌سایت ابداعی، شماره تلفن ساختگی یا هیچ اطلاعاتی که مطمئن نیستی صحیح است ارائه نکن. اگر چیزی را نمی‌دانی بگو «اطلاعات دقیقی در این مورد ندارم». فقط به فارسی پاسخ بده. تو یاران هستی، نه ChatGPT.' },
-          ...messages
-        ],
-        max_tokens: 500,
-        temperature: 0.7
-      })
+    const data = await llm.chat({
+      messages: [
+        { role: 'system', content: 'مهمترین قانون: هرگز اطلاعات جعلی، آدرس وبسایت ابداعی، شماره تلفن ساختگی یا هیچ اطلاعاتی که مطمئن نیستی صحیح است ارائه نکن. اگر چیزی را نمیدانی بگو «اطلاعات دقیقی در این مورد ندارم». فقط به فارسی پاسخ بده. تو یاران هستی، نه ChatGPT.' },
+        ...messages
+      ],
+      max_tokens: 500,
+      temperature: 0.7
     });
-    const data = await groqRes.json();
     res.json(data);
   } catch (e) {
     console.error('Chat proxy error:', e.message);
-    res.status(500).json({ error: e.message });
+    const exhausted = e.status === 402 || /402|Payment/i.test(e.message || '');
+    res.status(exhausted ? 503 : 500).json({ error: exhausted ? 'providers_exhausted' : e.message });
+  }
+});
+
+/* ═══════════ Needle Agent — چتبات اجراکنده ═══════════ */
+const { createNeedle } = require('./needle');
+const llm = require('./llm');
+
+// کتابخانههای سمت سرور برای جستجو (پارس سبک از فایلهای داده)
+const needleLibs = (function () {
+  const libs = { DECK_LIBRARY: [], PODCAST_TITLES: [] };
+  try {
+    const deckSrc = fs.readFileSync(path.join(__dirname, '..', 'js', 'deck-data.js'), 'utf8');
+    const deckRe = /id:\s*"([^"]+)"[^}]*?title:\s*"([^"]+)"[^}]*?desc:\s*"([^"]+)"[^}]*?audience:\s*\[([^\]]*)\]/g;
+    let m;
+    while ((m = deckRe.exec(deckSrc)) !== null) {
+      libs.DECK_LIBRARY.push({
+        id: m[1], title: m[2], desc: m[3],
+        audience: (m[4].match(/"([^"]+)"/g) || []).map(s => s.replace(/"/g, ''))
+      });
+    }
+  } catch (e) { console.warn('needle decks:', e.message); }
+  try {
+    const podSrc = fs.readFileSync(path.join(__dirname, '..', 'data', 'podcasts', 'castbox-channels.js'), 'utf8');
+    // هر اپیزود: title/audioUrl — دسته از نزدیکترین category قبل از آن
+    const podRe = /category:\s*"([^"]+)"|title:\s*"([^"]+)"/g;
+    let p, lastCat = '';
+    while ((p = podRe.exec(podSrc)) !== null) {
+      if (p[1]) { lastCat = p[1]; continue; }
+      const t = p[2];
+      if (t && !libs.PODCAST_TITLES.some(x => x.title === t)) {
+        libs.PODCAST_TITLES.push({ title: t, category: lastCat });
+      }
+    }
+  } catch (e) { console.warn('needle podcasts:', e.message); }
+  // castbox-data + playlist-data: {"title":"..","src":".."}
+  for (const f of ['castbox-data.js', 'playlist-data.js', 'castbox-meditation-data.js']) {
+    try {
+      const s2 = fs.readFileSync(path.join(__dirname, '..', 'data', 'podcasts', f), 'utf8');
+      const r2 = /"title"\s*:\s*"([^"]+)"/g;
+      let p2;
+      while ((p2 = r2.exec(s2)) !== null) {
+        const t = p2[1];
+        if (t && !libs.PODCAST_TITLES.some(x => x.title === t)) {
+          libs.PODCAST_TITLES.push({ title: t, category: '' });
+        }
+      }
+    } catch (e) { console.warn('needle podcasts extra:', f, e.message); }
+  }
+  // podcast-research.js: {"title":"..","category":".."}
+  try {
+    const s3 = fs.readFileSync(path.join(__dirname, '..', 'data', 'podcasts', 'podcast-research.js'), 'utf8');
+    const r3 = /"title"\s*:\s*"([^"]+)"[\s\S]{0,900}?"category"\s*:\s*"([^"]*)"/g;
+    let p3;
+    while ((p3 = r3.exec(s3)) !== null) {
+      const t = p3[1];
+      if (t && !libs.PODCAST_TITLES.some(x => x.title === t)) {
+        libs.PODCAST_TITLES.push({ title: t, category: p3[2] });
+      }
+    }
+  } catch (e) { console.warn('needle podcasts research:', e.message); }
+  return libs;
+})();
+
+const needle = createNeedle({
+  PORT: PORT,
+  signToken: (user) => jwt.sign({ id: user.id, email: user.email, role: user.role, name: user.name }, JWT_SECRET, { expiresIn: '1h' }),
+  DECK_LIBRARY: needleLibs.DECK_LIBRARY,
+  PODCAST_TITLES: needleLibs.PODCAST_TITLES
+});
+
+app.post('/api/agent', authMiddleware, async (req, res) => {
+  try {
+    const { messages } = req.body;
+    if (!messages || !Array.isArray(messages)) {
+      return res.status(400).json({ error: 'messages required' });
+    }
+    const apiKey = process.env.GROQ_API_KEY || process.env.HF_API_KEY;
+    if (!apiKey) {
+      return res.status(500).json({ error: 'GROQ_API_KEY / HF_API_KEY not configured' });
+    }
+
+    // پرامپت سیستم با هویت + دانش سایت + راهنمای Needle + تاریخ امروز
+    const now = new Date();
+    const todayISO = now.toISOString().slice(0, 10);
+    // هفته: دوشنبه همان هفته
+    const day = (now.getUTCDay() + 6) % 7; // mon=0
+    const monday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - day));
+    const mondayISO = monday.toISOString().slice(0, 10);
+    const tomorrowISO = new Date(now.getTime() + 86400000).toISOString().slice(0, 10);
+    const dayAfterISO = new Date(now.getTime() + 2 * 86400000).toISOString().slice(0, 10);
+    const DAY_FA = ['یکشنبه', 'دوشنبه', 'سهشنبه', 'چهارشنبه', 'پنجشنبه', 'جمعه', 'شنبه'];
+
+    const sysPrompt = [
+      'مهمترین قانون: هرگز اطلاعات جعلی یا ابداعی نده. فقط به فارسی پاسخ بده. تو یاران هستی، نه ChatGPT.',
+      'روال پرسشگری (مثل ربات تلگرام): اگر کاربر خواست چیزی بسازد یا برنامه بگذاری و جزئیات کلیدی (روز/ساعت/موضوع/مربی/کودک/عنوان) را نگفته، هرگز حدس نزن و هرگز هیچ ابزار اجرایی (set_weekly_plan/create_*) را صدا نزن — فقط ask_user بزن. در هر نوبت فقط «یک» سوال با گزینههای واقعی بپرس؛ سوال بعدی را بعد از جواب کاربر بپرس. وقتی همه جزئیات را دادی، اجرا کن.',
+      'تو دستیار اجرایی مدیر سایت مهدکودک یاران هستی. میتوانی با ابزار needle_execute عملیات واقعی روی سایت انجام دهی: مدیریت کودکان، مربیان، کلاسها، گزارشها، رویدادها، برنامه هفتگی، پیام والدین، کارها، یادداشتها، جستجوی محتوا و هدایت کاربر به اتاقها و درسها.',
+      'تاریخ امروز میلادی: ' + todayISO + ' (' + DAY_FA[now.getUTCDay()] + '). دوشنبه این هفته: ' + mondayISO + '. فردا: ' + tomorrowISO + '. پس فردا: ' + dayAfterISO + '. برای برنامه هفتگی از این تاریخها استفاده کن و هرگز تاریخ شمسی را از خودت حساب نکن — فقط میلادی بگو.',
+      'زبان: فقط و فقط فارسی پاسخ بده. هرگز به چینی، انگلیسی، عربی یا روسی جواب نده — حتی اگر سؤال به زبان دیگر بود.',
+      needle.guide,
+      'قوانین: ۱) هرگاه کاربر درخواست عملی کرد (ساختن/ویرایش/حذف/فهرست/جستجو/رفتن/وارد کردن)، حتماً ابزار needle_execute را صدا بزن — هرگز فقط توضیح نده یا جدول فرضی نشان نده. ۲) برای «برو به/باز کن/نمایش بده» از client_open_panel یا client_navigate_room یا client_open_deck استفاده کن. ۳) برای نوشتن برنامه هفتگی حتماً set_weekly_plan را اجرا کن. ۴) هرگز شناسهها (teacherId/classId/childId) را از خودت نساز — اول list_teachers/list_classes/list_children بگیر و شناسه واقعی را استفاده کن. ۵) قبل از حذف یا عملیات حساس، تأیید بگیر. ۶) نتیجه ابزار را به فارسی روان گزارش کن. ۷) هرگز پروتکل ابزار را از خودت نساز — فقط با action و args دقیق از راهنما؛ هرگز delete با «لیست خالی = حذف همه» وجود ندارد. ۸) نمایش کاربرگ/درس: اول search_decks{query} بعد client_open_deck{deckId}. ۹) «پلیر/پخشکننده/فهرست صوتی» → client_navigate_room به اتاق مربوط. ۱۰) اگر ابزار خطا داد، دوباره با args صحیح امتحان کن؛ اگر نشد، صادقانه بگو چه چیزی نشد. ۱۱) مهم — ساختن/برنامهگذاری: اگر جزئیات کلیدی (روز/ساعت/موضوع/مربی/کودک/عنوان) را کاربر نگفته، هرگز حدس نزن و اجرا نکن — اول با ask_user{question, options} بپرس؛ بعد از جواب کاربر مرحله بعد را بپرس یا اجرا کن. ۱۲) فقط وقتی همه اطلاعات لازم را داری بدون پرسیدن اجرا کن.'
+    ].join('\n');
+
+    async function callGroq(msgs, tools) {
+      const body = {
+        messages: [{ role: 'system', content: sysPrompt }, ...msgs],
+        max_tokens: 2000,
+        temperature: 0.4
+      };
+      if (tools) { body.tools = tools; body.tool_choice = 'auto'; }
+      return await llm.chat(body);
+    }
+
+    // حلقه ابزار: حداکثر ۶ دور
+    let convo = messages.slice(-12);
+    let clientActions = [];
+    let finalMsg = null;
+    const toolResults = [];
+    for (let i = 0; i < 6; i++) {
+      const data = await callGroq(convo, needle.tools);
+      const choice = data.choices && data.choices[0];
+      if (!choice) throw new Error('پاسخ نامعتبر از ' + (data._provider || 'مدل'));
+      const msg = choice.message;
+      const toolCalls = msg.tool_calls;
+
+      if (!toolCalls || !toolCalls.length) {
+        finalMsg = (msg.content && msg.content.trim()) ? msg.content : null;
+        break;
+      }
+
+      convo = convo.concat([{ role: 'assistant', content: msg.content || '', tool_calls: toolCalls }]);
+      let asked = false;
+      for (const tc of toolCalls) {
+        let action = null, params = {};
+        try {
+          const fnName = (tc.function && tc.function.name) || '';
+          let a = tc.function && tc.function.arguments;
+          if (typeof a === 'string') a = JSON.parse(a || '{}');
+          if (!a || typeof a !== 'object' || Array.isArray(a)) a = {};
+          if (fnName === 'needle_execute') {
+            // شکل اصلی: needle_execute{action, args}
+            if (!a.action && a.needle_execute) a = a.needle_execute;
+            if (a.action && a.args && typeof a.args === 'object') { action = a.action; params = a.args; }
+            else if (a.action) { action = a.action; const { action: _ac, ...rest } = a; params = rest; }
+          } else {
+            // مدل هر عمل را تابع جدا صدا میزند: search_decks{query}
+            action = fnName; params = a;
+          }
+        } catch (_e) {}
+        let result;
+        try {
+          result = await needle.execute(req.user, action, params);
+          // جمعآوری اقدامات سمت مرورگر
+          if (result && result.client_action) {
+            clientActions.push(result.client_action);
+            // پرسش تلگرامی: تا جواب کاربر هیچ ابزار دیگری اجرا نشود
+            if (result.client_action.type === 'ask') { asked = true; break; }
+          }
+        } catch (e) {
+          result = { error: e.message };
+        }
+        if (!result || result.error || result.ok === false) {
+          console.error('[needle fail]', action, JSON.stringify(params || {}).slice(0, 300), '=>', JSON.stringify(result).slice(0, 300));
+        }
+        toolResults.push(result);
+        console.log('[needle]', action, JSON.stringify(params || {}).slice(0, 120), '=>', JSON.stringify(result).slice(0, 160));
+        convo = convo.concat([{ role: 'tool', tool_call_id: tc.id, content: JSON.stringify(result).slice(0, 4000) }]);
+      }
+      if (asked) { finalMsg = ' '; break; } // متن خالی — سوال خودش رندر میشود
+      finalMsg = null; // دور بعدی پاسخ نهایی میآید
+    }
+
+    if (finalMsg === null) {
+      // حلقه تمام شد ولی پاسخ متنی نیامد → جمعبندی از نتایج ابزار
+      const done = toolResults.filter(r => r && (r.ok === true || r.client_action));
+      if (done.length) {
+        finalMsg = done.map(r => '✅ ' + (r.message || r.action || 'انجام شد')).join('\n');
+      } else if (toolResults.length) {
+        finalMsg = 'انجام درخواست ممکن نشد: ' + (toolResults[0].error || 'خطای نامشخص');
+      } else {
+        finalMsg = 'درخواست واضح نبود. لطفاً دقیقتر بگو چه کاری انجام دهم؟';
+      }
+    }
+
+    // مدل گاهی ابزار را متن خام میفرستد: search_decks{query:".."} → اجرا کن
+    const rawTool = finalMsg.match(/^(?:needle_execute\s+)?([a-z_]{3,40})\s*\{([\s\S]*)\}\s*$/i);
+    if (rawTool) {
+      try {
+        let rawArgs = rawTool[2].trim() || '{}';
+        let parsed;
+        try { parsed = JSON.parse(rawArgs); }
+        catch (_e) {
+          // کلیدهای بدون کوتیشن: {query: x}
+          parsed = JSON.parse(rawArgs.replace(/([{,]\s*)([A-Za-z_]\w*)\s*:/g, '$1"$2":'));
+        }
+        let actionName = rawTool[1];
+        let params = parsed;
+        if (actionName === 'needle_execute') { actionName = parsed.action; params = parsed.args || {}; }
+        const r = await needle.execute(req.user, actionName, params);
+        if (r && r.client_action) clientActions.push(r.client_action);
+        if (r && Array.isArray(r.results) && r.results.length) {
+          const lines = r.results.map(x => '• ' + (x.title || x.id || '')).slice(0, 10).join('\n');
+          finalMsg = (r.count || r.results.length) + ' نتیجه پیدا شد:\n' + lines;
+        } else {
+          finalMsg = (r && r.message) || (r && r.error) || 'انجام شد.';
+        }
+        console.log('[needle rawtext fallback]', actionName);
+      } catch (_e) { /* نامربوط بود — متن اصلی میماند */ }
+    }
+
+    res.json({ reply: finalMsg, clientActions });
+  } catch (e) {
+    console.error('Agent error:', e.message);
+    const rateLimited = e.status === 429 || /rate limit|quota/i.test(e.message || '');
+    const exhausted = e.status === 402 || /402|Payment/i.test(e.message || '');
+    if (exhausted) return res.status(503).json({ error: 'providers_exhausted' });
+    res.status(rateLimited ? 429 : 500).json({ error: rateLimited ? 'rate_limited' : e.message });
   }
 });
 
@@ -918,6 +1126,9 @@ app.get('/api/cms/files', authMiddleware, adminOnly, (req, res) => {
 });
 
 
+// ── Planner API (MUST be before SPA catch-all) ──
+registerPlanner(app, { authMiddleware, staffOnly, TENANT, uuid, broadcast, listParents });
+
 // ── Fallback to index.html ──
 app.get('*', (_req, res) => {
   res.sendFile(path.join(__dirname, '..', 'index.html'));
@@ -941,8 +1152,6 @@ const logStart = (port) => {
   console.log(`   Tasks API: http://localhost:${port}/api/tasks`);
   console.log(`   WebSocket: ws://localhost:${port}/ws`);
 };
-// Register Planner API (MUST be before SPA catch-all)
-registerPlanner(app, { authMiddleware, staffOnly, TENANT, uuid, broadcast, listParents });
 
 if (PORT_RAW) {
   server.listen(Number(PORT_RAW), '0.0.0.0', () => logStart(PORT_RAW));

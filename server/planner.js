@@ -195,10 +195,28 @@ function registerPlanner(app, ctx) {
       url: String(it.url || ''),
       image: String(it.image || ''),
       icon: String(it.icon || ''),
+      teacherId: String(it.teacherId || ''),
+      classId: String(it.classId || ''),
     })) : [];
     save();
     broadcast('planner_update', { weeklyPlan: { week, day, items: weeklyPlans[week].days[day] } });
     res.json({ ok: true, items: weeklyPlans[week].days[day] });
+  });
+
+  /* ── ویرایش یک آیتم برنامه هفتگی + الصاق مربی/کلاس ── */
+  app.patch('/api/planner/weekly', authMiddleware, staffOnly, (req, res) => {
+    const { week, day, itemId } = req.body;
+    if (!week || !day || !itemId) return res.status(400).json({ error: 'week, day, itemId الزامی است' });
+    const plan = weeklyPlans[week] && weeklyPlans[week].days && weeklyPlans[week].days[day];
+    if (!plan) return res.status(404).json({ error: 'برنامه یافت نشد' });
+    const it = plan.find(x => x.id === itemId);
+    if (!it) return res.status(404).json({ error: 'آیتم یافت نشد' });
+    ['title', 'type', 'time', 'desc', 'url', 'image', 'icon', 'teacherId', 'classId'].forEach(k => {
+      if (req.body[k] !== undefined) it[k] = String(req.body[k]).substring(0, 500);
+    });
+    save();
+    broadcast('planner_update', { weeklyPlan: { week, day, items: plan } });
+    res.json({ ok: true, item: it });
   });
 
   app.delete('/api/planner/weekly', authMiddleware, staffOnly, (req, res) => {

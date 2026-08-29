@@ -115,6 +115,37 @@ var YaranBot = (function () {
     chatHistory.push({ role: "user", content: text });
   }
 
+  /* ── پرسش گزینهای — دکمهها مثل ربات تلگرام ── */
+  function addAskMessage(question, options) {
+    var container = document.getElementById("yr-chat-messages");
+    var wrap = document.createElement("div");
+    wrap.className = "yr-chat-msg bot yr-chat-ask";
+    var q = document.createElement("div");
+    q.className = "yr-chat-ask-q";
+    q.textContent = question;
+    wrap.appendChild(q);
+    var btns = document.createElement("div");
+    btns.className = "yr-chat-ask-btns";
+    options.forEach(function (opt) {
+      var b = document.createElement("button");
+      b.className = "yr-chat-ask-btn";
+      b.type = "button";
+      b.textContent = opt;
+      b.addEventListener("click", function () {
+        // دکمهها بعد از انتخاب غیرفعال شوند — یک بار جواب
+        btns.querySelectorAll("button").forEach(function (x) { x.disabled = true; });
+        var input = document.getElementById("yr-chat-input");
+        input.value = opt;
+        send();
+      });
+      btns.appendChild(b);
+    });
+    wrap.appendChild(btns);
+    container.appendChild(wrap);
+    container.scrollTop = container.scrollHeight;
+    chatHistory.push({ role: "assistant", content: question + "\n" + options.map(function (o) { return "• " + o; }).join("\n") });
+  }
+
   function showTyping() {
     var container = document.getElementById("yr-chat-messages");
     var div = document.createElement("div");
@@ -130,8 +161,57 @@ var YaranBot = (function () {
     if (el) el.remove();
   }
 
-  function showSuggestions() {
-    document.getElementById("yr-chat-suggestions").style.display = "flex";
+  /* ── پیشنهادهای پویا — بر اساس متن پیامها مرتبط انتخاب میشوند ── */
+  var SUGGESTION_POOL = [
+    { msg: "چه امکاناتی داری؟", label: "🎯 امکانات سایت", kw: ["امکان", "چیکار", "چه کاری", "کمک"] },
+    { msg: "برنامه هفتگی این هفته را بچین", label: "📅 برنامه هفتگی", kw: ["برنامه", "هفته", "زمانبندی", "روز", "ساعت", "پس فردا", "فردا"] },
+    { msg: "فهرست کودکان را نشان بده", label: "👶 کودکان", kw: ["کودک", "بچه", "گرسنه", "خواب", "نیاز", "دستپاچه"] },
+    { msg: "فهرست مربیان را نشان بده", label: "👩🏫 مربیان", kw: ["مربی", "معلم", "آموزگار", "کارمند"] },
+    { msg: "فهرست کلاسها را نشان بده", label: "🏫 کلاسها", kw: ["کلاس", "گروه"] },
+    { msg: "کارها را نشان بده", label: "📋 وظایف", kw: ["کار", "وظیفه", "تسک", "پرونده"] },
+    { msg: "یادداشت جدید بساز", label: "📝 یادداشت", kw: ["یادداشت", "یاداش"] },
+    { msg: "گزارش امروز را بنویس", label: "😊 گزارش", kw: ["گزارش", "وضعیت"] },
+    { msg: "برو به اتاق موسیقی", label: "🎵 اتاق موسیقی", kw: ["موسیقی", "اتاق", "برو", "ناوبری", "تور"] },
+    { msg: "یک قصه صوتی پخش کن", label: "🔊 قصه صوتی", kw: ["قصه", "پخش", "صوت", "لالایی", "پادکست", "پلیر", "پخشکننده"] },
+    { msg: "یک ترانه کودکانه پخش کن", label: "🎶 ترانه", kw: ["ترانه", "آواز", "آهنگ", "شاد"] },
+    { msg: "درس والدین را نشان بده", label: "📚 درسها", kw: ["درس", "کاربرگ", "دک", "کوییز", "آموزش"] },
+    { msg: "بازیهای آموزشی را نشان بده", label: "🎮 بازیها", kw: ["بازی", "سرگرمی"] },
+    { msg: "پیامهای والدین را نشان بده", label: "💬 پیامها", kw: ["پیام", "والدین", "ارتباط"] },
+    { msg: "مدیریت کودکان را باز کن", label: "🛠 مدیریت", kw: ["مدیریت", "پنل", "افزودن", "ویرایش", "حذف", "باز"] },
+    { msg: "خداحافظیهای بیاشک چیست؟", label: "🌟 فرزندپروری", kw: ["تربیت", "رفتار", "پرورش", "مشاوره", "گریه", "خشم", "عصبانی", "خلاق", "والدپروری", "کمک"] }
+  ];
+  var sugOffset = 0;
+
+  function showSuggestions(contextText) {
+    var box = document.getElementById("yr-chat-suggestions");
+    if (!box) return;
+    var text = (contextText || "").toLowerCase();
+    var scored = SUGGESTION_POOL.map(function (s, i) {
+      var score = 0;
+      for (var k = 0; k < s.kw.length; k++) {
+        if (text.indexOf(s.kw[k]) >= 0) score += 2;
+      }
+      return { idx: i, score: score };
+    });
+    scored.sort(function (a, b) { return b.score - a.score; });
+    var picked = scored.filter(function (s) { return s.score > 0; }).slice(0, 4);
+    // تکمیل با پیشنهادهای عمومی (چرخشی تا هر بار تفاوت داشته باشد)
+    var general = scored.filter(function (s) { return s.score === 0; });
+    var g = sugOffset;
+    while (picked.length < 4 && general.length) {
+      var cand = general[g % general.length];
+      if (picked.indexOf(cand) < 0) picked.push(cand);
+      g++;
+      if (g > general.length * 2) break;
+    }
+    sugOffset = (sugOffset + 1) % Math.max(1, general.length);
+    var html = "";
+    picked.forEach(function (s) {
+      var item = SUGGESTION_POOL[s.idx];
+      html += '<button class="yr-chat-sug" data-msg="' + item.msg.replace(/"/g, "&quot;") + '">' + item.label + "</button>";
+    });
+    box.innerHTML = html;
+    box.style.display = "flex";
   }
 
   function hideSuggestions() {
@@ -157,38 +237,115 @@ var YaranBot = (function () {
         { role: "system", content: systemPrompt }
       ].concat(chatHistory.slice(-10));
 
-      var res = await fetch(GROQ_URL, {
+      var token = "";
+      try { token = localStorage.getItem("yaran-token") || ""; } catch (_e) {}
+      var endpoint = token ? "/api/agent" : "/api/chat";
+
+      var res = await fetch(endpoint, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: token
+          ? { "Content-Type": "application/json", "Authorization": "Bearer " + token }
+          : { "Content-Type": "application/json" },
         body: JSON.stringify({ messages: messages })
       });
 
       if (!res.ok) {
-        var err = await res.text();
-        console.error("Groq error:", err);
+        var err = "";
+        try { err = (await res.json()).error || ""; } catch (_e) {}
+        console.error("Bot error:", err);
         hideTyping();
-        addBotMessage("متأسفم، مشکلی پیش اومد. لطفاً دوباره امتحان کن. 🙏");
+        if (res.status === 401) {
+          // توکن نامعتبر — پاکسازی و راهنمای لاگین مجدد
+          localStorage.removeItem("yaran_jwt");
+          localStorage.removeItem("yaran_user");
+          addBotMessage("توکن نشست منقضی شد. لطفاً دوباره از در وارد شو و لاگین کن. 🔑");
+        } else if (err === "providers_exhausted") {
+          addBotMessage("فعلاً همه مدلهای هوش مصنوعی در دسترس نیستند 📵 — چند دقیقه دیگر دوباره امتحان کن.");
+        } else if (res.status === 429 || err === "rate_limited") {
+          addBotMessage("سهمیه هوش مصنوعی موقتاً پر شده ⏳ — چند ثانیه صبر کن و دوباره بفرست.");
+        } else {
+          addBotMessage("متأسفم، مشکلی پیش اومد. لطفاً دوباره امتحان کن. 🙏");
+        }
         showSuggestions();
         return;
       }
 
       var data = await res.json();
-      var reply = data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
       hideTyping();
-      if (reply) {
-        addBotMessage(reply);
+
+      // پاسخ Agent جدید: {reply, clientActions} — یا پاسخ قدیمی Groq
+      if (data && typeof data.reply === "string") {
+        if (data.reply.trim()) addBotMessage(data.reply);
+        if (Array.isArray(data.clientActions)) {
+          data.clientActions.forEach(runClientAction);
+        }
       } else {
-        addBotMessage("متأسفم نتونستم جواب بدم. دوباره بپرس! 🙏");
+        var reply = data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
+        if (reply && reply.trim()) addBotMessage(reply);
+        else addBotMessage("متأسفم نتونستم جواب بدم. دوباره بپرس! 🙏");
       }
-      showSuggestions();
+      // پیشنهادهای مرتبط با آخرین گفتوگو
+      var lastUser = "", lastBot = "";
+      for (var hi = chatHistory.length - 1; hi >= 0 && (lastUser === "" || lastBot === ""); hi--) {
+        if (chatHistory[hi].role === "assistant" && lastBot === "") lastBot = chatHistory[hi].content || "";
+        if (chatHistory[hi].role === "user" && lastUser === "") lastUser = chatHistory[hi].content || "";
+      }
+      showSuggestions(lastUser + " " + lastBot);
     } catch (e) {
-      console.error("Groq fetch error:", e);
+      console.error("Bot fetch error:", e);
       hideTyping();
       addBotMessage("مشکل اتصال پیش اومد. اینترنتت رو چک کن. 🌐");
       showSuggestions();
     } finally {
       btn.disabled = false;
     }
+  }
+
+  /* ── اجرای اقدامات Needle سمت مرورگر ── */
+  function runClientAction(a) {
+    if (!a || !a.type) return;
+    try {
+      switch (a.type) {
+        case "navigate_room": {
+          var roomId = a.roomId;
+          if (typeof VirtualTour !== "undefined" && VirtualTour.goToRoom) {
+            if (typeof currentUserRole !== "undefined" && currentUserRole) VirtualTour.setRole(currentUserRole);
+            VirtualTour.goToRoom(roomId);
+          } else if (typeof showScreen === "function") {
+            showScreen("screen-tour");
+          }
+          break;
+        }
+        case "open_deck": {
+          if (typeof Decks !== "undefined" && Decks.open) {
+            Decks.open(a.deckId);
+          }
+          break;
+        }
+        case "play_audio": {
+          if (a.url) {
+            var au = new Audio(a.url);
+            au.play().catch(function () {
+              addBotMessage("مرورگر اجازه پخش خودکار نداد 🔇 — یک بار روی صفحه کلیک کن و دوباره بخواه.");
+            });
+          } else {
+            addBotMessage("آدرس صوتی پیدا نشد. 🙏");
+          }
+          break;
+        }
+        case "ask": {
+          addAskMessage(a.question || "کدام را میخواهی؟", Array.isArray(a.options) ? a.options : []);
+          break;
+        }
+        case "open_panel": {
+          if (typeof showScreen === "function") {
+            showScreen("screen-panel");
+            if (typeof renderPanelTab === "function") renderPanelTab(a.tab || "dashboard");
+          }
+          break;
+        }
+      }
+    } catch (e) { console.warn("client action failed:", e); }
   }
 
   return { init: init, toggle: toggle };

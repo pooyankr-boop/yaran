@@ -22,5 +22,72 @@
       "readBy": [],
       "tenant": "yaran"
     }
-  ]
+  ],
+  "weeklyPlans": {
+    "2026-08-24": {
+      "days": {
+        "sat": [
+          {
+            "id": "fab08201-5c11-4dde-83dd-bbd06a5fa514",
+            "title": "بازی‌های آموزشی",
+            "type": "educational",
+            "time": "09:00",
+            "desc": "جورچین اشکال و شمارش",
+            "url": "",
+            "image": "",
+            "icon": "",
+            "teacherId": "1",
+            "classId": "1"
+          }
+        ],
+        "mon": [
+          {
+            "id": "391af164-9693-438b-b1a8-7a4049cfc015",
+            "title": "آموزش",
+            "type": "class",
+            "time": "8:00",
+            "desc": "مطالعه کتاب",
+            "url": "https://example.com",
+            "image": "",
+            "icon": "",
+            "teacherId": "1",
+            "classId": "1"
+          }
+        ],
+        "sun": [
+          {
+            "id": "98952cea-945b-4504-b556-8540c8d7e997",
+            "title": "بازی رنگ‌ها",
+            "type": "game",
+            "time": "09:00",
+            "desc": "بازی رنگ‌ها با مربی ۳",
+            "url": "",
+            "image": "",
+            "icon": "",
+            "teacherId": "مربی ۳",
+            "classId": "کلاس ۳"
+          }
+        ],
+        "tue": [
+          {
+            "id": "4223e2ed-6b60-4e45-9b5a-5f614a215b72",
+            "title": "آموزش رقص",
+            "type": "هنر و موسیقی",
+            "time": "10:00",
+            "desc": "آموزش رقص توسط مربی ۲",
+            "url": "",
+            "image": "",
+            "icon": "",
+            "teacherId": "مربی ۲",
+            "classId": "کلاس ۱"
+          }
+        ]
+      }
+    },
+    "2026-08-31": {
+      "days": {
+        "sat": []
+      }
+    }
+  }
 }

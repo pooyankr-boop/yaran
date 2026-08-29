@@ -923,5 +923,18 @@ var VirtualTour = (function () {
     if (role) state.role = role;
   }
 
-  return { start: start, exit: exit, startWithRole: startWithRole, setRole: setRole };
+  /* رفتن مستقیم به اتاق با شناسه (برای Needle/چتبات) */
+  function goToRoom(roomId) {
+    var idx = state.roomIds.indexOf(roomId);
+    if (idx < 0) {
+      // هنوز در تور نیستیم یا اتاق در فهرست نیست — استارت و بعد پرش
+      start();
+      idx = state.roomIds.indexOf(roomId);
+      if (idx < 0) return false;
+    }
+    jumpToRoom(idx);
+    return true;
+  }
+
+  return { start: start, exit: exit, startWithRole: startWithRole, setRole: setRole, goToRoom: goToRoom };
 })();
