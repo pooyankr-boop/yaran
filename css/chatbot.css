@@ -1,4 +1,4 @@
-/* ═══════════ چت‌بات یاران ═══════════ */
+/* ═══════════ چت‌بات رایان ═══════════ */
 .yr-chat-fab {
   position: fixed;
   bottom: 24px;
@@ -91,29 +91,6 @@
   border: 2px solid rgba(255,255,255,0.5);
   object-fit: cover;
 }
-/* ═══════════ Kebo Animated Avatar ═══════════ */
-.kebo-avatar {
-  width: 48px; height: 52px;
-  background-image: url('../img/kebo/sprite-strip.png');
-  background-size: 3584px 68px;
-  background-repeat: no-repeat;
-  image-rendering: pixelated;
-  border-radius: 12px;
-  flex-shrink: 0;
-}
-.kebo-avatar[data-state="idle"]   { animation: kebo-idle 1.2s steps(8) infinite; background-position: 0 0; }
-.kebo-avatar[data-state="wave"]   { animation: kebo-wave 1.2s steps(8) infinite; background-position: -512px 0; }
-.kebo-avatar[data-state="think"]  { animation: kebo-think 1.6s steps(8) infinite; background-position: -2560px 0; }
-.kebo-avatar[data-state="happy"]  { animation: kebo-happy 1s steps(8) infinite; background-position: -3072px 0; }
-.kebo-avatar[data-state="sad"]    { animation: kebo-sad 1.4s steps(8) infinite; background-position: -2816px 0; }
-.kebo-avatar[data-state="sleep"]  { animation: kebo-sleep 2s steps(8) infinite; background-position: -1024px 0; }
-
-@keyframes kebo-idle  { from { background-position: 0 0; } to { background-position: -512px 0; } }
-@keyframes kebo-wave  { from { background-position: -512px 0; } to { background-position: -1024px 0; } }
-@keyframes kebo-think { from { background-position: -2560px 0; } to { background-position: -3072px 0; } }
-@keyframes kebo-happy { from { background-position: -3072px 0; } to { background-position: -3584px 0; } }
-@keyframes kebo-sad   { from { background-position: -2816px 0; } to { background-position: -3328px 0; } }
-@keyframes kebo-sleep { from { background-position: -1024px 0; } to { background-position: -1536px 0; } }
 .yr-chat-header-info {
   flex: 1;
 }
@@ -271,12 +248,12 @@
   .yr-chat-fab img { width: 48px; height: 48px; }
 }
 
-/* ── پرسش گزینهای (دکمههای تلگرامی) ── */
-.yr-chat-ask { background: var(--yr-chat-bot-bg, rgba(120,120,255,.12)); border-radius: 14px; padding: 10px 12px; max-width: 88%; }
+/* ── پرسش گزینهای ── */
+.yr-chat-ask { background: rgba(120,120,255,.12); border-radius: 14px; padding: 10px 12px; max-width: 88%; }
 .yr-chat-ask-q { font-weight: 600; margin-bottom: 8px; line-height: 1.6; }
 .yr-chat-ask-btns { display: flex; flex-wrap: wrap; gap: 6px; }
 .yr-chat-ask-btn {
-  border: 1px solid var(--accent, #7c7cff);
+  border: 1px solid #7c7cff;
   background: transparent;
   color: inherit;
   border-radius: 999px;
@@ -286,68 +263,5 @@
   cursor: pointer;
   transition: background .15s, opacity .15s;
 }
-.yr-chat-ask-btn:hover:not(:disabled) { background: var(--accent, #7c7cff); color: #fff; }
+.yr-chat-ask-btn:hover:not(:disabled) { background: #7c7cff; color: #fff; }
 .yr-chat-ask-btn:disabled { opacity: .35; cursor: default; }
-
-/* ═══════════ Kebo — Floating Site Pet ═══════════ */
-.kebo-pet {
-  position: fixed;
-  bottom: 100px;
-  right: 20px;
-  z-index: 8999;
-  cursor: pointer;
-  transition: transform 0.3s;
-  image-rendering: pixelated;
-}
-.kebo-pet:hover { transform: scale(1.1); }
-.kebo-pet .kebo-sprite {
-  width: 80px;
-  height: 87px;
-  background-image: url('../img/kebo/sprite-strip.png');
-  background-size: 3584px 68px;
-  background-repeat: no-repeat;
-  image-rendering: pixelated;
-}
-.kebo-pet .kebo-sprite[data-state="idle"]   { animation: kebo-idle 1.2s steps(8) infinite; background-position: 0 0; }
-.kebo-pet .kebo-sprite[data-state="walk"]   { animation: kebo-walk 0.8s steps(8) infinite; background-position: -1536px 0; }
-.kebo-pet .kebo-sprite[data-state="wave"]   { animation: kebo-wave 1.2s steps(8) infinite; background-position: -512px 0; }
-.kebo-pet .kebo-sprite[data-state="sleep"]  { animation: kebo-sleep 2s steps(8) infinite; background-position: -1024px 0; }
-.kebo-pet .kebo-sprite[data-state="happy"]  { animation: kebo-happy 1s steps(8) infinite; background-position: -3072px 0; }
-.kebo-pet .kebo-sprite[data-state="think"]  { animation: kebo-think 1.6s steps(8) infinite; background-position: -2560px 0; }
-.kebo-pet .kebo-sprite[data-state="sad"]    { animation: kebo-sad 1.4s steps(8) infinite; background-position: -2816px 0; }
-.kebo-pet .kebo-name {
-  text-align: center;
-  font-size: 10px;
-  font-weight: 700;
-  color: var(--yr-accent, #ff6b35);
-  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
-  margin-top: 2px;
-}
-.kebo-pet .kebo-speech {
-  position: absolute;
-  bottom: 100%;
-  right: 0;
-  background: #fff;
-  color: #333;
-  border-radius: 12px 12px 0 12px;
-  padding: 6px 10px;
-  font-size: 11px;
-  white-space: nowrap;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-  opacity: 0;
-  transition: opacity 0.3s;
-  pointer-events: none;
-  max-width: 200px;
-  white-space: normal;
-}
-.kebo-pet .kebo-speech.show { opacity: 1; }
-
-@keyframes kebo-walk {
-  from { background-position: -1536px 0; }
-  to   { background-position: -2048px 0; }
-}
-
-@media (max-width: 768px) {
-  .kebo-pet { bottom: 80px; right: 12px; }
-  .kebo-pet .kebo-sprite { width: 56px; height: 61px; background-size: 2510px 48px; }
-}

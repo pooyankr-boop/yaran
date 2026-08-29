@@ -1,4 +1,5 @@
 /* ═══════════ چت‌بات رایان — دستیار هوشمند مهدکودک ═══════════ */
+/* ponytail: remove setRayanState aliases once all callers use setRayanState */
 var YaranBot = (function () {
   var GROQ_KEY = "";  // Used server-side only via /api/chat proxy
   var GROQ_URL = "/api/chat";
@@ -8,10 +9,10 @@ var YaranBot = (function () {
   var chatHistory = [];
   var lastBotText = "";
 
-  var KEBO_GIFS = {idle:"img/kebo/idle.gif",think:"img/kebo/think.gif",happy:"img/kebo/happy.gif",sad:"img/kebo/sad.gif",wave:"img/kebo/wave.gif"};
-  function setKeboState(state) {
+  var RAYAN_GIFS = {idle:"img/kebo/idle.gif",think:"img/kebo/think.gif",happy:"img/kebo/happy.gif",sad:"img/kebo/sad.gif",wave:"img/kebo/wave.gif"};
+  function setRayanState(state) {
     var el = document.getElementById("yr-chat-avatar");
-    if (el && KEBO_GIFS[state]) el.src = KEBO_GIFS[state];
+    if (el && RAYAN_GIFS[state]) el.src = RAYAN_GIFS[state];
   }
 
   /* ═══════════ دکمه‌های عملیاتی — بدون LLM ═══════════ */
@@ -101,7 +102,7 @@ var YaranBot = (function () {
     panel.id = "yr-chat-panel";
     panel.innerHTML = '' +
       '<div class="yr-chat-header">' +
-        '<div class="yr-chat-avatar-wrap"><img id="yr-chat-avatar" src="img/kebo/idle.gif" alt="یاران" style="width:42px;height:42px;border-radius:50%;image-rendering:pixelated;" /></div>' +
+        '<div class="yr-chat-avatar-wrap"><img id="yr-chat-avatar" src="img/kebo/idle.gif" alt="رایان" style="width:42px;height:42px;border-radius:50%;image-rendering:pixelated;" /></div>' +
         '<div class="yr-chat-header-info">' +
           '<div class="yr-chat-header-name">🤖 رایان — دستیار هوشمند</div>' +
           '<div class="yr-chat-header-status">آنلاین • متخصص مهدکودک</div>' +
@@ -150,7 +151,7 @@ var YaranBot = (function () {
       // Welcome message on first open
       if (chatHistory.length === 0) {
         addBotMessage("سلام! 👋 من رایانم، دستیار هوشمند مهدکودک یاران.\n\nمی‌تونم کمکت کنم:\n• راهنمایی محتواهای سایت\n• مشاوره تربیت کودک\n• پیشنهاد بازی و فعالیت آموزشی\n• برنامه‌ریزی روزانه مهدکودک\n\nهر سؤالی داری بپرس! 😊");
-        renderActionButtons(); setTimeout(function(){ setKeboState("idle"); }, 3000);
+        renderActionButtons(); setTimeout(function(){ setRayanState("idle"); }, 3000);
       }
       setTimeout(function () { document.getElementById("yr-chat-input").focus(); }, 300);
     } else {
@@ -210,7 +211,7 @@ var YaranBot = (function () {
   }
 
   function showTyping() {
-    setKeboState("think"); setKeboState("think"); }
+    setRayanState("think"); setRayanState("think"); }
   function _showTyping() {
     var container = document.getElementById("yr-chat-messages");
     var div = document.createElement("div");
@@ -222,7 +223,7 @@ var YaranBot = (function () {
   }
 
   function hideTyping() {
-    setKeboState("idle");
+    setRayanState("idle");
     var el = document.getElementById("yr-chat-typing");
     if (el) el.remove();
   }
@@ -271,13 +272,13 @@ var YaranBot = (function () {
           localStorage.removeItem("yaran_user");
           addBotMessage("توکن نشست منقضی شد. لطفاً دوباره از در وارد شو و لاگین کن. 🔑");
         } else if (err === "providers_exhausted") {
-          addBotMessage("فعلاً همه مدلهای هوش مصنوعی در دسترس نیستند 📵 — چند دقیقه دیگر دوباره امتحان کن."); setKeboState("sad");
+          addBotMessage("فعلاً همه مدلهای هوش مصنوعی در دسترس نیستند 📵 — چند دقیقه دیگر دوباره امتحان کن."); setRayanState("sad");
         } else if (res.status === 429 || err === "rate_limited") {
-          addBotMessage("سهمیه هوش مصنوعی موقتاً پر شده ⏳ — چند ثانیه صبر کن و دوباره بفرست."); setKeboState("sad");
+          addBotMessage("سهمیه هوش مصنوعی موقتاً پر شده ⏳ — چند ثانیه صبر کن و دوباره بفرست."); setRayanState("sad");
         } else {
-          addBotMessage("متأسفم، مشکلی پیش اومد. لطفاً دوباره امتحان کن. 🙏"); setKeboState("sad");
+          addBotMessage("متأسفم، مشکلی پیش اومد. لطفاً دوباره امتحان کن. 🙏"); setRayanState("sad");
         }
-        renderActionButtons(); setTimeout(function(){ setKeboState("idle"); }, 3000);
+        renderActionButtons(); setTimeout(function(){ setRayanState("idle"); }, 3000);
         return;
       }
 
@@ -286,13 +287,13 @@ var YaranBot = (function () {
 
       // پاسخ Agent جدید: {reply, clientActions} — یا پاسخ قدیمی Groq
       if (data && typeof data.reply === "string") {
-        if (data.reply.trim()) { addBotMessage(data.reply); setKeboState("happy"); }
+        if (data.reply.trim()) { addBotMessage(data.reply); setRayanState("happy"); }
         if (Array.isArray(data.clientActions)) {
           data.clientActions.forEach(runClientAction);
         }
       } else {
         var reply = data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
-        if (reply && reply.trim()) { addBotMessage(reply); setKeboState("happy"); }
+        if (reply && reply.trim()) { addBotMessage(reply); setRayanState("happy"); }
         else addBotMessage("متأسفم نتونستم جواب بدم. دوباره بپرس! 🙏");
       }
       // پیشنهادهای مرتبط با آخرین گفتوگو
@@ -301,12 +302,12 @@ var YaranBot = (function () {
         if (chatHistory[hi].role === "assistant" && lastBot === "") lastBot = chatHistory[hi].content || "";
         if (chatHistory[hi].role === "user" && lastUser === "") lastUser = chatHistory[hi].content || "";
       }
-      showSuggestions(lastUser + " " + lastBot);
+      renderActionButtons("after_msg");
     } catch (e) {
       console.error("Bot fetch error:", e);
       hideTyping();
-      addBotMessage("مشکل اتصال پیش اومد. اینترنتت رو چک کن. 🌐"); setKeboState("sad");
-      renderActionButtons(); setTimeout(function(){ setKeboState("idle"); }, 3000);
+      addBotMessage("مشکل اتصال پیش اومد. اینترنتت رو چک کن. 🌐"); setRayanState("sad");
+      renderActionButtons(); setTimeout(function(){ setRayanState("idle"); }, 3000);
     } finally {
       btn.disabled = false;
     }
