@@ -273,9 +273,15 @@ body.theme-night .dk-dot { background: rgba(255,255,255,.18); }
   padding: 2px 10px; border-radius: 99px;
 }
 
-@media (max-width: 640px) {
-  .dk-shell { height: 100dvh; width: 100vw; border-radius: 0; border: none; }
-  .dk-stage { padding: 6px 16px 16px; }
+@media (max-width: 768px) {
+  .dk-shell { height: 100dvh; width: 100vw; border-radius: 0; border: none; overflow: hidden; }
+  .dk-stage { padding: 6px 16px 16px; flex: 1 1 0; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .dk-slide { word-wrap: break-word; overflow-wrap: break-word; }
+  .dk-p, .dk-list li, .dk-quote, .dk-scenario-box, .dk-note, .dk-takeaway { max-width: 100%; overflow-wrap: break-word; word-break: break-word; }
+  .dk-flip-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); max-height: 50vh; overflow-y: auto; }
+  .dk-quiz-opts { gap: 7px; }
+  .dk-opt { font-size: .88rem; padding: 9px 12px; }
+  .dk-footer { flex-shrink: 0; position: sticky; bottom: 0; z-index: 10; background: var(--yr-surface); }
   .dk-h { font-size: 1.25rem; }
   .dk-scale-row { gap: 6px; }
   .dk-scale-opt { min-width: 58px; }

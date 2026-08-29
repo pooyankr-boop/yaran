@@ -136,9 +136,11 @@ document.getElementById("btn-decks").addEventListener("click", function () {
   if (!modal || !header || !body) return;
   header.innerHTML = '<span>🖥️</span> — ' + (aud === "parent"
     ? "درس‌های تعاملی والدین"
+    : aud === "teacher"
+    ? "درس‌های تعاملی مربیان — همه محتواها"
     : aud === null
     ? "درس‌های تعاملی (همه محتواها)"
-    : "درس‌های تعاملی مربیان و کارکنان");
+    : "درس‌های تعاملی کارکنان");
   body.innerHTML = Decks.picker(aud);
   modal.classList.remove("hidden");
   modal.classList.add("active");

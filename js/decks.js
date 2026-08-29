@@ -423,7 +423,11 @@ var Decks = (function () {
   /* ═══════════ انتخابگر (picker) ═══════════ */
   function picker(audience) {
     var list = (typeof DECK_LIBRARY !== "undefined") ? DECK_LIBRARY.filter(function (d) {
-      return !audience || (d.audience || []).indexOf(audience) >= 0;
+      if (!audience) return true;
+      var aud = d.audience || [];
+      // مربی: همه محتواها (والدین + مربیان + کارکنان)
+      if (audience === "teacher") return true;
+      return aud.indexOf(audience) >= 0;
     }) : [];
     var html = '<div class="dk-picker-grid">';
     list.forEach(function (d) {
