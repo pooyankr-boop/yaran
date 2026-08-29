@@ -265,3 +265,9 @@
 }
 .yr-chat-ask-btn:hover:not(:disabled) { background: #7c7cff; color: #fff; }
 .yr-chat-ask-btn:disabled { opacity: .35; cursor: default; }
+
+/* ═══ Rayan sprite animation ═══ */
+@keyframes rayan-sprite {
+  from { background-position-x: 0px; }
+  to { background-position-x: -512px; }
+}

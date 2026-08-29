@@ -16,36 +16,53 @@ var YaranBot = (function () {
   }
 
   /* ═══════════ دکمه‌های عملیاتی — بدون LLM ═══════════ */
-  var DIRECT_ACTIONS = {
-    rooms:   { icon: "🏫", label: "اتاق‌ها",   run: function () { showScreen("screen-lobby"); closeChat(); }},
-    lessons: { icon: "📚", label: "درسها",     run: function () { showScreen("screen-lobby"); if (typeof Tour !== "undefined" && Tour.openPicker) Tour.openPicker(); else openDeckPicker(); }},
-    music:   { icon: "🎵", label: "موسیقی",   run: function () { showScreen("screen-lobby"); if (typeof openRoom === "function") openRoom("honar"); closeChat(); }},
-    story:   { icon: "📖", label: "قصه",       run: function () { showScreen("screen-lobby"); if (typeof openRoom === "function") openRoom("motaleh"); closeChat(); }},
-    player:  { icon: "🎧", label: "پلیر",     run: function () { if (typeof Tour !== "undefined" && Tour.openPlayer) Tour.openPlayer(); }},
-    tasks:   { icon: "📋", label: "کارها",     run: function () { sendDirect("کارهای امروز را نشان بده"); }},
-    plan:    { icon: "📅", label: "برنامه",     run: function () { sendDirect("برنامه هفتگی را بچین"); }},
-    kids:    { icon: "👶", label: "کودکان",     run: function () { sendDirect("فهرست کودکان را نشان بده"); }},
-    teachers:{ icon: "👩\u200d🏫", label: "مربیان",  run: function () { sendDirect("فهرست مربیان را نشان بده"); }},
-  };
-
-  /* دکمههای اولیه — همیشه نشان داده شوند */
-  var INITIAL_KEYS = ["rooms", "lessons", "music", "story", "player"];
-  /* دکمههای مکالمه — بعد از پیام اول ظاهر شوند */
-  var CONVO_KEYS    = ["tasks", "plan", "kids", "teachers"];
+  /* ═══ دکمه‌های هوشمند — نقش‌محور ═══ */
+  var INITIAL_ACTIONS = [
+    { icon: "🏫", label: "اتاق\u200cها",   run: function () { showScreen("screen-lobby"); closePanel(); }},
+    { icon: "📚", label: "درس\u200cها",     run: function () { if (typeof Tour !== "undefined" && Tour.openPicker) Tour.openPicker(); closePanel(); }},
+    { icon: "🎵", label: "موسیقی",    run: function () { if (typeof openRoom === "function") openRoom("honar"); closePanel(); }},
+    { icon: "📖", label: "قصه",        run: function () { if (typeof openRoom === "function") openRoom("motaleh"); closePanel(); }},
+  ];
+  var CONVO_ACTIONS = [
+    { icon: "📋", label: "کارها",      run: function () { sendDirect("کارهای امروز را نشان بده"); }},
+    { icon: "📅", label: "برنامه",      run: function () { sendDirect("برنامه هفتگی را بچین"); }},
+    { icon: "🎮", label: "بازی",       run: function () { if (typeof openRoom === "function") openRoom("bazi"); closePanel(); }},
+    { icon: "📝", label: "گزارش",      run: function () { sendDirect("گزارش وضعیت کودکان را بده"); }},
+  ];
+  var MANAGER_ACTIONS = [
+    { icon: "👶", label: "کودکان",  run: function () { sendDirect("فهرست کودکان را نشان بده"); }},
+    { icon: "👩\u200d🏫", label: "مربیان", run: function () { sendDirect("فهرست مربیان را نشان بده"); }},
+    { icon: "📊", label: "داشبورد", run: function () { sendDirect("خلاصه وضعیت مهدکودک را بده"); }},
+  ];
 
   function renderActionButtons(context) {
     var box = document.getElementById("yr-chat-suggestions");
     if (!box) return;
-    var keys = INITIAL_KEYS.slice();
-    if (context === "after_msg") keys = keys.concat(CONVO_KEYS);
+    var btns = INITIAL_ACTIONS.slice();
+    if (context === "after_msg") btns = btns.concat(CONVO_ACTIONS);
+    if (context === "after_msg" && typeof currentUserRole !== "undefined" && (currentUserRole === "manager" || currentUserRole === "admin"))
+      btns = btns.concat(MANAGER_ACTIONS);
     var html = "";
-    keys.forEach(function (k) {
-      var b = DIRECT_ACTIONS[k];
-      if (b) html += '<button class="yr-chat-sug" data-action="' + k + '">' + b.icon + " " + b.label + "</button>";
+    btns.forEach(function (b, i) {
+      html += '<button class="yr-chat-sug" data-action-idx="' + i + '">' + b.icon + " " + b.label + "</button>";
     });
     box.innerHTML = html;
     box.style.display = "flex";
   }
+
+  function closePanel() {
+    isOpen = false;
+    var panel = document.getElementById("yr-chat-panel");
+    if (panel) panel.classList.remove("open");
+  }
+
+  /* DIRECT_ACTIONS: label → text mapping (for data-msg buttons) */
+  var DIRECT_ACTIONS = {};
+  INITIAL_ACTIONS.concat(CONVO_ACTIONS, MANAGER_ACTIONS).forEach(function (a, i) {
+    DIRECT_ACTIONS[a.label] = a.run;
+  });
+
+  var ALL_ACTIONS = INITIAL_ACTIONS.concat(CONVO_ACTIONS, MANAGER_ACTIONS);
 
   // اجرای مستقیم — پیام را به agent میفرستد ولی فقط یک خط
   function sendDirect(text) {
@@ -129,11 +146,9 @@ var YaranBot = (function () {
     document.getElementById("yr-chat-suggestions").addEventListener("click", function (e) {
       var btn = e.target.closest(".yr-chat-sug");
       if (!btn) return;
-      var actionIdx = btn.getAttribute("data-action-idx");
-      if (actionIdx !== null) {
-        // دکمه عملیاتی — اجرای مستقیم بدون LLM
-        var fn = ACTION_BUTTONS[parseInt(actionIdx)] && ACTION_BUTTONS[parseInt(actionIdx)].action;
-        if (fn) fn();
+      var idx = btn.getAttribute("data-action-idx");
+      if (idx !== null && ALL_ACTIONS[parseInt(idx)]) {
+        ALL_ACTIONS[parseInt(idx)].run();
       } else {
         var msg = btn.getAttribute("data-msg");
         if (msg) { document.getElementById("yr-chat-input").value = msg; send(); }
