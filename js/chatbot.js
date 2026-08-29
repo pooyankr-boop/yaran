@@ -6,6 +6,68 @@ var YaranBot = (function () {
 
   var isOpen = false;
   var chatHistory = [];
+  var lastBotText = "";
+
+  function setKeboState(state) {
+    var el = document.getElementById("yr-chat-avatar");
+    if (el) el.setAttribute("data-state", state);
+  }
+
+  /* ═══════════ دکمه‌های عملیاتی — بدون LLM ═══════════ */
+  var DIRECT_ACTIONS = {
+    rooms:   { icon: "🏫", label: "اتاق‌ها",   run: function () { showScreen("screen-lobby"); closeChat(); }},
+    lessons: { icon: "📚", label: "درسها",     run: function () { showScreen("screen-lobby"); if (typeof Tour !== "undefined" && Tour.openPicker) Tour.openPicker(); else openDeckPicker(); }},
+    music:   { icon: "🎵", label: "موسیقی",   run: function () { showScreen("screen-lobby"); if (typeof openRoom === "function") openRoom("honar"); closeChat(); }},
+    story:   { icon: "📖", label: "قصه",       run: function () { showScreen("screen-lobby"); if (typeof openRoom === "function") openRoom("motaleh"); closeChat(); }},
+    player:  { icon: "🎧", label: "پلیر",     run: function () { if (typeof Tour !== "undefined" && Tour.openPlayer) Tour.openPlayer(); }},
+    tasks:   { icon: "📋", label: "کارها",     run: function () { sendDirect("کارهای امروز را نشان بده"); }},
+    plan:    { icon: "📅", label: "برنامه",     run: function () { sendDirect("برنامه هفتگی را بچین"); }},
+    kids:    { icon: "👶", label: "کودکان",     run: function () { sendDirect("فهرست کودکان را نشان بده"); }},
+    teachers:{ icon: "👩\u200d🏫", label: "مربیان",  run: function () { sendDirect("فهرست مربیان را نشان بده"); }},
+  };
+
+  /* دکمههای اولیه — همیشه نشان داده شوند */
+  var INITIAL_KEYS = ["rooms", "lessons", "music", "story", "player"];
+  /* دکمههای مکالمه — بعد از پیام اول ظاهر شوند */
+  var CONVO_KEYS    = ["tasks", "plan", "kids", "teachers"];
+
+  function renderActionButtons(context) {
+    var box = document.getElementById("yr-chat-suggestions");
+    if (!box) return;
+    var keys = INITIAL_KEYS.slice();
+    if (context === "after_msg") keys = keys.concat(CONVO_KEYS);
+    var html = "";
+    keys.forEach(function (k) {
+      var b = DIRECT_ACTIONS[k];
+      if (b) html += '<button class="yr-chat-sug" data-action="' + k + '">' + b.icon + " " + b.label + "</button>";
+    });
+    box.innerHTML = html;
+    box.style.display = "flex";
+  }
+
+  // اجرای مستقیم — پیام را به agent میفرستد ولی فقط یک خط
+  function sendDirect(text) {
+    addUserMessage(text);
+    _showTyping();
+    callGroq(text);
+  }
+
+  // باز کردن picker درسها
+  function openDeckPicker() {
+    try {
+      var modal = document.getElementById("dk-picker-modal");
+      if (!modal) {
+        modal = document.createElement("div");
+        modal.id = "dk-picker-modal";
+        modal.className = "deck-overlay";
+        modal.innerHTML = '<div class="dk-shell"><div class="dk-header"><span>🖥️</span> — درس‌های تعاملی</div><div class="dk-stage" id="dk-picker-body"></div><div class="dk-footer"><button class="dk-btn dk-btn-ghost" onclick="document.getElementById(\'dk-picker-modal\').classList.add(\'hidden\')">بستن</button></div></div>';
+        document.body.appendChild(modal);
+      }
+      var body = document.getElementById("dk-picker-body");
+      if (body && typeof Decks !== "undefined") body.innerHTML = Decks.picker(null);
+      modal.classList.remove("hidden");
+    } catch (e) { console.warn("deck picker failed:", e); }
+  }
   var systemPrompt = [
     "مهم‌ترین قانون مطلق: هرگز اطلاعات جعلی، آدرس وب‌سایت ابداعی، شماره تلفن ساختگی، یا هیچ اطلاعاتی که مطمئن نیستی صحیح است ارائه نکن. اگر چیزی را نمی‌دانی صریحاً بگو «اطلاعات دقیقی در این مورد ندارم».",
     "تو «یاران» هستی، دستیار هوشمند مهدکودک مجازی یاران. یک شخصیت کارتونی مهربان و باانرژی هستی.",
@@ -38,7 +100,7 @@ var YaranBot = (function () {
     panel.id = "yr-chat-panel";
     panel.innerHTML = '' +
       '<div class="yr-chat-header">' +
-        '<div class="yr-chat-avatar-wrap"><img id="yr-chat-avatar" src="assets/images/bot-avatar.svg" alt="یاران" onerror="this.src=\'assets/images/bot-avatar.svg\'" /></div>' +
+        '<div class="yr-chat-avatar-wrap"><div id="yr-chat-avatar" class="kebo-avatar" data-state="idle"></div></div>' +
         '<div class="yr-chat-header-info">' +
           '<div class="yr-chat-header-name">🤖 یاران — دستیار هوشمند</div>' +
           '<div class="yr-chat-header-status">آنلاین • متخصص مهدکودک</div>' +
@@ -64,10 +126,15 @@ var YaranBot = (function () {
     // Suggestions
     document.getElementById("yr-chat-suggestions").addEventListener("click", function (e) {
       var btn = e.target.closest(".yr-chat-sug");
-      if (btn) {
+      if (!btn) return;
+      var actionIdx = btn.getAttribute("data-action-idx");
+      if (actionIdx !== null) {
+        // دکمه عملیاتی — اجرای مستقیم بدون LLM
+        var fn = ACTION_BUTTONS[parseInt(actionIdx)] && ACTION_BUTTONS[parseInt(actionIdx)].action;
+        if (fn) fn();
+      } else {
         var msg = btn.getAttribute("data-msg");
-        document.getElementById("yr-chat-input").value = msg;
-        send();
+        if (msg) { document.getElementById("yr-chat-input").value = msg; send(); }
       }
     });
   }
@@ -82,7 +149,7 @@ var YaranBot = (function () {
       // Welcome message on first open
       if (chatHistory.length === 0) {
         addBotMessage("سلام! 👋 من یارانم، دستیار هوشمند مهدکودک یاران.\n\nمی‌تونم کمکت کنم:\n• راهنمایی محتواهای سایت\n• مشاوره تربیت کودک\n• پیشنهاد بازی و فعالیت آموزشی\n• برنامه‌ریزی روزانه مهدکودک\n\nهر سؤالی داری بپرس! 😊");
-        showSuggestions();
+        renderActionButtons(); setTimeout(function(){ setKeboState("idle"); }, 3000);
       }
       setTimeout(function () { document.getElementById("yr-chat-input").focus(); }, 300);
     } else {
@@ -142,6 +209,8 @@ var YaranBot = (function () {
   }
 
   function showTyping() {
+    setKeboState("think"); setKeboState("think"); }
+  function _showTyping() {
     var container = document.getElementById("yr-chat-messages");
     var div = document.createElement("div");
     div.className = "yr-chat-typing";
@@ -152,75 +221,21 @@ var YaranBot = (function () {
   }
 
   function hideTyping() {
+    setKeboState("idle");
     var el = document.getElementById("yr-chat-typing");
     if (el) el.remove();
   }
 
-  /* ── پیشنهادهای پویا — بر اساس متن پیامها مرتبط انتخاب میشوند ── */
-  var SUGGESTION_POOL = [
-    { msg: "چه امکاناتی داری؟", label: "🎯 امکانات سایت", kw: ["امکان", "چیکار", "چه کاری", "کمک"] },
-    { msg: "برنامه هفتگی این هفته را بچین", label: "📅 برنامه هفتگی", kw: ["برنامه", "هفته", "زمانبندی", "روز", "ساعت", "پس فردا", "فردا"] },
-    { msg: "فهرست کودکان را نشان بده", label: "👶 کودکان", kw: ["کودک", "بچه", "گرسنه", "خواب", "نیاز", "دستپاچه"] },
-    { msg: "فهرست مربیان را نشان بده", label: "👩🏫 مربیان", kw: ["مربی", "معلم", "آموزگار", "کارمند"] },
-    { msg: "فهرست کلاسها را نشان بده", label: "🏫 کلاسها", kw: ["کلاس", "گروه"] },
-    { msg: "کارها را نشان بده", label: "📋 وظایف", kw: ["کار", "وظیفه", "تسک", "پرونده"] },
-    { msg: "یادداشت جدید بساز", label: "📝 یادداشت", kw: ["یادداشت", "یاداش"] },
-    { msg: "گزارش امروز را بنویس", label: "😊 گزارش", kw: ["گزارش", "وضعیت"] },
-    { msg: "برو به اتاق موسیقی", label: "🎵 اتاق موسیقی", kw: ["موسیقی", "اتاق", "برو", "ناوبری", "تور"] },
-    { msg: "یک قصه صوتی پخش کن", label: "🔊 قصه صوتی", kw: ["قصه", "پخش", "صوت", "لالایی", "پادکست", "پلیر", "پخشکننده"] },
-    { msg: "یک ترانه کودکانه پخش کن", label: "🎶 ترانه", kw: ["ترانه", "آواز", "آهنگ", "شاد"] },
-    { msg: "درس والدین را نشان بده", label: "📚 درسها", kw: ["درس", "کاربرگ", "دک", "کوییز", "آموزش"] },
-    { msg: "بازیهای آموزشی را نشان بده", label: "🎮 بازیها", kw: ["بازی", "سرگرمی"] },
-    { msg: "پیامهای والدین را نشان بده", label: "💬 پیامها", kw: ["پیام", "والدین", "ارتباط"] },
-    { msg: "مدیریت کودکان را باز کن", label: "🛠 مدیریت", kw: ["مدیریت", "پنل", "افزودن", "ویرایش", "حذف", "باز"] },
-    { msg: "خداحافظیهای بیاشک چیست؟", label: "🌟 فرزندپروری", kw: ["تربیت", "رفتار", "پرورش", "مشاوره", "گریه", "خشم", "عصبانی", "خلاق", "والدپروری", "کمک"] }
-  ];
-  var sugOffset = 0;
 
-  function showSuggestions(contextText) {
-    var box = document.getElementById("yr-chat-suggestions");
-    if (!box) return;
-    var text = (contextText || "").toLowerCase();
-    var scored = SUGGESTION_POOL.map(function (s, i) {
-      var score = 0;
-      for (var k = 0; k < s.kw.length; k++) {
-        if (text.indexOf(s.kw[k]) >= 0) score += 2;
-      }
-      return { idx: i, score: score };
-    });
-    scored.sort(function (a, b) { return b.score - a.score; });
-    var picked = scored.filter(function (s) { return s.score > 0; }).slice(0, 4);
-    // تکمیل با پیشنهادهای عمومی (چرخشی تا هر بار تفاوت داشته باشد)
-    var general = scored.filter(function (s) { return s.score === 0; });
-    var g = sugOffset;
-    while (picked.length < 4 && general.length) {
-      var cand = general[g % general.length];
-      if (picked.indexOf(cand) < 0) picked.push(cand);
-      g++;
-      if (g > general.length * 2) break;
-    }
-    sugOffset = (sugOffset + 1) % Math.max(1, general.length);
-    var html = "";
-    picked.forEach(function (s) {
-      var item = SUGGESTION_POOL[s.idx];
-      html += '<button class="yr-chat-sug" data-msg="' + item.msg.replace(/"/g, "&quot;") + '">' + item.label + "</button>";
-    });
-    box.innerHTML = html;
-    box.style.display = "flex";
-  }
-
-  function hideSuggestions() {
-    document.getElementById("yr-chat-suggestions").style.display = "none";
-  }
+  /* ── دکمه‌های عملیاتی جایگزین شد — به ACTION_BUTTONS بالا مراجعه کنید ── */
 
   function send() {
     var input = document.getElementById("yr-chat-input");
     var text = input.value.trim();
     if (!text) return;
     input.value = "";
-    hideSuggestions();
     addUserMessage(text);
-    showTyping();
+    _showTyping();
     callGroq(text);
   }
 
@@ -255,13 +270,13 @@ var YaranBot = (function () {
           localStorage.removeItem("yaran_user");
           addBotMessage("توکن نشست منقضی شد. لطفاً دوباره از در وارد شو و لاگین کن. 🔑");
         } else if (err === "providers_exhausted") {
-          addBotMessage("فعلاً همه مدلهای هوش مصنوعی در دسترس نیستند 📵 — چند دقیقه دیگر دوباره امتحان کن.");
+          addBotMessage("فعلاً همه مدلهای هوش مصنوعی در دسترس نیستند 📵 — چند دقیقه دیگر دوباره امتحان کن."); setKeboState("sad");
         } else if (res.status === 429 || err === "rate_limited") {
-          addBotMessage("سهمیه هوش مصنوعی موقتاً پر شده ⏳ — چند ثانیه صبر کن و دوباره بفرست.");
+          addBotMessage("سهمیه هوش مصنوعی موقتاً پر شده ⏳ — چند ثانیه صبر کن و دوباره بفرست."); setKeboState("sad");
         } else {
-          addBotMessage("متأسفم، مشکلی پیش اومد. لطفاً دوباره امتحان کن. 🙏");
+          addBotMessage("متأسفم، مشکلی پیش اومد. لطفاً دوباره امتحان کن. 🙏"); setKeboState("sad");
         }
-        showSuggestions();
+        renderActionButtons(); setTimeout(function(){ setKeboState("idle"); }, 3000);
         return;
       }
 
@@ -270,13 +285,13 @@ var YaranBot = (function () {
 
       // پاسخ Agent جدید: {reply, clientActions} — یا پاسخ قدیمی Groq
       if (data && typeof data.reply === "string") {
-        if (data.reply.trim()) addBotMessage(data.reply);
+        if (data.reply.trim()) { addBotMessage(data.reply); setKeboState("happy"); }
         if (Array.isArray(data.clientActions)) {
           data.clientActions.forEach(runClientAction);
         }
       } else {
         var reply = data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
-        if (reply && reply.trim()) addBotMessage(reply);
+        if (reply && reply.trim()) { addBotMessage(reply); setKeboState("happy"); }
         else addBotMessage("متأسفم نتونستم جواب بدم. دوباره بپرس! 🙏");
       }
       // پیشنهادهای مرتبط با آخرین گفتوگو
@@ -289,8 +304,8 @@ var YaranBot = (function () {
     } catch (e) {
       console.error("Bot fetch error:", e);
       hideTyping();
-      addBotMessage("مشکل اتصال پیش اومد. اینترنتت رو چک کن. 🌐");
-      showSuggestions();
+      addBotMessage("مشکل اتصال پیش اومد. اینترنتت رو چک کن. 🌐"); setKeboState("sad");
+      renderActionButtons(); setTimeout(function(){ setKeboState("idle"); }, 3000);
     } finally {
       btn.disabled = false;
     }

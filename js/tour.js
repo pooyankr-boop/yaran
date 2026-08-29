@@ -140,10 +140,18 @@ document.getElementById("btn-decks").addEventListener("click", function () {
     ? "درس‌های تعاملی مربیان — همه محتواها"
     : aud === null
     ? "درس‌های تعاملی (همه محتواها)"
-    : "درس‌های تعاملی کارکنان");
+    : "درس‌های تعاملی کارکنان")
+    + ' <button id="picker-close-btn" style="float:left;background:none;border:none;color:white;font-size:1.3rem;cursor:pointer;padding:2px 8px;">✕</button>';
   body.innerHTML = Decks.picker(aud);
   modal.classList.remove("hidden");
   modal.classList.add("active");
+  // Close button
+  var closeBtn = document.getElementById("picker-close-btn");
+  if (closeBtn) closeBtn.onclick = function() {
+    modal.classList.add("hidden");
+    modal.classList.remove("active");
+    body.innerHTML = "";
+  };
   body.querySelectorAll(".dk-picker-card").forEach(function (card) {
     card.addEventListener("click", function () {
       modal.classList.add("hidden");

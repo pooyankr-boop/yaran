@@ -5,12 +5,12 @@
    ═══════════════════════════════════════════════════════ */
 
 const PROVIDERS = [
-  { name: 'hf-llama33', url: 'https://router.huggingface.co/v1/chat/completions', key: () => process.env.HF_API_KEY, model: 'meta-llama/Llama-3.3-70B-Instruct' },
-  { name: 'or-llama33', url: 'https://openrouter.ai/api/v1/chat/completions', key: () => process.env.OPENROUTER_API_KEY, model: 'meta-llama/llama-3.3-70b-instruct' },
   { name: 'groq-120b', url: 'https://api.groq.com/openai/v1/chat/completions', key: () => process.env.GROQ_API_KEY, model: 'openai/gpt-oss-120b' },
-  { name: 'or-qwen72', url: 'https://openrouter.ai/api/v1/chat/completions', key: () => process.env.OPENROUTER_API_KEY, model: 'qwen/qwen-2.5-72b-instruct' },
   { name: 'groq-20b', url: 'https://api.groq.com/openai/v1/chat/completions', key: () => process.env.GROQ_API_KEY, model: 'openai/gpt-oss-20b' },
+  { name: 'hf-llama33', url: 'https://router.huggingface.co/v1/chat/completions', key: () => process.env.HF_API_KEY, model: 'meta-llama/Llama-3.3-70B-Instruct' },
   { name: 'hf-qwen72', url: 'https://router.huggingface.co/v1/chat/completions', key: () => process.env.HF_API_KEY, model: 'Qwen/Qwen2.5-72B-Instruct' },
+  { name: 'or-llama33', url: 'https://openrouter.ai/api/v1/chat/completions', key: () => process.env.OPENROUTER_API_KEY, model: 'meta-llama/llama-3.3-70b-instruct' },
+  { name: 'or-qwen72', url: 'https://openrouter.ai/api/v1/chat/completions', key: () => process.env.OPENROUTER_API_KEY, model: 'qwen/qwen-2.5-72b-instruct' },
 ];
 
 const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
