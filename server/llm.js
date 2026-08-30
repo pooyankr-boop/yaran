@@ -1,12 +1,16 @@
 /* ═══════════════════════════════════════════════════════
    LLM Chain — زنجیرهی مدلها با fallback خودکار
-   Groq 20b → Groq 120b → OpenRouter → HF (402 مرده)
+   Groq → Mistral → OpenRouter → HF
    20b اول: TPM آزادتر، خطای توکن کمتر
    ═══════════════════════════════════════════════════════ */
 
 const PROVIDERS = [
   { name: 'groq-20b', url: 'https://api.groq.com/openai/v1/chat/completions', key: () => process.env.GROQ_API_KEY, model: 'openai/gpt-oss-20b' },
   { name: 'groq-120b', url: 'https://api.groq.com/openai/v1/chat/completions', key: () => process.env.GROQ_API_KEY, model: 'openai/gpt-oss-120b' },
+  { name: 'mistral-small', url: 'https://api.mistral.ai/v1/chat/completions', key: () => process.env.MISTRAL_API_KEY, model: 'mistral-small-latest' },
+  { name: 'mistral-medium', url: 'https://api.mistral.ai/v1/chat/completions', key: () => process.env.MISTRAL_API_KEY, model: 'mistral-medium-latest' },
+  { name: 'cerebras-120b', url: 'https://api.cerebras.ai/v1/chat/completions', key: () => process.env.CEREBRAS_API_KEY, model: 'gpt-oss-120b' },
+  { name: 'cerebras-gemma', url: 'https://api.cerebras.ai/v1/chat/completions', key: () => process.env.CEREBRAS_API_KEY, model: 'gemma-4-31b' },
   { name: 'or-llama33', url: 'https://openrouter.ai/api/v1/chat/completions', key: () => process.env.OPENROUTER_API_KEY, model: 'meta-llama/llama-3.3-70b-instruct' },
   { name: 'or-qwen72', url: 'https://openrouter.ai/api/v1/chat/completions', key: () => process.env.OPENROUTER_API_KEY, model: 'qwen/qwen-2.5-72b-instruct' },
   { name: 'hf-llama33', url: 'https://router.huggingface.co/v1/chat/completions', key: () => process.env.HF_API_KEY, model: 'meta-llama/Llama-3.3-70B-Instruct' },

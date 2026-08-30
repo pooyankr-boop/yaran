@@ -350,6 +350,9 @@ function openRoom(id) {
   a.src = "assets/images/" + currentRoom.folder + "/" + (isPortrait() ? "hero-v" : "media") + ".webp";
   a.classList.add("on");
   activeLayer = "a";
+  // نمای اول همیشه hero-v/media است (تمام‌صفحه)، کلاس مربع احتمالی از اتاق قبلی پاک شود
+  var sceneEl0 = document.querySelector("#screen-room .scene");
+  if (sceneEl0) sceneEl0.classList.remove("scene-square");
   updateRoomChrome();
   if (typeof updateExplorerVisibility === "function") {
     var _isChild = (typeof currentUserRole !== "undefined" && currentUserRole === "child");
@@ -369,6 +372,11 @@ function setRoomView(view) {
   // نمای جلو: عکس media.webp اتاق
   const file = view === "media" ? (isPortrait() ? "hero-v" : "hero")
     : (view === "hero" ? (isPortrait() ? "hero-v" : "hero") : view);
+  // نماهای herog/herog_left/herog_right دقیقاً مربع (1:1) هستند — .scene را به همان
+  // نسبت قفل می‌کنیم تا object-fit:cover در هیچ اندازه‌ی صفحه‌ای برش اشتباه ندهد
+  // (رفع همپوشانی هات‌اسپات‌ها روی موبایل — این خط را پاک نکنید).
+  const sceneElSq = document.querySelector("#screen-room .scene");
+  if (sceneElSq) sceneElSq.classList.toggle("scene-square", file !== "hero" && file !== "hero-v");
   const src = "assets/images/" + currentRoom.folder + "/" + file + ".webp";
   const showEl = activeLayer === "a" ? b : a;
   const hideEl = activeLayer === "a" ? a : b;

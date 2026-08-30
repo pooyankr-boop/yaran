@@ -77,7 +77,7 @@ function buildPodcastMap() {
     }
   } catch (e) { console.warn('needle podcast map:', e.message); }
   // castbox-data.js + playlist-data.js: {"title":"..", "src":"https://.."}
-  const extraFiles = ['castbox-data.js', 'playlist-data.js', 'castbox-meditation-data.js'];
+  const extraFiles = ['playlist-data.js', 'castbox-meditation-data.js'];
   for (const f of extraFiles) {
     try {
       const src2 = fs.readFileSync(path.join(__dirname, '..', 'data', 'podcasts', f), 'utf8');
@@ -210,7 +210,10 @@ function createNeedle(ctx) {
         return (await callAPI(user, 'POST', '/api/planner/events', args)).data;
       }
       case 'list_events': return (await callAPI(user, 'GET', '/api/planner/events')).data;
-      case 'update_event': return (await callAPI(user, 'PATCH', '/api/planner/events/' + args.id, args)).data;
+      case 'update_event': {
+        if (!staff) return { error: 'دسترسی ندارید' };
+        return (await callAPI(user, 'PATCH', '/api/planner/events/' + args.id, args)).data;
+      }
       case 'delete_event': {
         if (!staff) return { error: 'دسترسی ندارید' };
         return (await callAPI(user, 'DELETE', '/api/planner/events/' + args.id)).data;

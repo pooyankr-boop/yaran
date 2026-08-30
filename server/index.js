@@ -162,6 +162,8 @@ const allowedOrigins = [...defaultOrigins, ...extraOrigins];
 app.use(cors({
   origin(origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+    // Allow any localhost port for local development
+    if (origin && /^https?:\/\/localhost(:\d+)?$/.test(origin)) return callback(null, true);
     callback(new Error('Not allowed by CORS'));
   },
 }));
@@ -402,7 +404,7 @@ app.delete('/api/tasks/:id', (req, res) => {
 });
 
 app.get('/api/tasks', (_req, res) => {
-  res.json({ tasks: memoryTasks.reverse() });
+  res.json({ tasks: [...memoryTasks].reverse() });
 });
 
 // ── Chat Bot Proxy (Groq API) ──
@@ -472,7 +474,7 @@ const needleLibs = (function () {
     }
   } catch (e) { console.warn('needle podcasts:', e.message); }
   // castbox-data + playlist-data: {"title":"..","src":".."}
-  for (const f of ['castbox-data.js', 'playlist-data.js', 'castbox-meditation-data.js']) {
+  for (const f of ['playlist-data.js', 'castbox-meditation-data.js']) {
     try {
       const s2 = fs.readFileSync(path.join(__dirname, '..', 'data', 'podcasts', f), 'utf8');
       const r2 = /"title"\s*:\s*"([^"]+)"/g;

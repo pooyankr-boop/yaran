@@ -25,7 +25,7 @@ var YaranBot = (function () {
   /* ═══ دکمههای هوشمند — نقشمحور ═══ */
   var INITIAL_ACTIONS = [
     { icon: "🏫", label: "اتاق\u200cها",   run: function () { showScreen("screen-lobby"); closePanel(); }},
-    { icon: "📚", label: "درس\u200cها",     run: function () { if (typeof Tour !== "undefined" && Tour.openPicker) Tour.openPicker(); closePanel(); }},
+    { icon: "📚", label: "درس‌ها",     run: function () { openDeckPicker(); closePanel(); }},
     { icon: "🎵", label: "موسیقی",    run: function () { if (typeof openRoom === "function") openRoom("honar"); closePanel(); }},
     { icon: "📖", label: "قصه",        run: function () { if (typeof openRoom === "function") openRoom("motaleh"); closePanel(); }},
   ];
@@ -36,9 +36,14 @@ var YaranBot = (function () {
     { icon: "📝", label: "گزارش",      run: function () { sendDirect("گزارش وضعیت کودکان را بده"); }},
   ];
   var MANAGER_ACTIONS = [
-    { icon: "👶", label: "کودکان",  run: function () { sendDirect("فهرست کودکان را نشان بده"); }},
-    { icon: "👩\u200d🏫", label: "مربیان", run: function () { sendDirect("فهرست مربیان را نشان بده"); }},
     { icon: "📊", label: "داشبورد", run: function () { sendDirect("خلاصه وضعیت مهدکودک را بده"); }},
+    { icon: "📅", label: "برنامه هفتگی", run: function () { openPanelTab("planner"); }},
+    { icon: "📋", label: "ذخیره برنامه", run: function () { sendDirect("برنامه هفتگی پیشنهادی را ذخیره کن"); }},
+    { icon: "👩‍🏫", label: "مربیان", run: function () { sendDirect("فهرست مربیان را نشان بده"); }},
+    { icon: "👶", label: "کودکان",  run: function () { sendDirect("فهرست کودکان را نشان بده"); }},
+    { icon: "⚙️", label: "مدیریت", run: function () {
+      sendDirect("امکانات مدیریتی را توضیح بده و میانبرهای پنل را نشان بده");
+    }},
   ];
   /* مربی: پنل برنامهریزی مستقیم (برنامه هفتگی خودش را ببیند) */
   var TEACHER_ACTIONS = [
@@ -58,13 +63,30 @@ var YaranBot = (function () {
     } catch (e) { console.warn("openPlannerTab:", e); }
   }
 
+  /* باز کردن مستقیم تب پنل */
+  function openPanelTab(tab) {
+    try {
+      if (typeof showScreen === "function") showScreen("screen-panel");
+      if (typeof renderPanelTab === "function") renderPanelTab(tab);
+    } catch (e) { console.warn("openPanelTab:", e); }
+  }
+
   function renderActionButtons(context) {
     var box = document.getElementById("yr-chat-suggestions");
     if (!box) return;
     var btns = INITIAL_ACTIONS.slice();
     if (context === "after_msg") btns = btns.concat(CONVO_ACTIONS);
-    if (context === "after_msg" && typeof currentUserRole !== "undefined" && (currentUserRole === "manager" || currentUserRole === "admin"))
+    if (context === "after_msg" && typeof currentUserRole !== "undefined" && (currentUserRole === "manager" || currentUserRole === "admin")) {
       btns = btns.concat(MANAGER_ACTIONS);
+      // Show shortcuts after management explanation
+      var lastBot = "";
+      for (var hi = chatHistory.length - 1; hi >= 0; hi--) {
+        if (chatHistory[hi].role === "assistant") { lastBot = chatHistory[hi].content || ""; break; }
+      }
+      if (lastBot.indexOf("مدیریت") >= 0 || lastBot.indexOf("پنل") >= 0) {
+        btns = btns.concat(MANAGER_SHORTCUTS);
+      }
+    }
     var html = "";
     btns.forEach(function (b, i) {
       html += '<button class="yr-chat-sug" data-action-idx="' + i + '">' + b.icon + " " + b.label + "</button>";
@@ -85,7 +107,20 @@ var YaranBot = (function () {
     DIRECT_ACTIONS[a.label] = a.run;
   });
 
-  var ALL_ACTIONS = INITIAL_ACTIONS.concat(CONVO_ACTIONS, MANAGER_ACTIONS);
+  /* میانبرهای مدیریتی (بعد از توضیح مدیریت نمایش داده میشوند) */
+  var MANAGER_SHORTCUTS = [
+    { icon: "📅", label: "برنامه هفتگی", run: function () { openPanelTab("planner"); }},
+    { icon: "📋", label: "ذخیره برنامه", run: function () { sendDirect("برنامه هفتگی پیشنهادی را ذخیره کن"); }},
+    { icon: "👩‍🏫", label: "مربیان", run: function () { sendDirect("فهرست مربیان را نشان بده"); }},
+    { icon: "👶", label: "کودکان",  run: function () { sendDirect("فهرست کودکان را نشان بده"); }},
+    { icon: "📋", label: "کارها", run: function () { sendDirect("کارهای امروز را نشان بده"); }},
+    { icon: "📝", label: "گزارش", run: function () { sendDirect("گزارش وضعیت کودکان را بده"); }},
+    { icon: "✉️", label: "پیام", run: function () { sendDirect("پیامهای والدین را نشان بده"); }},
+    { icon: "📓", label: "یادداشت", run: function () { sendDirect("یادداشتهای من را نشان بده"); }},
+    { icon: "🗓", label: "رویداد", run: function () { sendDirect("رویدادهای پیش رو را نشان بده"); }},
+  ];
+
+  var ALL_ACTIONS = INITIAL_ACTIONS.concat(CONVO_ACTIONS, MANAGER_ACTIONS, MANAGER_SHORTCUTS);
 
   // اجرای مستقیم — پیام را به agent میفرستد ولی فقط یک خط
   function sendDirect(text) {
@@ -95,7 +130,7 @@ var YaranBot = (function () {
   }
 
   // باز کردن picker درسها
-  function openDeckPicker() {
+  window.openDeckPicker = function() {
     try {
       var modal = document.getElementById("dk-picker-modal");
       if (!modal) {
@@ -112,7 +147,7 @@ var YaranBot = (function () {
   }
   var systemPrompt = [
     "مهم‌ترین قانون مطلق: هرگز اطلاعات جعلی، آدرس وب‌سایت ابداعی، شماره تلفن ساختگی، یا هیچ اطلاعاتی که مطمئن نیستی صحیح است ارائه نکن. اگر چیزی را نمی‌دانی صریحاً بگو «اطلاعات دقیقی در این مورد ندارم».",
-    "تو «رایان» هستی، دستیار هوشمند مهدکودک مجازی رایان. یک شخصیت کارتونی مهربان و باانرژی هستی.",
+    "تو «رایان» هستی، دستیار هوشمند مهدکودک مجازی «یاران». یک شخصیت کارتونی مهربان و باانرژی هستی.",
     "فقط به فارسی پاسخ بده. هرگز انگلیسی، عربی، روسی یا هیچ زبان دیگری استفاده نکن.",
     "تو ChatGPT یا OpenAI نیستی. تو رایان هستی.",
     "قوانین سختگیرانه:\n- فقط اطلاعاتی بده که در این system prompt آمده\n- هرگز آدرس وب‌سایت، شماره تلفن، لینک یا منبعی ابداع نکن\n- اگر سؤالی خارج از اطلاعات موجود پرسیده شد، بگو «اطلاعات دقیقی در این مورد ندارم»\n- مختصر و مفید باش\n- مهربان و صمیمی باش\n- از ایموجی مناسب استفاده کن",
@@ -188,8 +223,8 @@ var YaranBot = (function () {
       fab.querySelector(".yr-chat-fab-pulse").style.display = "none";
       // Welcome message on first open
       if (chatHistory.length === 0) {
-        addBotMessage("سلام! 👋 من رایانم، دستیار هوشمند مهدکودک رایان.\n\nمی‌تونم کمکت کنم:\n• راهنمایی محتواهای سایت\n• مشاوره تربیت کودک\n• پیشنهاد بازی و فعالیت آموزشی\n• برنامه‌ریزی روزانه مهدکودک\n\nهر سؤالی داری بپرس! 😊");
-        renderActionButtons(); setTimeout(function(){ setRayanState("idle"); }, 3000);
+        addBotMessage("سلام! 👋 من رایانم، دستیار هوشمند مهدکودک «یاران».\n\nمی‌تونم کمکت کنم:\n• راهنمایی محتواهای سایت\n• مشاوره تربیت کودک\n• پیشنهاد بازی و فعالیت آموزشی\n• برنامه‌ریزی روزانه مهدکودک\n\nهر سؤالی داری بپرس! 😊");
+        renderActionButtons("after_msg"); setTimeout(function(){ setRayanState("idle"); }, 3000);
       }
       setTimeout(function () { document.getElementById("yr-chat-input").focus(); }, 300);
     } else {
@@ -318,7 +353,7 @@ var YaranBot = (function () {
         } else {
           addBotMessage("متأسفم، مشکلی پیش اومد. لطفاً دوباره امتحان کن. 🙏"); setRayanState("sad");
         }
-        renderActionButtons(); setTimeout(function(){ setRayanState("idle"); }, 3000);
+        renderActionButtons("after_msg"); setTimeout(function(){ setRayanState("idle"); }, 3000);
         return;
       }
 
@@ -345,14 +380,13 @@ var YaranBot = (function () {
       // پیشنهادهای سرور (از نتایج ابزار — بدون توکن اضافه)
       if (Array.isArray(data.suggestions) && data.suggestions.length) {
         renderServerSuggestions(data.suggestions);
-      } else {
-        renderActionButtons("after_msg");
       }
+      renderActionButtons("after_msg");
     } catch (e) {
       console.error("Bot fetch error:", e);
       hideTyping();
       addBotMessage("مشکل اتصال پیش اومد. اینترنتت رو چک کن. 🌐"); setRayanState("sad");
-      renderActionButtons(); setTimeout(function(){ setRayanState("idle"); }, 3000);
+      renderActionButtons("after_msg"); setTimeout(function(){ setRayanState("idle"); }, 3000);
     } finally {
       btn.disabled = false;
     }
@@ -363,10 +397,21 @@ var YaranBot = (function () {
     var box = document.getElementById("yr-chat-suggestions");
     if (!box) return;
     var html = "";
+    // Server suggestions (contextual)
     list.slice(0, 4).forEach(function (s) {
       if (!s || !s.msg) return;
       html += '<button class="yr-chat-sug" data-msg="' + String(s.msg).replace(/"/g, "&quot;") + '">' + (s.label || "→") + "</button>";
     });
+    // Fixed buttons (always shown)
+    INITIAL_ACTIONS.forEach(function (b, i) {
+      html += '<button class="yr-chat-sug" data-action-idx="' + i + '">' + b.icon + " " + b.label + "</button>";
+    });
+    if (typeof currentUserRole !== "undefined" && (currentUserRole === "manager" || currentUserRole === "admin")) {
+      var offset = INITIAL_ACTIONS.length;
+      MANAGER_ACTIONS.forEach(function (b, i) {
+        html += '<button class="yr-chat-sug" data-action-idx="' + (offset + i) + '">' + b.icon + " " + b.label + "</button>";
+      });
+    }
     if (!html) return;
     box.innerHTML = html;
     box.style.display = "flex";

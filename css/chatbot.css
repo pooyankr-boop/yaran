@@ -132,6 +132,7 @@
   font-size: 0.9rem;
   line-height: 1.6;
   word-wrap: break-word;
+  white-space: pre-wrap;
 }
 .yr-chat-msg.bot {
   align-self: flex-start;
@@ -211,10 +212,17 @@
 /* ── پیشنهادات ── */
 .yr-chat-suggestions {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 6px;
   padding: 0 16px 12px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: #ccc transparent;
 }
+.yr-chat-suggestions::-webkit-scrollbar { height: 4px; }
+.yr-chat-suggestions::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
 .yr-chat-sug {
   background: #f5f0e8;
   border: 1px solid #e0d5c5;
@@ -225,6 +233,8 @@
   color: #5a4a3a;
   transition: background 0.2s;
   font-family: inherit;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .yr-chat-sug:hover { background: #ffe8d5; }
 

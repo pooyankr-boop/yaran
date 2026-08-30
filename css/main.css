@@ -118,6 +118,22 @@ html, body {
 }
 #room-hotspots .hotspot { pointer-events: auto; }
 
+/* ⚠️ این قانون قبلاً ۳ بار در بازسازی‌های مختلف CSS پاک شده — لطفاً حذف نشود.
+   رفع ریشه‌ای همپوشانی هات‌اسپات‌ها در سایزهای مختلف صفحه (تقویت مکمل الگوریتم
+   جبران‌سازی object-fit در js/tour.js): تصاویر herog/herog_left/herog_right همه
+   دقیقاً مربع (1:1) هستند؛ با قفل‌کردن نسبت .scene به همان 1:1 برای این نماها
+   (کلاس scene-square از tour.js اضافه می‌شود)، cover هیچ برشی ایجاد نمی‌کند. */
+.scene.scene-square {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: 1 / 1;
+  max-width: 100vh;
+  max-height: 100vw;
+}
+
 /* نقشه plan2 در صفحه انتخاب اتاق: شفافیت پیش‌فرض، اندازه ۰.۹ */
 #screen-map img#map-bg { transform: scale(.9); }
 
