@@ -33,7 +33,7 @@ const NEEDLE_TOOLS = [
               'remember_fact', 'recall_memory', 'forget_memory',
               'search_decks', 'search_podcasts',
               'ask_user',
-              'client_navigate_room', 'client_open_deck', 'client_play_audio', 'client_open_panel'
+              'client_navigate_room', 'client_open_deck', 'client_play_audio', 'client_play_video', 'client_show_content', 'client_show_tip', 'client_play_slideshow', 'client_open_panel'
             ],
             description: 'نام عملیات'
           },
@@ -60,7 +60,7 @@ const NEEDLE_GUIDE = `
 — حافظه: remember_fact{fact} — هر ترجیح/اصلاح/اطلاع کاربر (نام کوچک، کلاس فرزند، سبک ارتباط، «گزارشها را کوتاه بخواه») را ذخیره کن؛ خودکار ذخیره کن نه با پرسیدن / recall_memory — فهرست آنچه یاد گرفتی / forget_memory{n|text} — حذف با شماره یا متن
 — جستجو: search_decks{query} / search_podcasts{query} — اگر یکی نتیجه نداد، دومی را امتحان کن؛ نتیجهها را با نام و تعداد به کاربر بده
 — پرسش گزینهای: ask_user{question, options:[...]} — برای کار مبهم/چندمرحلهای مثل ربات تلگرام بپرس؛ حداکثر ۶ گزینه. گزینهها فقط از داده واقعی: مربیها فقط از list_teachers، کلاسها فقط از list_classes، کودکان فقط از list_children، روزها sat..fri، ساعت 08:00..16:00. اگر فهرست را هنوز نگرفتی، اول list بگیر بعد ask_user — هرگز «مدرس ۱/گزینه ۲» ابداع نکن
-— اقدام مرورگر (سمت کاربر اجرا میشود): client_navigate_room{roomId:amoozesh|bazi|honar|motaleh|salamat|khab|moraabi|esterahat-moraabian|jalase-owlia|bayegani|teria|hayat|maddakari} — نام اتاقها: amoozesh=آموزش, bazi=بازی, honar=هنر و موسیقی, motaleh=مطالعه و هوش, salamat=بهداشت و سلامت, khab=خواب, moraabi=مربی, esterahat-moraabian=استراحت مربیان, jalase-owlia=جلسه اولیا, bayegani=بایگانی, teria=تریا, hayat=حیاط, maddakari=مددکاری و کودکیاری / client_open_deck{deckId} / client_play_audio{title} — URL لازم نیست؛ سرور خودش از کتابخانه پادکست پیدا میکند؛ اگر عنوان دقیق را نمیدانی اول search_podcasts بزن؛ کاربر «پخش» خواست حتماً client_play_audio صدا بزن — ناوبری جایگزین پخش نیست / client_open_panel{tab:planner|children|teachers|classes|reports|tasks|notes}
+— اقدام مرورگر (سمت کاربر اجرا میشود): client_navigate_room{roomId:amoozesh|bazi|honar|motaleh|salamat|khab|moraabi|esterahat-moraabian|jalase-owlia|bayegani|teria|hayat|maddakari} — client_play_video{url} — پخش ویدیو در مودال — client_show_content{screen:screen-lobby|screen-tour|screen-panel} — نمایش بخش — client_show_tip{text} — نمایش نکته آموزشی — client_play_slideshow{roomId} — نمایش اسلایدشوی اتاق — نام اتاقها: amoozesh=آموزش, bazi=بازی, honar=هنر و موسیقی, motaleh=مطالعه و هوش, salamat=بهداشت و سلامت, khab=خواب, moraabi=مربی, esterahat-moraabian=استراحت مربیان, jalase-owlia=جلسه اولیا, bayegani=بایگانی, teria=تریا, hayat=حیاط, maddakari=مددکاری و کودکیاری / client_open_deck{deckId} / client_play_audio{title} — URL لازم نیست؛ سرور خودش از کتابخانه پادکست پیدا میکند؛ اگر عنوان دقیق را نمیدانی اول search_podcasts بزن؛ کاربر «پخش» خواست حتماً client_play_audio صدا بزن — ناوبری جایگزین پخش نیست / client_open_panel{tab:planner|children|teachers|classes|reports|tasks|notes}
 هفته: شماره روز هفته که دوشنبه است، قالب YYYY-MM-DD میلادی. روزها: sat,sun,mon,tue,wed,thu,fri.
 تاریخ امروز را در پیام سیستم میبینی — برای «امروز/فردا» از آن استفاده کن.`;
 
@@ -297,6 +297,14 @@ function createNeedle(ctx) {
         }
         return { client_action: { type: 'play_audio', title, url, category: String(args.category || '') }, ok: true, message: 'در حال پخش «' + title + '»…' };
       }
+      case 'client_play_video':
+        return { client_action: { type: 'play_video', url: String(args.url || '') }, ok: true, message: 'در حال پخش ویدیو…' };
+      case 'client_show_content':
+        return { client_action: { type: 'show_content', screen: String(args.screen || 'screen-lobby') }, ok: true, message: 'در حال نمایش…' };
+      case 'client_show_tip':
+        return { client_action: { type: 'show_tip', text: String(args.text || '') }, ok: true, message: 'نکته نمایش داده شد.' };
+      case 'client_play_slideshow':
+        return { client_action: { type: 'play_slideshow', roomId: String(args.roomId || 'honar') }, ok: true, message: 'در حال نمایش اسلایدشو…' };
       case 'client_open_panel':
         return { client_action: { type: 'open_panel', tab: String(args.tab || 'planner') }, ok: true, message: 'در حال باز کردن پنل…' };
 

@@ -460,6 +460,32 @@ var YaranBot = (function () {
           }
           break;
         }
+        case "play_video": {
+          if (a.url) {
+            var modal = document.createElement("div");
+            modal.style.cssText = "position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;";
+            modal.innerHTML = '<video controls autoplay style="max-width:90%;max-height:85vh;border-radius:8px;" src="' + a.url + '"></video><button style="position:absolute;top:16px;left:16px;background:#fff;border:none;border-radius:50%;width:36px;height:36px;font-size:18px;cursor:pointer;" onclick="this.parentElement.remove()">✕</button>';
+            document.body.appendChild(modal);
+            modal.addEventListener("click", function(e){ if(e.target===modal) modal.remove(); });
+          }
+          break;
+        }
+        case "show_content": {
+          if (typeof showScreen === "function") {
+            showScreen(a.screen || "screen-lobby");
+          }
+          break;
+        }
+        case "show_tip": {
+          if (a.text) addBotMessage("💡 " + a.text);
+          break;
+        }
+        case "play_slideshow": {
+          if (typeof VirtualTour !== "undefined" && VirtualTour.goToRoom) {
+            VirtualTour.goToRoom(a.roomId || "honar");
+          }
+          break;
+        }
       }
     } catch (e) { console.warn("client action failed:", e); }
   }
